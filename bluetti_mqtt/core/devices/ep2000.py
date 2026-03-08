@@ -37,10 +37,10 @@ class EP2000(BluettiDevice):
         self.struct.add_bool_field("generator_control_enabled", 2246)
 
         # NEW: grid limits (2435–2438)
-        self.struct.add_decimal_field("grid_voltage_min", 2435, 1)
-        self.struct.add_decimal_field("grid_voltage_max", 2436, 1)
-        self.struct.add_decimal_field("grid_freq_min", 2437, 2)
-        self.struct.add_decimal_field("grid_freq_max", 2438, 2)
+        self.struct.add_decimal_field("grid_reconnect_voltage_low_limit", 2435, 1)
+        self.struct.add_decimal_field("grid_reconnect_voltage_high_limit", 2436, 1)
+        self.struct.add_decimal_field("grid_reconnect_frequency_low_limit", 2437, 2)
+        self.struct.add_decimal_field("grid_reconnect_frequency_high_limit", 2438, 2)
 
         # WiFi name
         self.struct.add_swap_string_field("wifi_name", 12002, 16)
