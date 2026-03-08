@@ -1,3 +1,10 @@
+from typing import List
+from ..commands import ReadHoldingRegisters
+from .bluetti_device import BluettiDevice
+from .struct import DeviceStruct
+
+
+
 class EP2000(BluettiDevice):
     def __init__(self, address: str, sn: str):
         self.struct = DeviceStruct()
