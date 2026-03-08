@@ -7,6 +7,7 @@ from .devices.ep500 import EP500
 from .devices.ep500p import EP500P
 from .devices.ep600 import EP600
 from .devices.eb3a import EB3A
+from .devices.ep2000 import EP2000
 from .commands import (
     DeviceCommand,
     ReadHoldingRegisters,
