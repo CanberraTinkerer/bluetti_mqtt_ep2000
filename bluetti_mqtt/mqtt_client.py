@@ -160,15 +160,6 @@ NORMAL_DEVICE_FIELDS = {
         }
     ),
 
-    'wifi_name': MqttFieldConfig(
-        type=MqttFieldType.ENUM,  # HA doesn't like strings; ENUM works fine
-        setter=False,
-        advanced=False,
-        home_assistant_extra={
-            'name': 'WiFi Name',
-        }
-    ),
-
     'dc_input_power': MqttFieldConfig(
         type=MqttFieldType.NUMERIC,
         setter=False,
