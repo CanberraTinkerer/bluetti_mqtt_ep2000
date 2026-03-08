@@ -30,6 +30,163 @@ class MqttFieldConfig:
 
 COMMAND_TOPIC_RE = re.compile(r'^bluetti/command/(\w+)-(\d+)/([a-z_]+)$')
 NORMAL_DEVICE_FIELDS = {
+        'pv1_power': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'PV1 Power',
+            'unit_of_measurement': 'W',
+            'device_class': 'power',
+            'state_class': 'measurement',
+        }
+    ),
+    'pv1_voltage': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'PV1 Voltage',
+            'unit_of_measurement': 'V',
+            'device_class': 'voltage',
+            'state_class': 'measurement',
+        }
+    ),
+    'pv1_current': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'PV1 Current',
+            'unit_of_measurement': 'A',
+            'device_class': 'current',
+            'state_class': 'measurement',
+        }
+    ),
+    'pv2_power': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'PV2 Power',
+            'unit_of_measurement': 'W',
+            'device_class': 'power',
+            'state_class': 'measurement',
+        }
+    ),
+    'pv2_voltage': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'PV2 Voltage',
+            'unit_of_measurement': 'V',
+            'device_class': 'voltage',
+            'state_class': 'measurement',
+        }
+    ),
+    'pv2_current': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'PV2 Current',
+            'unit_of_measurement': 'A',
+            'device_class': 'current',
+            'state_class': 'measurement',
+        }
+    ),
+
+    'ac_control_enabled': MqttFieldConfig(
+        type=MqttFieldType.BOOL,
+        setter=True,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'AC Control Enabled',
+        }
+    ),
+
+    'generator_control_enabled': MqttFieldConfig(
+        type=MqttFieldType.BOOL,
+        setter=True,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'Generator Control Enabled',
+        }
+    ),
+
+    'grid_reconnect_voltage_low_limit': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'Grid Reconnect Voltage Low',
+            'unit_of_measurement': 'V',
+            'device_class': 'voltage',
+            'state_class': 'measurement',
+        }
+    ),
+    'grid_reconnect_voltage_high_limit': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'Grid Reconnect Voltage High',
+            'unit_of_measurement': 'V',
+            'device_class': 'voltage',
+            'state_class': 'measurement',
+        }
+    ),
+    'grid_reconnect_frequency_low_limit': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'Grid Reconnect Frequency Low',
+            'unit_of_measurement': 'Hz',
+            'device_class': 'frequency',
+            'state_class': 'measurement',
+        }
+    ),
+    'grid_reconnect_frequency_high_limit': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'Grid Reconnect Frequency High',
+            'unit_of_measurement': 'Hz',
+            'device_class': 'frequency',
+            'state_class': 'measurement',
+        }
+    ),
+
+    'wifi_name': MqttFieldConfig(
+        type=MqttFieldType.ENUM,  # HA doesn't like strings; ENUM works fine
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'WiFi Name',
+        }
+    ),
+
+    'serial_number': MqttFieldConfig(
+        type=MqttFieldType.ENUM,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'Serial Number',
+        }
+    ),
+
+    'model_code': MqttFieldConfig(
+        type=MqttFieldType.ENUM,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'Model Code',
+        }
+    ),
+
     'dc_input_power': MqttFieldConfig(
         type=MqttFieldType.NUMERIC,
         setter=False,
