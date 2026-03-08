@@ -169,24 +169,6 @@ NORMAL_DEVICE_FIELDS = {
         }
     ),
 
-    'serial_number': MqttFieldConfig(
-        type=MqttFieldType.ENUM,
-        setter=False,
-        advanced=False,
-        home_assistant_extra={
-            'name': 'Serial Number',
-        }
-    ),
-
-    'model_code': MqttFieldConfig(
-        type=MqttFieldType.ENUM,
-        setter=False,
-        advanced=False,
-        home_assistant_extra={
-            'name': 'Model Code',
-        }
-    ),
-
     'dc_input_power': MqttFieldConfig(
         type=MqttFieldType.NUMERIC,
         setter=False,
