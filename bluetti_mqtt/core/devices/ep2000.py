@@ -10,7 +10,7 @@ class EP2000(BluettiDevice):
 
         # --- Core system info ---
         self.struct.add_uint_field("battery_soc", 100)
-        self.struct.add_decimal_field("battery_power", 101)  # W (+ discharge / - charge)
+        self.struct.add_decimal_field("battery_power", 101, 0)  # W (+ discharge / - charge)
         self.struct.add_uint_field("total_battery_percent", 102)
 
         # --- PV inputs ---
@@ -23,9 +23,9 @@ class EP2000(BluettiDevice):
         self.struct.add_uint_field("pv2_power", 108)
 
         # --- Grid import/export per phase ---
-        self.struct.add_decimal_field("grid_l1_power", 109)
-        self.struct.add_decimal_field("grid_l2_power", 110)
-        self.struct.add_decimal_field("grid_l3_power", 111)
+        self.struct.add_decimal_field("grid_l1_power", 109, 0)
+        self.struct.add_decimal_field("grid_l2_power", 110, 0)
+        self.struct.add_decimal_field("grid_l3_power", 111, 0)
 
         # --- AC output / load ---
         self.struct.add_uint_field("ac_output_voltage_l1", 112)
@@ -43,12 +43,12 @@ class EP2000(BluettiDevice):
         self.struct.add_uint_field("ac_output_total_power", 121)
 
         # --- AC coupling ---
-        self.struct.add_decimal_field("ac_coupling_power", 122)
+        self.struct.add_decimal_field("ac_coupling_power", 122, 0)
 
         # --- Temperatures ---
-        self.struct.add_decimal_field("temperature_inverter", 123)
-        self.struct.add_decimal_field("temperature_battery", 124)
-        self.struct.add_decimal_field("temperature_mppt", 125)
+        self.struct.add_decimal_field("temperature_inverter", 123, 0)
+        self.struct.add_decimal_field("temperature_battery", 124, 0)
+        self.struct.add_decimal_field("temperature_mppt", 125, 0)
 
         # --- Status flags ---
         self.struct.add_uint_field("status_flags", 126)
