@@ -4,38 +4,72 @@ from .bluetti_device import BluettiDevice
 from .struct import DeviceStruct
 
 
-class EP600(BluettiDevice):
+class EP2000(BluettiDevice):
     def __init__(self, address: str, sn: str):
         self.struct = DeviceStruct()
 
-        self.struct.add_uint_field('total_battery_percent', 102)
-        self.struct.add_swap_string_field('device_type', 110, 6)
-        self.struct.add_sn_field('serial_number', 116)
-        self.struct.add_decimal_field('power_generation', 154, 1)  # Total power generated since last reset (kwh)
-        self.struct.add_swap_string_field('device_type', 1101, 6)
-        self.struct.add_sn_field('serial_number', 1107)
-        self.struct.add_decimal_field('power_generation', 1202, 1)  # Total power generated since last reset (kwh)
-        # 2001-2003 is the current device time & date without a timezone
-        self.struct.add_uint_field('battery_range_start', 2022)
-        self.struct.add_uint_field('battery_range_end', 2023)
-        self.struct.add_uint_field('max_ac_input_power', 2213)
-        self.struct.add_uint_field('max_ac_input_current', 2214)
-        self.struct.add_uint_field('max_ac_output_power', 2215)
-        self.struct.add_uint_field('max_ac_output_current', 2216)
-        self.struct.add_swap_string_field('battery_type', 6101, 6)
-        self.struct.add_sn_field('battery_serial_number', 6107)
-        self.struct.add_version_field('bcu_version', 6175)
-        self.struct.add_version_field('bmu_version', 6178)
-        self.struct.add_version_field('safety_module_version', 6181)
-        self.struct.add_version_field('high_voltage_module_version', 6184)
+        # --- Core system info ---
+        self.struct.add_uint_field("battery_soc", 100)
+        self.struct.add_int_field("battery_power", 101)  # W (+ discharge / - charge)
+        self.struct.add_uint_field("total_battery_percent", 102)
 
-        super().__init__(address, 'EP600', sn)
+        # --- PV inputs ---
+        self.struct.add_uint_field("pv1_voltage", 103)
+        self.struct.add_uint_field("pv1_current", 104)
+        self.struct.add_uint_field("pv1_power", 105)
+
+        self.struct.add_uint_field("pv2_voltage", 106)
+        self.struct.add_uint_field("pv2_current", 107)
+        self.struct.add_uint_field("pv2_power", 108)
+
+        # --- Grid import/export per phase ---
+        self.struct.add_int_field("grid_l1_power", 109)
+        self.struct.add_int_field("grid_l2_power", 110)
+        self.struct.add_int_field("grid_l3_power", 111)
+
+        # --- AC output / load ---
+        self.struct.add_uint_field("ac_output_voltage_l1", 112)
+        self.struct.add_uint_field("ac_output_voltage_l2", 113)
+        self.struct.add_uint_field("ac_output_voltage_l3", 114)
+
+        self.struct.add_uint_field("ac_output_current_l1", 115)
+        self.struct.add_uint_field("ac_output_current_l2", 116)
+        self.struct.add_uint_field("ac_output_current_l3", 117)
+
+        self.struct.add_uint_field("ac_output_power_l1", 118)
+        self.struct.add_uint_field("ac_output_power_l2", 119)
+        self.struct.add_uint_field("ac_output_power_l3", 120)
+
+        self.struct.add_uint_field("ac_output_total_power", 121)
+
+        # --- AC coupling ---
+        self.struct.add_int_field("ac_coupling_power", 122)
+
+        # --- Temperatures ---
+        self.struct.add_int_field("temperature_inverter", 123)
+        self.struct.add_int_field("temperature_battery", 124)
+        self.struct.add_int_field("temperature_mppt", 125)
+
+        # --- Status flags ---
+        self.struct.add_uint_field("status_flags", 126)
+        self.struct.add_uint_field("warning_flags", 127)
+        self.struct.add_uint_field("fault_flags", 128)
+
+        # --- Device identity ---
+        self.struct.add_swap_string_field("device_type", 110, 6)
+        self.struct.add_sn_field("serial_number", 116)
+
+        # --- Battery range controls ---
+        self.struct.add_uint_field("battery_range_start", 2022)
+        self.struct.add_uint_field("battery_range_end", 2023)
+
+        super().__init__(address, "EP2000", sn)
 
     @property
     def polling_commands(self) -> List[ReadHoldingRegisters]:
         return [
-            ReadHoldingRegisters(100, 62),
-            ReadHoldingRegisters(2022, 2),
+            ReadHoldingRegisters(100, 62),   # Main EMS block
+            ReadHoldingRegisters(2022, 2),   # Battery range
         ]
 
     @property
