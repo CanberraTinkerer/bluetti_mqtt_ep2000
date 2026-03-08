@@ -45,25 +45,6 @@ class EP2000(BluettiDevice):
         # WiFi name
         self.struct.add_swap_string_field("wifi_name", 12002, 16)
 
-        self.fields.append("pv1_power")
-        self.fields.append("pv1_voltage")
-        self.fields.append("pv1_current")
-        self.fields.append("pv2_power")
-        self.fields.append("pv2_voltage")
-        self.fields.append("pv2_current")
-        self.fields.append("ac_control_enabled")
-        self.fields.append("battery_range_start")
-        self.fields.append("battery_range_end")
-        self.fields.append("generator_control_enabled")
-        self.fields.append("grid_reconnect_voltage_low_limit")
-        self.fields.append("grid_reconnect_voltage_high_limit")
-        self.fields.append("grid_reconnect_frequency_low_limit")
-        self.fields.append("grid_reconnect_frequency_high_limit")
-        self.fields.append("wifi_name")
-        self.fields.append("model_code")
-        self.fields.append("serial_number")
-
-        
         super().__init__(address, "EP2000", sn)
 
     @property
