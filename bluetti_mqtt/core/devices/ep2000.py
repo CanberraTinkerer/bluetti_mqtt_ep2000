@@ -71,9 +71,9 @@ class EP2000(BluettiDevice):
         self.struct.add_decimal_field("ac_output_frequency", 1500, 1)
 
         # AC output
-        self.struct.add_int_field("ac_output_power_phase1", 1510)
-        self.struct.add_int_field("ac_output_power_phase2", 1517)
-        self.struct.add_int_field("ac_output_power_phase3", 1524)
+        self.struct.add_uint_field("ac_output_power_phase1", 1510)
+        self.struct.add_uint_field("ac_output_power_phase2", 1517)
+        self.struct.add_uint_field("ac_output_power_phase3", 1524)
 
         self.struct.add_decimal_field("ac_output_voltage_phase1", 1511, 1)
         self.struct.add_decimal_field("ac_output_voltage_phase2", 1518, 1)
@@ -84,9 +84,9 @@ class EP2000(BluettiDevice):
         self.struct.add_decimal_field("ac_output_current_phase3", 1526, 1)
 
         # house consumption
-        self.struct.add_int_field("consumption_power_phase1", 1430)
-        self.struct.add_int_field("consumption_power_phase2", 1436)
-        self.struct.add_int_field("consumption_power_phase3", 1442)
+        self.struct.add_uint_field("consumption_power_phase1", 1430)
+        self.struct.add_uint_field("consumption_power_phase2", 1436)
+        self.struct.add_uint_field("consumption_power_phase3", 1442)
 
         self.struct.add_decimal_field("consumption_voltage_phase1", 1431, 1)
         self.struct.add_decimal_field("consumption_voltage_phase2", 1437, 1)
