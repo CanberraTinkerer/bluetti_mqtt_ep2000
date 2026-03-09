@@ -261,7 +261,7 @@ def main():
     args = parser.parse_args()
 
     if args.deep_scan:
-        asyncio.run(deep_scan_registers(args.address, 1, 12100, args.deep_scan))
+        asyncio.run(deep_scan_registers(args.address, 1, 31111, args.deep_scan))
     elif args.scan_start is not None:
         asyncio.run(scan_registers(args.address, args.scan_start, args.scan_count))
     elif args.watch_start is not None:
