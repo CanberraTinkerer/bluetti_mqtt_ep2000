@@ -162,22 +162,36 @@ async def deep_scan_registers(address: str, start_reg: int, end_reg: int, output
     asyncio.get_running_loop().create_task(client.run())
     while not client.is_ready: await asyncio.sleep(1)
 
-    print(f"--- DEEP SCAN: {start_reg} to {end_reg} ---")
+    print(f"--- INDIVIDUAL DEEP SCAN: {start_reg} to {end_reg} ---")
+    current = start_reg
+    
     with open(output_path, 'a') as f:
-        chunk = 60
-        for current in range(start_reg, end_reg + 1, chunk):
-            count = min(chunk, end_reg - current + 1)
-            print(f"Scanning {current}...", end='\r')
-            cmd = ReadHoldingRegisters(current, count)
+        while current <= end_reg:
+            print(f"Checking Register {current}...", end='\r')
+            cmd = ReadHoldingRegisters(current, 1) # Just one register
+            
             try:
                 fut = await client.perform(cmd)
-                res = cast(bytes, await asyncio.wait_for(fut, timeout=10.0))
+                res = cast(bytes, await asyncio.wait_for(fut, timeout=5.0))
                 body = cmd.parse_response(res)
-                f.write(json.dumps({'reg': current, 'data': body.hex(), 'ts': time.time()}) + '\n')
-                f.flush()
+                
+                # Only log if it's not zero (optional, but saves space)
+                if body.hex() != "0000":
+                    f.write(json.dumps({'reg': current, 'val': int.from_bytes(body, 'big'), 'hex': body.hex(), 'ts': time.time()}) + '\n')
+                    f.flush()
+                
+                current += 1 # Move to next register
+                
             except Exception as e:
-                print(f"\nError at {current}: {e}")
-            await asyncio.sleep(0.1)
+                # If we hit an error, assume the rest of this 'page' is empty
+                next_page = ((current // 100) + 1) * 100
+                print(f"\n[!] Error at {current}. Skipping to {next_page} (Reason: {e})")
+                current = next_page
+                
+            # Tiny sleep to let the BLE radio breathe
+            await asyncio.sleep(0.05)
+
+    print(f"\n--- SCAN FINISHED ---")
 
 
 async def scan_registers(address: str, start: int, count: int):
