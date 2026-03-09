@@ -1,7 +1,10 @@
 [build-system]
-requires = ['setuptools>=40.8.0', 'wheel']
-build-backend = 'setuptools.build_meta:__legacy__'
+requires = ["setuptools>=40.8.0", "wheel"]
+build-backend = "setuptools.build_meta:__legacy__"
+
 [project]
+name = "bluetti-mqtt-ep2000"
+version = "0.1.0"
 dependencies = [
     "paho-mqtt<2.0",
 ]
