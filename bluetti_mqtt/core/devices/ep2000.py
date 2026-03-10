@@ -2,6 +2,131 @@ from typing import List
 from ..commands import ReadHoldingRegisters
 from .bluetti_device import BluettiDevice
 from .struct import DeviceStruct
+# ---------- inside class EP2000 ----------
+
+def _get_uint(self, name_or_addr):
+    """Return uint value by field name or address. Prefer name if present."""
+    # DeviceStruct.parse returns dict keyed by name; your code likely stores parsed results
+    # Replace `self.parsed` with the actual dict your code uses after parse.
+    parsed = getattr(self, "parsed", None)
+    if parsed is None:
+        return None
+    if isinstance(name_or_addr, str):
+        return parsed.get(name_or_addr)
+    return None
+
+def _read_raw(self, addr_name):
+    """Helper wrapper to read parsed value by field name."""
+    return self._get_uint(addr_name)
+
+def decode_pv_strings(self, parsed):
+    pv1_p = parsed.get("pv1_power_w")
+    pv1_v = parsed.get("pv1_voltage_v")
+    pv1_i = parsed.get("pv1_current_a")
+    pv2_p = parsed.get("pv2_power_w")
+    pv2_v = parsed.get("pv2_voltage_v")
+    pv2_i = parsed.get("pv2_current_a")
+    return {
+        "pv1": {"power_w": signed16(pv1_p) if pv1_p is not None else None,
+                "voltage_v": float(pv1_v) if pv1_v is not None else None,
+                "current_a": float(pv1_i) if pv1_i is not None else None},
+        "pv2": {"power_w": signed16(pv2_p) if pv2_p is not None else None,
+                "voltage_v": float(pv2_v) if pv2_v is not None else None,
+                "current_a": float(pv2_i) if pv2_i is not None else None},
+    }
+
+def decode_inverter_phases(self, parsed):
+    def phase(prefix, p_reg, v_reg, i_reg):
+        p_raw = parsed.get(p_reg)
+        v = parsed.get(v_reg)
+        i_raw = parsed.get(i_reg)
+        p = signed16(p_raw) if p_raw is not None else None
+        v_f = float(v) if v is not None else None
+        i_f = float(i_raw) if i_raw is not None else None
+        if i_f is None and p is not None and v_f:
+            i_f = safe_div(abs(p), v_f)
+        return {"power_w": p, "voltage_v": v_f, "current_a": round(i_f, 2) if i_f is not None else None}
+    return {
+        "inv_l1": phase("l1", "ac_output_power_phase1_raw", "ac_output_voltage_phase1_v", "ac_output_current_phase1_a"),
+        "inv_l2": phase("l2", "ac_output_power_phase2_raw", "ac_output_voltage_phase2_v", "ac_output_current_phase2_a"),
+        "inv_l3": phase("l3", "ac_output_power_phase3_raw", "ac_output_voltage_phase3_v", "ac_output_current_phase3_a"),
+    }
+
+def decode_adl400_candidates(self, parsed):
+    def ac_phase(prefix, p_raw_name, v_name, i_name):
+        p_raw = parsed.get(p_raw_name)
+        v = parsed.get(v_name)
+        i = parsed.get(i_name)
+        if p_raw is None and v is None and i is None:
+            return None
+        p = signed16(p_raw) if p_raw is not None else None
+        v_f = float(v) if v is not None else None
+        i_f = float(i) if i is not None else None
+        return {"power_w": p, "voltage_v": v_f, "current_a": i_f}
+    return {
+        "pv_ac_l1": ac_phase("l1", "pv_ac_l1_power_raw", "pv_ac_l1_voltage_v", "pv_ac_l1_current_a"),
+        "pv_ac_l2": ac_phase("l2", "pv_ac_l2_power_raw", "pv_ac_l2_voltage_v", "pv_ac_l2_current_a"),
+        "pv_ac_l3": ac_phase("l3", "pv_ac_l3_power_raw", "pv_ac_l3_voltage_v", "pv_ac_l3_current_a"),
+    }
+
+def decode_grid(self, parsed):
+    # grid_power_all_low/high were registered at 144/145 etc; combine here
+    gp_low = parsed.get("grid_power_all_low")
+    gp_high = parsed.get("grid_power_all_high")
+    grid_total = combine_32_swapped(gp_low, gp_high)
+    # per-phase grid raw values
+    g1 = signed16(parsed.get("grid_power_phase1_raw")) if parsed.get("grid_power_phase1_raw") is not None else None
+    g2 = signed16(parsed.get("grid_power_phase2_raw")) if parsed.get("grid_power_phase2_raw") is not None else None
+    g3 = signed16(parsed.get("grid_power_phase3_raw")) if parsed.get("grid_power_phase3_raw") is not None else None
+    return {"grid_power_w": grid_total, "grid_phase1_w": g1, "grid_phase2_w": g2, "grid_phase3_w": g3}
+
+def compute_flows_from_parsed(self, parsed):
+    decoded = {}
+    decoded.update(self.decode_pv_strings(parsed))
+    decoded.update(self.decode_inverter_phases(parsed))
+    decoded.update(self.decode_adl400_candidates(parsed))
+    grid = self.decode_grid(parsed)
+    decoded["grid_power_w"] = grid.get("grid_power_w") or 0
+
+    # totals
+    pv_dc_total = 0
+    for k in ("pv1", "pv2"):
+        p = decoded.get(k, {}).get("power_w")
+        if p is not None:
+            pv_dc_total += p
+
+    pv_ac_total = 0
+    for k in ("pv_ac_l1", "pv_ac_l2", "pv_ac_l3"):
+        p = decoded.get(k, {}).get("power_w")
+        if p is not None:
+            pv_ac_total += p
+
+    inv_sum = 0
+    for k in ("inv_l1", "inv_l2", "inv_l3"):
+        p = decoded.get(k, {}).get("power_w")
+        if p is not None:
+            inv_sum += p
+
+    pv_total = pv_dc_total + pv_ac_total
+    grid_power = decoded.get("grid_power_w", 0) or 0
+
+    # Convention: grid_power > 0 = import, grid_power < 0 = export
+    exported = -grid_power if grid_power < 0 else 0
+    load_est = inv_sum + pv_ac_total + pv_dc_total - exported
+    self_consumption = pv_total - exported
+
+    # attach computed values
+    decoded.update({
+        "pv_dc_total_w": int(pv_dc_total),
+        "pv_ac_total_w": int(pv_ac_total),
+        "pv_total_w": int(pv_total),
+        "inv_sum_w": int(inv_sum),
+        "grid_power_w": int(grid_power),
+        "load_est_w": int(load_est),
+        "self_consumption_w": int(self_consumption),
+        "exported_w": int(exported),
+    })
+    return decoded
 
 
 
