@@ -141,6 +141,8 @@ class EP2000(BluettiDevice):
             'ac_output_power_phase1', 'ac_output_voltage_phase1', 'ac_output_current_phase1',
             'ac_output_power_phase2', 'ac_output_voltage_phase2', 'ac_output_current_phase2',
             'ac_output_power_phase3', 'ac_output_voltage_phase3', 'ac_output_current_phase3',
+            'grid_power_phase1', 'grid_power_phase2', 'grid_power_phase3',
+            'consumption_power_phase1', 'consumption_power_phase2', 'consumption_power_phase3',
             'adl400_ac_input_power_phase1', 'adl400_ac_input_voltage_phase1', 'adl400_ac_input_current_phase1',
             'adl400_ac_input_power_phase2', 'adl400_ac_input_voltage_phase2', 'adl400_ac_input_current_phase2',
             'adl400_ac_input_power_phase3', 'adl400_ac_input_voltage_phase3', 'adl400_ac_input_current_phase3',
@@ -330,6 +332,14 @@ class EP2000(BluettiDevice):
         parsed['adl400_ac_input_power_phase3'] = pv_ac_l3.get('power_w') if pv_ac_l3 else None
         parsed['adl400_ac_input_voltage_phase3'] = pv_ac_l3.get('voltage_v') if pv_ac_l3 else None
         parsed['adl400_ac_input_current_phase3'] = pv_ac_l3.get('current_a') if pv_ac_l3 else None
+
+        # Phase Powers
+        parsed['grid_power_phase1'] = _to_signed16(parsed.get('grid_power_phase1_raw'))
+        parsed['grid_power_phase2'] = _to_signed16(parsed.get('grid_power_phase2_raw'))
+        parsed['grid_power_phase3'] = _to_signed16(parsed.get('grid_power_phase3_raw'))
+        parsed['consumption_power_phase1'] = _to_signed16(parsed.get('consumption_power_phase1_raw'))
+        parsed['consumption_power_phase2'] = _to_signed16(parsed.get('consumption_power_phase2_raw'))
+        parsed['consumption_power_phase3'] = _to_signed16(parsed.get('consumption_power_phase3_raw'))
 
         # Totals
         parsed['pv_input_power_all'] = flows.get('pv_total_w')

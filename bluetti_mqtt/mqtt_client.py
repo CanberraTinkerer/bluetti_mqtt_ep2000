@@ -195,7 +195,7 @@ NORMAL_DEVICE_FIELDS = {
             'state_class': 'measurement',
         }
     ),
-    'grid_frequency': MqttFieldConfig(
+    'grid_frequency_hz': MqttFieldConfig(
         type=MqttFieldType.NUMERIC,
         setter=False,
         advanced=False,
@@ -599,7 +599,7 @@ NORMAL_DEVICE_FIELDS = {
         }
     ),
 
-    'grid_reconnect_voltage_low_limit': MqttFieldConfig(
+    'grid_reconnect_voltage_low_limit_v': MqttFieldConfig(
         type=MqttFieldType.NUMERIC,
         setter=False,
         advanced=False,
@@ -610,7 +610,7 @@ NORMAL_DEVICE_FIELDS = {
             'state_class': 'measurement',
         }
     ),
-    'grid_reconnect_voltage_high_limit': MqttFieldConfig(
+    'grid_reconnect_voltage_high_limit_v': MqttFieldConfig(
         type=MqttFieldType.NUMERIC,
         setter=False,
         advanced=False,
@@ -621,7 +621,7 @@ NORMAL_DEVICE_FIELDS = {
             'state_class': 'measurement',
         }
     ),
-    'grid_reconnect_frequency_low_limit': MqttFieldConfig(
+    'grid_reconnect_frequency_low_limit_hz': MqttFieldConfig(
         type=MqttFieldType.NUMERIC,
         setter=False,
         advanced=False,
@@ -632,7 +632,7 @@ NORMAL_DEVICE_FIELDS = {
             'state_class': 'measurement',
         }
     ),
-    'grid_reconnect_frequency_high_limit': MqttFieldConfig(
+    'grid_reconnect_frequency_high_limit_hz': MqttFieldConfig(
         type=MqttFieldType.NUMERIC,
         setter=False,
         advanced=False,
@@ -709,6 +709,17 @@ NORMAL_DEVICE_FIELDS = {
         advanced=False,
         home_assistant_extra={
             'name': 'Total Battery Percent',
+            'unit_of_measurement': '%',
+            'device_class': 'battery',
+            'state_class': 'measurement',
+        }
+    ),
+    'battery_soc': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'Battery SOC',
             'unit_of_measurement': '%',
             'device_class': 'battery',
             'state_class': 'measurement',
