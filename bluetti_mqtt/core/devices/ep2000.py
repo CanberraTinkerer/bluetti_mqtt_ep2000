@@ -128,6 +128,28 @@ class EP2000(BluettiDevice):
 
         super().__init__(address, "EP2000", sn)
 
+    def has_field(self, name: str) -> bool:
+        # First, check the struct
+        if any(f.name == name for f in self.struct.fields):
+            return True
+        
+        # Then, check the calculated fields
+        calculated_fields = [
+            'total_ac_consumption', 'total_grid_consumption', 'total_grid_feed',
+            'pv1_power', 'pv1_voltage', 'pv1_current',
+            'pv2_power', 'pv2_voltage', 'pv2_current',
+            'ac_output_power_phase1', 'ac_output_voltage_phase1', 'ac_output_current_phase1',
+            'ac_output_power_phase2', 'ac_output_voltage_phase2', 'ac_output_current_phase2',
+            'ac_output_power_phase3', 'ac_output_voltage_phase3', 'ac_output_current_phase3',
+            'adl400_ac_input_power_phase1', 'adl400_ac_input_voltage_phase1', 'adl400_ac_input_current_phase1',
+            'adl400_ac_input_power_phase2', 'adl400_ac_input_voltage_phase2', 'adl400_ac_input_current_phase2',
+            'adl400_ac_input_power_phase3', 'adl400_ac_input_voltage_phase3', 'adl400_ac_input_current_phase3',
+            'pv_input_power_all', 'grid_power_all', 'consumption_power_all',
+            'pv_dc_total_power', 'pv_ac_total_power', 'inverter_sum_power',
+            'self_consumption_power', 'exported_power'
+        ]
+        return name in calculated_fields
+
     def _combine_u32_swapped(self, low: int, high: int):
         if low is None or high is None:
             return None
