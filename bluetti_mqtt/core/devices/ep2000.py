@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Dict
 from ..commands import ReadHoldingRegisters
 from .bluetti_device import BluettiDevice
 from .struct import DeviceStruct
@@ -128,20 +128,14 @@ class EP2000(BluettiDevice):
 
         super().__init__(address, "EP2000", sn)
 
-    def _read_field_safe(self, name: str):
-        try:
-            return self.struct.get(name)
-        except Exception:
-            return None
-
     def _combine_u32_swapped(self, low: int, high: int):
         if low is None or high is None:
             return None
         return (high << 16) | (low & 0xFFFF)
-    
-    def decode_phase_tuple(self, power_reg: int, voltage_reg: int, current_reg: int = None):
-        p_raw = self.struct.get(power_reg)
-        v_raw = self.struct.get(voltage_reg)
+
+    def _decode_phase_tuple(self, parsed: Dict, power_name: str, voltage_name: str, current_name: str = None):
+        p_raw = parsed.get(power_name)
+        v_raw = parsed.get(voltage_name)
 
         if p_raw is None or v_raw is None:
             return None
@@ -149,64 +143,55 @@ class EP2000(BluettiDevice):
         p = _to_signed16(p_raw)
         v = v_raw
         i = None
-        if current_reg is not None:
-            cur_raw = self.struct.get(current_reg)
+        if current_name is not None:
+            cur_raw = parsed.get(current_name)
             if cur_raw is not None:
                 i = cur_raw
         if i is None and v > 0:
             i = abs(p) / v
         return {"power_w": int(p), "voltage_v": round(v, 1), "current_a": round(i, 2) if i is not None else None}
 
-    def decode_grid_power32(self, low_reg: int, high_reg: int):
-        low = self.struct.get(low_reg)
-        high = self.struct.get(high_reg)
+    def _decode_grid_power32(self, parsed: Dict, low_name: str, high_name: str):
+        low = parsed.get(low_name)
+        high = parsed.get(high_name)
         if low is None or high is None:
             return None
         return int(_to_signed32_swapped(low, high))
 
-    def decode_pv_strings(self):
-        pv1 = self.decode_phase_tuple(1212, 1213, 1214)
-        pv2 = self.decode_phase_tuple(1220, 1221, 1222)
+    def _decode_pv_strings(self, parsed: Dict):
+        pv1 = self._decode_phase_tuple(parsed, 'pv1_power_w', 'pv1_voltage_v', 'pv1_current_a')
+        pv2 = self._decode_phase_tuple(parsed, 'pv2_power_w', 'pv2_voltage_v', 'pv2_current_a')
         return {"pv1": pv1, "pv2": pv2}
 
-    def decode_inverter_phases(self):
-        l1 = self.decode_phase_tuple(1510, 1511, 1512)
-        l2 = self.decode_phase_tuple(1517, 1518, 1519)
-        l3 = self.decode_phase_tuple(1524, 1525, 1526)
+    def _decode_inverter_phases(self, parsed: Dict):
+        l1 = self._decode_phase_tuple(parsed, 'ac_output_power_phase1_raw', 'ac_output_voltage_phase1_v', 'ac_output_current_phase1_a')
+        l2 = self._decode_phase_tuple(parsed, 'ac_output_power_phase2_raw', 'ac_output_voltage_phase2_v', 'ac_output_current_phase2_a')
+        l3 = self._decode_phase_tuple(parsed, 'ac_output_power_phase3_raw', 'ac_output_voltage_phase3_v', 'ac_output_current_phase3_a')
         return {"inv_l1": l1, "inv_l2": l2, "inv_l3": l3}
 
-    def decode_adl400_ac(self):
+    def _decode_adl400_ac(self, parsed: Dict):
         p1, p2, p3 = None, None, None
-        try:
-            p1_raw = self.struct.get('pv_ac_l1_power_raw')
-            v1_raw = self.struct.get('pv_ac_l1_voltage_v')
-            i1_raw = self.struct.get('pv_ac_l1_current_a')
-            if p1_raw is not None and v1_raw is not None and i1_raw is not None:
-                p1 = {"power_w": _to_signed16(p1_raw), "voltage_v": v1_raw, "current_a": i1_raw}
-        except KeyError:
-            pass
+        p1_raw = parsed.get('pv_ac_l1_power_raw')
+        v1_raw = parsed.get('pv_ac_l1_voltage_v')
+        i1_raw = parsed.get('pv_ac_l1_current_a')
+        if p1_raw is not None and v1_raw is not None and i1_raw is not None:
+            p1 = {"power_w": _to_signed16(p1_raw), "voltage_v": v1_raw, "current_a": i1_raw}
 
-        try:
-            p2_raw = self.struct.get('pv_ac_l2_power_raw')
-            v2_raw = self.struct.get('pv_ac_l2_voltage_v')
-            i2_raw = self.struct.get('pv_ac_l2_current_a')
-            if p2_raw is not None and v2_raw is not None and i2_raw is not None:
-                p2 = {"power_w": _to_signed16(p2_raw), "voltage_v": v2_raw, "current_a": i2_raw}
-        except KeyError:
-            pass
+        p2_raw = parsed.get('pv_ac_l2_power_raw')
+        v2_raw = parsed.get('pv_ac_l2_voltage_v')
+        i2_raw = parsed.get('pv_ac_l2_current_a')
+        if p2_raw is not None and v2_raw is not None and i2_raw is not None:
+            p2 = {"power_w": _to_signed16(p2_raw), "voltage_v": v2_raw, "current_a": i2_raw}
 
-        try:
-            p3_raw = self.struct.get('pv_ac_l3_power_raw')
-            v3_raw = self.struct.get('pv_ac_l3_voltage_v')
-            i3_raw = self.struct.get('pv_ac_l3_current_a')
-            if p3_raw is not None and v3_raw is not None and i3_raw is not None:
-                p3 = {"power_w": _to_signed16(p3_raw), "voltage_v": v3_raw, "current_a": i3_raw}
-        except KeyError:
-            pass
+        p3_raw = parsed.get('pv_ac_l3_power_raw')
+        v3_raw = parsed.get('pv_ac_l3_voltage_v')
+        i3_raw = parsed.get('pv_ac_l3_current_a')
+        if p3_raw is not None and v3_raw is not None and i3_raw is not None:
+            p3 = {"power_w": _to_signed16(p3_raw), "voltage_v": v3_raw, "current_a": i3_raw}
             
         return {"pv_ac_l1": p1, "pv_ac_l2": p2, "pv_ac_l3": p3}
 
-    def compute_flows(self, decoded: dict):
+    def _compute_flows(self, decoded: dict):
         pv_dc_total = 0
         for p in ("pv1", "pv2"):
             tup = decoded.get(p)
@@ -245,14 +230,14 @@ class EP2000(BluettiDevice):
             "exported_w": int(exported),
         }
 
-    def decode_flows(self):
+    def _decode_flows(self, parsed: Dict):
         decoded = {}
-        decoded.update(self.decode_pv_strings())
-        decoded.update(self.decode_inverter_phases())
-        grid_p = self.decode_grid_power32(146, 147) # grid_power_all_low, grid_power_all_high
+        decoded.update(self._decode_pv_strings(parsed))
+        decoded.update(self._decode_inverter_phases(parsed))
+        grid_p = self._decode_grid_power32(parsed, 'grid_power_all_low', 'grid_power_all_high')
         decoded["grid_power_w"] = grid_p if grid_p is not None else 0
-        decoded.update(self.decode_adl400_ac())
-        computed = self.compute_flows(decoded)
+        decoded.update(self._decode_adl400_ac(parsed))
+        computed = self._compute_flows(decoded)
         decoded.update(computed)
         return decoded
     
@@ -280,7 +265,7 @@ class EP2000(BluettiDevice):
         if total_grid_feed_kwh is not None:
             parsed['total_grid_feed'] = round(total_grid_feed_kwh / 10.0, 2)
 
-        flows = self.decode_flows()
+        flows = self._decode_flows(parsed)
 
         if flows.get('pv1'):
             parsed['pv1_power'] = flows['pv1'].get('power_w')
