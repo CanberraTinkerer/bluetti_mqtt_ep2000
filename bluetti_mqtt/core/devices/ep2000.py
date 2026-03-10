@@ -134,127 +134,126 @@ class EP2000(BluettiDevice):
     def __init__(self, address: str, sn: str):
         self.struct = DeviceStruct()
 
-# --- Identity / battery ---
-self.struct.add_uint_field("battery_soc", 100)                       # raw % (uint16)
-self.struct.add_decimal_field("battery_power_w_raw", 101, 0)         # raw W (uint16) — signed interpretation in decode
-self.struct.add_uint_field("total_battery_percent", 102)             # duplicate SOC if needed
+        # --- Identity / battery ---
+        self.struct.add_uint_field("battery_soc", 100)                       # raw % (uint16)
+        self.struct.add_decimal_field("battery_power_w_raw", 101, 0)         # raw W (uint16) — signed interpretation in decode
+        self.struct.add_uint_field("total_battery_percent", 102)             # duplicate SOC if needed
 
-self.struct.add_swap_string_field("device_type", 110, 6)
-self.struct.add_sn_field("serial_number", 116)
-self.struct.add_swap_string_field("model_code", 1101, 6)
+        self.struct.add_swap_string_field("device_type", 110, 6)
+        self.struct.add_sn_field("serial_number", 116)
+        self.struct.add_swap_string_field("model_code", 1101, 6)
 
-# --- Totals (32-bit swapped) ---
-# DeviceStruct does not have a 32-bit field helper, so store low/high words and combine later.
-self.struct.add_uint_field("pv_input_power_all_low", 144)            # low word of 32-bit swapped Total PV power
-self.struct.add_uint_field("pv_input_power_all_high", 145)           # high word
+        # --- Totals (32-bit swapped) ---
+        # DeviceStruct does not have a 32-bit field helper, so store low/high words and combine later.
+        self.struct.add_uint_field("pv_input_power_all_low", 144)            # low word of 32-bit swapped Total PV power
+        self.struct.add_uint_field("pv_input_power_all_high", 145)           # high word
 
-self.struct.add_uint_field("consumption_power_all_low", 142)         # low word of 32-bit swapped Total AC load
-self.struct.add_uint_field("consumption_power_all_high", 143)        # high word
+        self.struct.add_uint_field("consumption_power_all_low", 142)         # low word of 32-bit swapped Total AC load
+        self.struct.add_uint_field("consumption_power_all_high", 143)        # high word
 
-self.struct.add_uint_field("grid_power_all_low", 146)                # low word of 32-bit swapped signed Grid power
-self.struct.add_uint_field("grid_power_all_high", 147)               # high word
+        self.struct.add_uint_field("grid_power_all_low", 146)                # low word of 32-bit swapped signed Grid power
+        self.struct.add_uint_field("grid_power_all_high", 147)               # high word
 
-# --- Energy statistics (32-bit swapped, scaled) ---
-self.struct.add_uint_field("total_ac_consumption_low", 152)          # low word (32-bit swapped; /10 => kWh)
-self.struct.add_uint_field("total_ac_consumption_high", 153)         # high word
+        # --- Energy statistics (32-bit swapped, scaled) ---
+        self.struct.add_uint_field("total_ac_consumption_low", 152)          # low word (32-bit swapped; /10 => kWh)
+        self.struct.add_uint_field("total_ac_consumption_high", 153)         # high word
 
-self.struct.add_uint_field("total_grid_consumption_low", 156)        # low word (32-bit swapped; /10 => kWh)
-self.struct.add_uint_field("total_grid_consumption_high", 157)       # high word
+        self.struct.add_uint_field("total_grid_consumption_low", 156)        # low word (32-bit swapped; /10 => kWh)
+        self.struct.add_uint_field("total_grid_consumption_high", 157)       # high word
 
-self.struct.add_uint_field("total_grid_feed_low", 158)               # low word (32-bit swapped; /10 => kWh)
-self.struct.add_uint_field("total_grid_feed_high", 159)              # high word
+        self.struct.add_uint_field("total_grid_feed_low", 158)               # low word (32-bit swapped; /10 => kWh)
+        self.struct.add_uint_field("total_grid_feed_high", 159)              # high word
 
-# --- PV DC strings (confirmed) ---
-self.struct.add_uint_field("pv1_power_w", 1212)                      # raw W (uint16) — signed interpretation if needed
-self.struct.add_decimal_field("pv1_voltage_v", 1213, 1)             # /10 V
-self.struct.add_decimal_field("pv1_current_a", 1214, 1)             # /10 A
+        # --- PV DC strings (confirmed) ---
+        self.struct.add_uint_field("pv1_power_w", 1212)                      # raw W (uint16) — signed interpretation if needed
+        self.struct.add_decimal_field("pv1_voltage_v", 1213, 1)             # /10 V
+        self.struct.add_decimal_field("pv1_current_a", 1214, 1)             # /10 A
 
-self.struct.add_uint_field("pv2_power_w", 1220)                      # raw W (uint16)
-self.struct.add_decimal_field("pv2_voltage_v", 1221, 1)             # /10 V
-self.struct.add_decimal_field("pv2_current_a", 1222, 1)             # /10 A
+        self.struct.add_uint_field("pv2_power_w", 1220)                      # raw W (uint16)
+        self.struct.add_decimal_field("pv2_voltage_v", 1221, 1)             # /10 V
+        self.struct.add_decimal_field("pv2_current_a", 1222, 1)             # /10 A
 
-# --- ADL400 AC‑coupled PV (candidate offsets) ---
-# Keep these candidate offsets; discovery may change them. Power is signed 16-bit in practice.
-self.struct.add_uint_field("pv_ac_l1_power_raw", 1228)               # candidate: ADL400 L1 power (uint16; signed in decode)
-self.struct.add_decimal_field("pv_ac_l1_voltage_v", 1229, 1)        # candidate: /10 V
-self.struct.add_decimal_field("pv_ac_l1_current_a", 1230, 1)        # candidate: /10 A
+        # --- ADL400 AC‑coupled PV (candidate offsets) ---
+        # Keep these candidate offsets; discovery may change them. Power is signed 16-bit in practice.
+        self.struct.add_uint_field("pv_ac_l1_power_raw", 1228)               # candidate: ADL400 L1 power (uint16; signed in decode)
+        self.struct.add_decimal_field("pv_ac_l1_voltage_v", 1229, 1)        # candidate: /10 V
+        self.struct.add_decimal_field("pv_ac_l1_current_a", 1230, 1)        # candidate: /10 A
 
-self.struct.add_uint_field("pv_ac_l2_power_raw", 1236)               # candidate: ADL400 L2 power
-self.struct.add_decimal_field("pv_ac_l2_voltage_v", 1237, 1)        # candidate: /10 V
-self.struct.add_decimal_field("pv_ac_l2_current_a", 1238, 1)        # candidate: /10 A
+        self.struct.add_uint_field("pv_ac_l2_power_raw", 1236)               # candidate: ADL400 L2 power
+        self.struct.add_decimal_field("pv_ac_l2_voltage_v", 1237, 1)        # candidate: /10 V
+        self.struct.add_decimal_field("pv_ac_l2_current_a", 1238, 1)        # candidate: /10 A
 
-self.struct.add_uint_field("pv_ac_l3_power_raw", 1244)               # candidate: ADL400 L3 power
-self.struct.add_decimal_field("pv_ac_l3_voltage_v", 1245, 1)        # candidate: /10 V
-self.struct.add_decimal_field("pv_ac_l3_current_a", 1246, 1)        # candidate: /10 A
+        self.struct.add_uint_field("pv_ac_l3_power_raw", 1244)               # candidate: ADL400 L3 power
+        self.struct.add_decimal_field("pv_ac_l3_voltage_v", 1245, 1)        # candidate: /10 V
+        self.struct.add_decimal_field("pv_ac_l3_current_a", 1246, 1)        # candidate: /10 A
 
-# --- Grid data (phase grid values) ---
-self.struct.add_decimal_field("grid_frequency_hz", 1300, 1)         # /10 Hz
+        # --- Grid data (phase grid values) ---
+        self.struct.add_decimal_field("grid_frequency_hz", 1300, 1)         # /10 Hz
 
-# Phase 1 grid
-self.struct.add_uint_field("grid_power_phase1_raw", 1313)           # raw W (uint16) — signed in decode if needed
-self.struct.add_decimal_field("grid_voltage_phase1_v", 1314, 1)     # /10 V
-self.struct.add_decimal_field("grid_current_phase1_a", 1315, 1)     # /10 A
+        # Phase 1 grid
+        self.struct.add_uint_field("grid_power_phase1_raw", 1313)           # raw W (uint16) — signed in decode if needed
+        self.struct.add_decimal_field("grid_voltage_phase1_v", 1314, 1)     # /10 V
+        self.struct.add_decimal_field("grid_current_phase1_a", 1315, 1)     # /10 A
 
-# Phase 2 grid
-self.struct.add_uint_field("grid_power_phase2_raw", 1319)           # raw W
-self.struct.add_decimal_field("grid_voltage_phase2_v", 1320, 1)     # /10 V
-self.struct.add_decimal_field("grid_current_phase2_a", 1321, 1)     # /10 A
+        # Phase 2 grid
+        self.struct.add_uint_field("grid_power_phase2_raw", 1319)           # raw W
+        self.struct.add_decimal_field("grid_voltage_phase2_v", 1320, 1)     # /10 V
+        self.struct.add_decimal_field("grid_current_phase2_a", 1321, 1)     # /10 A
 
-# Phase 3 grid
-self.struct.add_uint_field("grid_power_phase3_raw", 1325)           # raw W
-self.struct.add_decimal_field("grid_voltage_phase3_v", 1326, 1)     # /10 V
-self.struct.add_decimal_field("grid_current_phase3_a", 1327, 1)     # /10 A
+        # Phase 3 grid
+        self.struct.add_uint_field("grid_power_phase3_raw", 1325)           # raw W
+        self.struct.add_decimal_field("grid_voltage_phase3_v", 1326, 1)     # /10 V
+        self.struct.add_decimal_field("grid_current_phase3_a", 1327, 1)     # /10 A
 
-# --- AC output / inverter phases (inverter contribution to AC bus) ---
-self.struct.add_uint_field("ac_output_power_phase1_raw", 1510)      # raw W (uint16) — signed in decode
-self.struct.add_decimal_field("ac_output_voltage_phase1_v", 1511, 1)# /10 V
-self.struct.add_decimal_field("ac_output_current_phase1_a", 1512, 1)# /10 A (if present)
+        # --- AC output / inverter phases (inverter contribution to AC bus) ---
+        self.struct.add_uint_field("ac_output_power_phase1_raw", 1510)      # raw W (uint16) — signed in decode
+        self.struct.add_decimal_field("ac_output_voltage_phase1_v", 1511, 1)# /10 V
+        self.struct.add_decimal_field("ac_output_current_phase1_a", 1512, 1)# /10 A (if present)
 
-self.struct.add_uint_field("ac_output_power_phase2_raw", 1517)      # raw W
-self.struct.add_decimal_field("ac_output_voltage_phase2_v", 1518, 1)# /10 V
-self.struct.add_decimal_field("ac_output_current_phase2_a", 1519, 1)# /10 A
+        self.struct.add_uint_field("ac_output_power_phase2_raw", 1517)      # raw W
+        self.struct.add_decimal_field("ac_output_voltage_phase2_v", 1518, 1)# /10 V
+        self.struct.add_decimal_field("ac_output_current_phase2_a", 1519, 1)# /10 A
 
-self.struct.add_uint_field("ac_output_power_phase3_raw", 1524)      # raw W
-self.struct.add_decimal_field("ac_output_voltage_phase3_v", 1525, 1)# /10 V
-self.struct.add_decimal_field("ac_output_current_phase3_a", 1526, 1)# /10 A
+        self.struct.add_uint_field("ac_output_power_phase3_raw", 1524)      # raw W
+        self.struct.add_decimal_field("ac_output_voltage_phase3_v", 1525, 1)# /10 V
+        self.struct.add_decimal_field("ac_output_current_phase3_a", 1526, 1)# /10 A
 
-# --- House consumption (per-phase load) ---
-self.struct.add_uint_field("consumption_power_phase1_raw", 1430)    # raw W (uint16) — signed in decode if negative export possible
-self.struct.add_decimal_field("consumption_voltage_phase1_v", 1431, 1)
-self.struct.add_decimal_field("consumption_current_phase1_a", 1432, 1)
+        # --- House consumption (per-phase load) ---
+        self.struct.add_uint_field("consumption_power_phase1_raw", 1430)    # raw W (uint16) — signed in decode if negative export possible
+        self.struct.add_decimal_field("consumption_voltage_phase1_v", 1431, 1)
+        self.struct.add_decimal_field("consumption_current_phase1_a", 1432, 1)
 
-self.struct.add_uint_field("consumption_power_phase2_raw", 1436)    # raw W
-self.struct.add_decimal_field("consumption_voltage_phase2_v", 1437, 1)
-self.struct.add_decimal_field("consumption_current_phase2_a", 1438, 1)
+        self.struct.add_uint_field("consumption_power_phase2_raw", 1436)    # raw W
+        self.struct.add_decimal_field("consumption_voltage_phase2_v", 1437, 1)
+        self.struct.add_decimal_field("consumption_current_phase2_a", 1438, 1)
 
-self.struct.add_uint_field("consumption_power_phase3_raw", 1442)    # raw W
-self.struct.add_decimal_field("consumption_voltage_phase3_v", 1443, 1)
-self.struct.add_decimal_field("consumption_current_phase3_a", 1444, 1)
+        self.struct.add_uint_field("consumption_power_phase3_raw", 1442)    # raw W
+        self.struct.add_decimal_field("consumption_voltage_phase3_v", 1443, 1)
+        self.struct.add_decimal_field("consumption_current_phase3_a", 1444, 1)
 
-# --- Controls / battery range ---
-self.struct.add_bool_field("ac_control_enabled", 2011)
-self.struct.add_uint_field("battery_range_start", 2022)
-self.struct.add_uint_field("battery_range_end", 2023)
-self.struct.add_bool_field("generator_control_enabled", 2246)
+        # --- Controls / battery range ---
+        self.struct.add_bool_field("ac_control_enabled", 2011)
+        self.struct.add_uint_field("battery_range_start", 2022)
+        self.struct.add_uint_field("battery_range_end", 2023)
+        self.struct.add_bool_field("generator_control_enabled", 2246)
 
-# --- Grid limits (decimal scaling) ---
-self.struct.add_decimal_field("grid_reconnect_voltage_low_limit_v", 2435, 1)
-self.struct.add_decimal_field("grid_reconnect_voltage_high_limit_v", 2436, 1)
-self.struct.add_decimal_field("grid_reconnect_frequency_low_limit_hz", 2437, 2)
-self.struct.add_decimal_field("grid_reconnect_frequency_high_limit_hz", 2438, 2)
+        # --- Grid limits (decimal scaling) ---
+        self.struct.add_decimal_field("grid_reconnect_voltage_low_limit_v", 2435, 1)
+        self.struct.add_decimal_field("grid_reconnect_voltage_high_limit_v", 2436, 1)
+        self.struct.add_decimal_field("grid_reconnect_frequency_low_limit_hz", 2437, 2)
+        self.struct.add_decimal_field("grid_reconnect_frequency_high_limit_hz", 2438, 2)
 
-# --- WiFi name ---
-self.struct.add_swap_string_field("wifi_name", 12002, 16)
+        # --- WiFi name ---
+        self.struct.add_swap_string_field("wifi_name", 12002, 16)
 
-# --- Notes: computed fields are not added to DeviceStruct here.
-# Compute these in your decode/publish path after parsing the registers:
-#  - pv_dc_total_w  = pv1_power_w + pv2_power_w
-#  - pv_ac_total_w  = combine pv_ac_l?_power_raw (apply signed)
-#  - pv_total_w     = pv_dc_total_w + pv_ac_total_w
-#  - inv_sum_w      = sum of ac_output_power_phase?_raw (apply signed)
-#  - grid_power_all = combine grid_power_all_low/high (32-bit swapped signed)
-#  - total_* energy values = combine low/high and divide by 10 where applicable
-
+        # --- Notes: computed fields are not added to DeviceStruct here.
+        # Compute these in your decode/publish path after parsing the registers:
+        #  - pv_dc_total_w  = pv1_power_w + pv2_power_w
+        #  - pv_ac_total_w  = combine pv_ac_l?_power_raw (apply signed)
+        #  - pv_total_w     = pv_dc_total_w + pv_ac_total_w
+        #  - inv_sum_w      = sum of ac_output_power_phase?_raw (apply signed)
+        #  - grid_power_all = combine grid_power_all_low/high (32-bit swapped signed)
+        #  - total_* energy values = combine low/high and divide by 10 where applicable
         super().__init__(address, "EP2000", sn)
     # ---------- helpers (place near top of ep2000.py) ----------
 def _to_signed16(v: int) -> int:
