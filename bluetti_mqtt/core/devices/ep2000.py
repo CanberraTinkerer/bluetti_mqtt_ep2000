@@ -429,6 +429,100 @@ def decode_flows(self):
 
 
     
+    def parse(self, address: int, data: bytes):
+        # Let the struct parse all the raw values
+        parsed = self.struct.parse(address, data)
+
+        # Manually combine 32-bit unsigned energy values
+        total_ac_consumption_kwh = self._combine_u32_swapped(
+            parsed.get('total_ac_consumption_low'),
+            parsed.get('total_ac_consumption_high')
+        )
+        if total_ac_consumption_kwh is not None:
+            parsed['total_ac_consumption'] = round(total_ac_consumption_kwh / 10.0, 2)
+
+        total_grid_consumption_kwh = self._combine_u32_swapped(
+            parsed.get('total_grid_consumption_low'),
+            parsed.get('total_grid_consumption_high')
+        )
+        if total_grid_consumption_kwh is not None:
+            parsed['total_grid_consumption'] = round(total_grid_consumption_kwh / 10.0, 2)
+        
+        total_grid_feed_kwh = self._combine_u32_swapped(
+            parsed.get('total_grid_feed_low'),
+            parsed.get('total_grid_feed_high')
+        )
+        if total_grid_feed_kwh is not None:
+            parsed['total_grid_feed'] = round(total_grid_feed_kwh / 10.0, 2)
+
+        # Get all the fancy flow values
+        flows = self.decode_flows()
+
+        # Flatten PV strings
+        if flows.get('pv1'):
+            parsed['pv1_power'] = flows['pv1'].get('power_w')
+            parsed['pv1_voltage'] = flows['pv1'].get('voltage_v')
+            parsed['pv1_current'] = flows['pv1'].get('current_a')
+        if flows.get('pv2'):
+            parsed['pv2_power'] = flows['pv2'].get('power_w')
+            parsed['pv2_voltage'] = flows['pv2'].get('voltage_v')
+            parsed['pv2_current'] = flows['pv2'].get('current_a')
+
+        # Flatten inverter phases
+        if flows.get('inv_l1'):
+            parsed['ac_output_power_phase1'] = flows['inv_l1'].get('power_w')
+            parsed['ac_output_voltage_phase1'] = flows['inv_l1'].get('voltage_v')
+            parsed['ac_output_current_phase1'] = flows['inv_l1'].get('current_a')
+        if flows.get('inv_l2'):
+            parsed['ac_output_power_phase2'] = flows['inv_l2'].get('power_w')
+            parsed['ac_output_voltage_phase2'] = flows['inv_l2'].get('voltage_v')
+            parsed['ac_output_current_phase2'] = flows['inv_l2'].get('current_a')
+        if flows.get('inv_l3'):
+            parsed['ac_output_power_phase3'] = flows['inv_l3'].get('power_w')
+            parsed['ac_output_voltage_phase3'] = flows['inv_l3'].get('voltage_v')
+            parsed['ac_output_current_phase3'] = flows['inv_l3'].get('current_a')
+            
+        # Flatten ADL400 AC PV
+        if flows.get('pv_ac_l1'):
+            parsed['adl400_ac_input_power_phase1'] = flows['pv_ac_l1'].get('power_w')
+            parsed['adl400_ac_input_voltage_phase1'] = flows['pv_ac_l1'].get('voltage_v')
+            parsed['adl400_ac_input_current_phase1'] = flows['pv_ac_l1'].get('current_a')
+        if flows.get('pv_ac_l2'):
+            parsed['adl400_ac_input_power_phase2'] = flows['pv_ac_l2'].get('power_w')
+            parsed['adl400_ac_input_voltage_phase2'] = flows['pv_ac_l2'].get('voltage_v')
+            parsed['adl400_ac_input_current_phase2'] = flows['pv_ac_l2'].get('current_a')
+        if flows.get('pv_ac_l3'):
+            parsed['adl400_ac_input_power_phase3'] = flows['pv_ac_l3'].get('power_w')
+            parsed['adl400_ac_input_voltage_phase3'] = flows['pv_ac_l3'].get('voltage_v')
+            parsed['adl400_ac_input_current_phase3'] = flows['pv_ac_l3'].get('current_a')
+
+        # Add computed flow values, renaming where necessary
+        if flows.get('pv_total_w') is not None:
+            parsed['pv_input_power_all'] = flows['pv_total_w']
+        if flows.get('grid_power_w') is not None:
+            parsed['grid_power_all'] = flows['grid_power_w']
+        if flows.get('load_est_w') is not None:
+            parsed['consumption_power_all'] = flows['load_est_w']
+        if flows.get('pv_dc_total_w') is not None:
+            parsed['pv_dc_total_power'] = flows['pv_dc_total_w']
+        if flows.get('pv_ac_total_w') is not None:
+            parsed['pv_ac_total_power'] = flows['pv_ac_total_w']
+        if flows.get('inv_sum_w') is not None:
+            parsed['inverter_sum_power'] = flows['inv_sum_w']
+        if flows.get('self_consumption_w') is not None:
+            parsed['self_consumption_power'] = flows['self_consumption_w']
+        if flows.get('exported_w') is not None:
+            parsed['exported_power'] = flows['exported_w']
+
+        return parsed
+
+    def _combine_u32_swapped(self, low: int, high: int):
+        if low is None or high is None:
+            return None
+        return (high << 16) | (low & 0xFFFF)
+
+
+    
     @property
     def polling_commands(self) -> List[ReadHoldingRegisters]:
         return [
