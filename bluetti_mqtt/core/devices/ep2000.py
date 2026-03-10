@@ -20,8 +20,8 @@ class EP2000(BluettiDevice):
         self.struct = DeviceStruct()
 
         # --- Identity / battery ---
-        self.struct.add_uint_field("battery_soc", 100)
-        self.struct.add_decimal_field("battery_power_w_raw", 101, 0)
+        self.struct.add_decimal_field("pack_total_voltage", 100, 1)
+        self.struct.add_decimal_field("pack_total_current", 101, 1)
         self.struct.add_uint_field("total_battery_percent", 102)
 
         self.struct.add_swap_string_field("device_type", 110, 6)

@@ -714,14 +714,25 @@ NORMAL_DEVICE_FIELDS = {
             'state_class': 'measurement',
         }
     ),
-    'battery_soc': MqttFieldConfig(
+    'pack_total_voltage': MqttFieldConfig(
         type=MqttFieldType.NUMERIC,
         setter=False,
         advanced=False,
         home_assistant_extra={
-            'name': 'Battery SOC',
-            'unit_of_measurement': '%',
-            'device_class': 'battery',
+            'name': 'Pack Total Voltage',
+            'unit_of_measurement': 'V',
+            'device_class': 'voltage',
+            'state_class': 'measurement',
+        }
+    ),
+    'pack_total_current': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'Pack Total Current',
+            'unit_of_measurement': 'A',
+            'device_class': 'current',
             'state_class': 'measurement',
         }
     ),
