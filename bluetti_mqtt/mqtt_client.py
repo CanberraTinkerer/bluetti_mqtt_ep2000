@@ -1093,6 +1093,17 @@ NORMAL_DEVICE_FIELDS = {
             'state_class': 'measurement',
         }
     ),
+    'total_dc_power': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'Total DC Power',
+            'unit_of_measurement': 'W',
+            'device_class': 'power',
+            'state_class': 'measurement',
+        }
+    ),
 }
 DC_INPUT_FIELDS = {
     'dc_input_voltage1': MqttFieldConfig(

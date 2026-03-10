@@ -29,12 +29,12 @@ class EP2000(BluettiDevice):
         self.struct.add_swap_string_field("model_code", 1101, 6)
 
         # --- Totals (32-bit swapped) ---
-        self.struct.add_uint_field("pv_input_power_all_low", 144)
-        self.struct.add_uint_field("pv_input_power_all_high", 145)
-
+        self.struct.add_uint_field("total_dc_power_low", 140)
+        self.struct.add_uint_field("total_dc_power_high", 141)
         self.struct.add_uint_field("consumption_power_all_low", 142)
         self.struct.add_uint_field("consumption_power_all_high", 143)
-
+        self.struct.add_uint_field("pv_input_power_all_low", 144)
+        self.struct.add_uint_field("pv_input_power_all_high", 145)
         self.struct.add_uint_field("grid_power_all_low", 146)
         self.struct.add_uint_field("grid_power_all_high", 147)
 
@@ -147,6 +147,7 @@ class EP2000(BluettiDevice):
             'adl400_ac_input_power_phase2', 'adl400_ac_input_voltage_phase2', 'adl400_ac_input_current_phase2',
             'adl400_ac_input_power_phase3', 'adl400_ac_input_voltage_phase3', 'adl400_ac_input_current_phase3',
             'pv_input_power_all', 'grid_power_all', 'consumption_power_all',
+            'total_dc_power',
             'pv_dc_total_power', 'pv_ac_total_power', 'inverter_sum_power',
             'self_consumption_power', 'exported_power'
         ]
@@ -160,6 +161,7 @@ class EP2000(BluettiDevice):
             'total_ac_consumption': [152, 153],
             'total_grid_consumption': [156, 157],
             'total_grid_feed': [158, 159],
+            'total_dc_power': [140, 141],
             'pv_input_power_all': [144, 145],
             'grid_power_all': [146, 147],
             'consumption_power_all': [142, 143],
@@ -313,6 +315,11 @@ class EP2000(BluettiDevice):
             parsed.get('total_grid_feed_high')
         )
         parsed['total_grid_feed'] = round(total_grid_feed_kwh / 10.0, 2) if total_grid_feed_kwh is not None else None
+
+        parsed['total_dc_power'] = self._combine_u32_swapped(
+            parsed.get('total_dc_power_low'), 
+            parsed.get('total_dc_power_high')
+        )
 
         # Power flows
         flows = self._decode_flows(parsed)
