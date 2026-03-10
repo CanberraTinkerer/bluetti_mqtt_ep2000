@@ -152,6 +152,33 @@ class EP2000(BluettiDevice):
         ]
         return name in calculated_fields
 
+    def get_field_registers(self, field_name: str) -> List[int]:
+        # This map is not exhaustive, but covers many fields.
+        # It maps the final field name to the starting register address.
+        # For fields that span multiple registers, we'll just list the first one for simplicity for now.
+        mapping = {
+            'total_ac_consumption': [152, 153],
+            'total_grid_consumption': [156, 157],
+            'total_grid_feed': [158, 159],
+            'pv_input_power_all': [144, 145],
+            'grid_power_all': [146, 147],
+            'consumption_power_all': [142, 143],
+            'pv_dc_total_power': [1212, 1220], 
+            'pv_ac_total_power': [1228, 1236, 1244],
+            'inverter_sum_power': [1510, 1517, 1524],
+            'self_consumption_power': [1212, 1220, 1228, 1236, 1244, 146, 147],
+            'exported_power': [146, 147],
+        }
+        if field_name in mapping:
+            return mapping[field_name]
+        
+        # Try to find in struct for other fields
+        field_def = next((f for f in self.struct.fields if f.name == field_name), None)
+        if field_def:
+            return [field_def.address]
+            
+        return []
+
     def _combine_u32_swapped(self, low: int, high: int):
         if low is None or high is None:
             return None

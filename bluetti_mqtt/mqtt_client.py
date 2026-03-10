@@ -1277,10 +1277,19 @@ class MQTTClient:
             elif field.type == MqttFieldType.BUTTON:
                 type = 'button'
 
+            # Add modbus register as attribute if available
+            current_payload = payload(name, device, field)
+            if hasattr(device, 'get_field_registers'):
+                registers = device.get_field_registers(name)
+                if registers:
+                    current_payload_dict = json.loads(current_payload)
+                    current_payload_dict['json_attributes_topic'] = f'bluetti/state/{device.type}-{device.sn}/{name}/attributes'
+                    current_payload = json.dumps(current_payload_dict, separators=(',', ':'))
+
             # Publish config
             await client.publish(
                 f'homeassistant/{type}/{device.sn}_{name}/config',
-                payload=payload(name, device, field).encode(),
+                payload=current_payload.encode(),
                 retain=True
             )
 
@@ -1370,6 +1379,13 @@ class MQTTClient:
                 assert False, f'Unhandled field type: {field.type.name}'
 
             await client.publish(topic_prefix + name, payload=payload.encode())
+
+            # Publish attributes
+            if hasattr(msg.device, 'get_field_registers'):
+                registers = msg.device.get_field_registers(name)
+                if registers:
+                    attributes = {'modbus_registers': ', '.join(map(str, registers))}
+                    await client.publish(topic_prefix + name + '/attributes', payload=json.dumps(attributes).encode())
 
         # Publish battery pack data
         pack_details = self._build_pack_details(msg.parsed)
