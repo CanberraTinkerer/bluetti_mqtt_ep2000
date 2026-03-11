@@ -176,9 +176,9 @@ async def deep_scan_registers(address: str, start_reg: int, end_reg: int, output
                 body = cmd.parse_response(res)
                 
                 # Only log if it's not zero (optional, but saves space)
-                if body.hex() != "0000":
-                    f.write(json.dumps({'reg': current, 'val': int.from_bytes(body, 'big'), 'hex': body.hex(), 'ts': time.time()}) + '\n')
-                    f.flush()
+#                if body.hex() != "0000":
+                f.write(json.dumps({'reg': current, 'val': int.from_bytes(body, 'big'), 'hex': body.hex(), 'ts': time.time()}) + '\n')
+                f.flush()
                 
                 current += 1 # Move to next register
                 
