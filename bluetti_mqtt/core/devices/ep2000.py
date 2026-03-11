@@ -145,8 +145,12 @@ class EP2000(BluettiDevice):
             'ac_output_power_phase1', 'ac_output_voltage_phase1', 'ac_output_current_phase1',
             'ac_output_power_phase2', 'ac_output_voltage_phase2', 'ac_output_current_phase2',
             'ac_output_power_phase3', 'ac_output_voltage_phase3', 'ac_output_current_phase3',
-            'grid_power_phase1', 'grid_power_phase2', 'grid_power_phase3',
-            'consumption_power_phase1', 'consumption_power_phase2', 'consumption_power_phase3',
+            'grid_power_phase1', 'grid_voltage_phase1_v', 'grid_current_phase1_a',
+            'grid_power_phase2', 'grid_voltage_phase2_v', 'grid_current_phase2_a',
+            'grid_power_phase3', 'grid_voltage_phase3_v', 'grid_current_phase3_a',
+            'consumption_power_phase1', 'consumption_voltage_phase1_v', 'consumption_current_phase1_a',
+            'consumption_power_phase2', 'consumption_voltage_phase2_v', 'consumption_current_phase2_a',
+            'consumption_power_phase3', 'consumption_voltage_phase3_v', 'consumption_current_phase3_a',
             'adl400_ac_input_power_phase1', 'adl400_ac_input_voltage_phase1', 'adl400_ac_input_current_phase1',
             'adl400_ac_input_power_phase2', 'adl400_ac_input_voltage_phase2', 'adl400_ac_input_current_phase2',
             'adl400_ac_input_power_phase3', 'adl400_ac_input_voltage_phase3', 'adl400_ac_input_current_phase3',
@@ -226,6 +230,18 @@ class EP2000(BluettiDevice):
         l2 = self._decode_phase_tuple(parsed, 'ac_output_power_phase2_raw', 'ac_output_voltage_phase2_v', 'ac_output_current_phase2_a')
         l3 = self._decode_phase_tuple(parsed, 'ac_output_power_phase3_raw', 'ac_output_voltage_phase3_v', 'ac_output_current_phase3_a')
         return {"inv_l1": l1, "inv_l2": l2, "inv_l3": l3}
+
+    def _decode_grid_phases(self, parsed: Dict):
+        l1 = self._decode_phase_tuple(parsed, 'grid_power_phase1_raw', 'grid_voltage_phase1_v', 'grid_current_phase1_a')
+        l2 = self._decode_phase_tuple(parsed, 'grid_power_phase2_raw', 'grid_voltage_phase2_v', 'grid_current_phase2_a')
+        l3 = self._decode_phase_tuple(parsed, 'grid_power_phase3_raw', 'grid_voltage_phase3_v', 'grid_current_phase3_a')
+        return {"grid_l1": l1, "grid_l2": l2, "grid_l3": l3}
+
+    def _decode_consumption_phases(self, parsed: Dict):
+        l1 = self._decode_phase_tuple(parsed, 'consumption_power_phase1_raw', 'consumption_voltage_phase1_v', 'consumption_current_phase1_a')
+        l2 = self._decode_phase_tuple(parsed, 'consumption_power_phase2_raw', 'consumption_voltage_phase2_v', 'consumption_current_phase2_a')
+        l3 = self._decode_phase_tuple(parsed, 'consumption_power_phase3_raw', 'consumption_voltage_phase3_v', 'consumption_current_phase3_a')
+        return {"cons_l1": l1, "cons_l2": l2, "cons_l3": l3}
 
     def _decode_adl400_ac(self, parsed: Dict):
         p1, p2, p3 = None, None, None
@@ -340,6 +356,36 @@ class EP2000(BluettiDevice):
         # Power flows
         flows = self._decode_flows(parsed)
 
+        # Grid Phases
+        grid_phases = self._decode_grid_phases(parsed)
+        grid_l1 = grid_phases.get('grid_l1')
+        parsed['grid_power_phase1'] = grid_l1.get('power_w') if grid_l1 else None
+        parsed['grid_voltage_phase1_v'] = grid_l1.get('voltage_v') if grid_l1 else None
+        parsed['grid_current_phase1_a'] = grid_l1.get('current_a') if grid_l1 else None
+        grid_l2 = grid_phases.get('grid_l2')
+        parsed['grid_power_phase2'] = grid_l2.get('power_w') if grid_l2 else None
+        parsed['grid_voltage_phase2_v'] = grid_l2.get('voltage_v') if grid_l2 else None
+        parsed['grid_current_phase2_a'] = grid_l2.get('current_a') if grid_l2 else None
+        grid_l3 = grid_phases.get('grid_l3')
+        parsed['grid_power_phase3'] = grid_l3.get('power_w') if grid_l3 else None
+        parsed['grid_voltage_phase3_v'] = grid_l3.get('voltage_v') if grid_l3 else None
+        parsed['grid_current_phase3_a'] = grid_l3.get('current_a') if grid_l3 else None
+
+        # Consumption Phases
+        cons_phases = self._decode_consumption_phases(parsed)
+        cons_l1 = cons_phases.get('cons_l1')
+        parsed['consumption_power_phase1'] = cons_l1.get('power_w') if cons_l1 else None
+        parsed['consumption_voltage_phase1_v'] = cons_l1.get('voltage_v') if cons_l1 else None
+        parsed['consumption_current_phase1_a'] = cons_l1.get('current_a') if cons_l1 else None
+        cons_l2 = cons_phases.get('cons_l2')
+        parsed['consumption_power_phase2'] = cons_l2.get('power_w') if cons_l2 else None
+        parsed['consumption_voltage_phase2_v'] = cons_l2.get('voltage_v') if cons_l2 else None
+        parsed['consumption_current_phase2_a'] = cons_l2.get('current_a') if cons_l2 else None
+        cons_l3 = cons_phases.get('cons_l3')
+        parsed['consumption_power_phase3'] = cons_l3.get('power_w') if cons_l3 else None
+        parsed['consumption_voltage_phase3_v'] = cons_l3.get('voltage_v') if cons_l3 else None
+        parsed['consumption_current_phase3_a'] = cons_l3.get('current_a') if cons_l3 else None
+
         # PV Strings
         pv1 = flows.get('pv1')
         parsed['pv1_power'] = pv1.get('power_w') if pv1 else None
@@ -382,14 +428,6 @@ class EP2000(BluettiDevice):
         parsed['adl400_ac_input_power_phase3'] = pv_ac_l3.get('power_w') if pv_ac_l3 else None
         parsed['adl400_ac_input_voltage_phase3'] = pv_ac_l3.get('voltage_v') if pv_ac_l3 else None
         parsed['adl400_ac_input_current_phase3'] = pv_ac_l3.get('current_a') if pv_ac_l3 else None
-
-        # Phase Powers
-        parsed['grid_power_phase1'] = _to_signed16(parsed.get('grid_power_phase1_raw'))
-        parsed['grid_power_phase2'] = _to_signed16(parsed.get('grid_power_phase2_raw'))
-        parsed['grid_power_phase3'] = _to_signed16(parsed.get('grid_power_phase3_raw'))
-        parsed['consumption_power_phase1'] = _to_signed16(parsed.get('consumption_power_phase1_raw'))
-        parsed['consumption_power_phase2'] = _to_signed16(parsed.get('consumption_power_phase2_raw'))
-        parsed['consumption_power_phase3'] = _to_signed16(parsed.get('consumption_power_phase3_raw'))
 
         # Totals
         parsed['pv_input_power_all'] = flows.get('pv_total_w')

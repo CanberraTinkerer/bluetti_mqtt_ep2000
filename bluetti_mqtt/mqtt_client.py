@@ -239,7 +239,7 @@ NORMAL_DEVICE_FIELDS = {
             'state_class': 'measurement',
         }
     ),
-    'grid_voltage_phase1': MqttFieldConfig(
+    'grid_voltage_phase1_v': MqttFieldConfig(
         type=MqttFieldType.NUMERIC,
         setter=False,
         advanced=False,
@@ -250,7 +250,7 @@ NORMAL_DEVICE_FIELDS = {
             'state_class': 'measurement',
         }
     ),
-    'grid_voltage_phase2': MqttFieldConfig(
+    'grid_voltage_phase2_v': MqttFieldConfig(
         type=MqttFieldType.NUMERIC,
         setter=False,
         advanced=False,
@@ -261,7 +261,7 @@ NORMAL_DEVICE_FIELDS = {
             'state_class': 'measurement',
         }
     ),
-    'grid_voltage_phase3': MqttFieldConfig(
+    'grid_voltage_phase3_v': MqttFieldConfig(
         type=MqttFieldType.NUMERIC,
         setter=False,
         advanced=False,
@@ -272,7 +272,7 @@ NORMAL_DEVICE_FIELDS = {
             'state_class': 'measurement',
         }
     ),
-    'grid_current_phase1': MqttFieldConfig(
+    'grid_current_phase1_a': MqttFieldConfig(
         type=MqttFieldType.NUMERIC,
         setter=False,
         advanced=False,
@@ -283,7 +283,7 @@ NORMAL_DEVICE_FIELDS = {
             'state_class': 'measurement',
         }
     ),
-    'grid_current_phase2': MqttFieldConfig(
+    'grid_current_phase2_a': MqttFieldConfig(
         type=MqttFieldType.NUMERIC,
         setter=False,
         advanced=False,
@@ -294,7 +294,7 @@ NORMAL_DEVICE_FIELDS = {
             'state_class': 'measurement',
         }
     ),
-    'grid_current_phase3': MqttFieldConfig(
+    'grid_current_phase3_a': MqttFieldConfig(
         type=MqttFieldType.NUMERIC,
         setter=False,
         advanced=False,
@@ -448,7 +448,7 @@ NORMAL_DEVICE_FIELDS = {
             'state_class': 'measurement',
         }
     ),
-    'consumption_voltage_phase1': MqttFieldConfig(
+    'consumption_voltage_phase1_v': MqttFieldConfig(
         type=MqttFieldType.NUMERIC,
         setter=False,
         advanced=False,
@@ -459,7 +459,7 @@ NORMAL_DEVICE_FIELDS = {
             'state_class': 'measurement',
         }
     ),
-    'consumption_voltage_phase2': MqttFieldConfig(
+    'consumption_voltage_phase2_v': MqttFieldConfig(
         type=MqttFieldType.NUMERIC,
         setter=False,
         advanced=False,
@@ -470,7 +470,7 @@ NORMAL_DEVICE_FIELDS = {
             'state_class': 'measurement',
         }
     ),
-    'consumption_voltage_phase3': MqttFieldConfig(
+    'consumption_voltage_phase3_v': MqttFieldConfig(
         type=MqttFieldType.NUMERIC,
         setter=False,
         advanced=False,
@@ -481,7 +481,7 @@ NORMAL_DEVICE_FIELDS = {
             'state_class': 'measurement',
         }
     ),
-    'consumption_current_phase1': MqttFieldConfig(
+    'consumption_current_phase1_a': MqttFieldConfig(
         type=MqttFieldType.NUMERIC,
         setter=False,
         advanced=False,
@@ -492,7 +492,7 @@ NORMAL_DEVICE_FIELDS = {
             'state_class': 'measurement',
         }
     ),
-    'consumption_current_phase2': MqttFieldConfig(
+    'consumption_current_phase2_a': MqttFieldConfig(
         type=MqttFieldType.NUMERIC,
         setter=False,
         advanced=False,
@@ -503,7 +503,7 @@ NORMAL_DEVICE_FIELDS = {
             'state_class': 'measurement',
         }
     ),
-    'consumption_current_phase3': MqttFieldConfig(
+    'consumption_current_phase3_a': MqttFieldConfig(
         type=MqttFieldType.NUMERIC,
         setter=False,
         advanced=False,
