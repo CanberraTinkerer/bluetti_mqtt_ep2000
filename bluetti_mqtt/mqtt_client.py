@@ -1082,17 +1082,6 @@ NORMAL_DEVICE_FIELDS = {
             'state_class': 'measurement',
         }
     ),
-    'exported_power': MqttFieldConfig(
-        type=MqttFieldType.NUMERIC,
-        setter=False,
-        advanced=False,
-        home_assistant_extra={
-            'name': 'Exported Power',
-            'unit_of_measurement': 'W',
-            'device_class': 'power',
-            'state_class': 'measurement',
-        }
-    ),
     'total_dc_power': MqttFieldConfig(
         type=MqttFieldType.NUMERIC,
         setter=False,

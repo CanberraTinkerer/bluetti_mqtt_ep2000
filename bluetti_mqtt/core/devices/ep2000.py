@@ -149,7 +149,7 @@ class EP2000(BluettiDevice):
             'pv_input_power_all', 'grid_power_all', 'consumption_power_all',
             'total_dc_power',
             'pv_dc_total_power', 'pv_ac_total_power', 'inverter_sum_power',
-            'self_consumption_power', 'exported_power'
+            'self_consumption_power'
         ]
         return name in calculated_fields
 
@@ -169,7 +169,6 @@ class EP2000(BluettiDevice):
             'pv_ac_total_power': [1228, 1236, 1244],
             'inverter_sum_power': [1510, 1517, 1524],
             'self_consumption_power': [1212, 1220, 1228, 1236, 1244, 146, 147],
-            'exported_power': [146, 147],
         }
         if field_name in mapping:
             return mapping[field_name]
@@ -279,8 +278,7 @@ class EP2000(BluettiDevice):
             "inv_sum_w": int(inv_sum),
             "grid_power_w": int(grid_power),
             "load_est_w": int(load_est),
-            "self_consumption_w": int(self_consumption),
-            "exported_w": int(exported),
+            "self_consumption_w": int(self_consumption)
         }
 
     def _decode_flows(self, parsed: Dict):
@@ -383,8 +381,7 @@ class EP2000(BluettiDevice):
         parsed['pv_ac_total_power'] = flows.get('pv_ac_total_w')
         parsed['inverter_sum_power'] = flows.get('inv_sum_w')
         parsed['self_consumption_power'] = flows.get('self_consumption_w')
-        parsed['exported_power'] = flows.get('exported_w')
-
+        
         return parsed
     
     @property

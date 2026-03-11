@@ -184,9 +184,12 @@ async def deep_scan_registers(address: str, start_reg: int, end_reg: int, output
                 
             except Exception as e:
                 # If we hit an error, assume the rest of this 'page' is empty
-                next_page = ((current // 100) + 1) * 100
-                print(f"\n[!] Error at {current}. Skipping to {next_page} (Reason: {e})")
-                current = next_page
+                #next_page = ((current // 100) + 1) * 100
+                #print(f"\n[!] Error at {current}. Skipping to {next_page} (Reason: {e})")
+                #current = next_page
+                f.write(json.dumps({'reg': current, 'val': 'invalid', 'hex': 'invalid', 'ts': time.time()}) + '\n')
+                f.flush()
+                current += 1 # Move to next register
                 
             # Tiny sleep to let the BLE radio breathe
             await asyncio.sleep(0.05)
@@ -248,7 +251,7 @@ async def log(address: str, path: str):
 
 def main():
     parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter, description='EP2000 Logger')
-    parser.add_argument('--deep-scan', metavar='FILE', help='Scan 1-12100 to FILE')
+    parser.add_argument('--deep-scan', metavar='FILE', help='Scan 1-31111 to FILE')
     parser.add_argument('--scan-start', type=int)
     parser.add_argument('--scan-count', type=int)
     parser.add_argument('--watch-start', type=int)
