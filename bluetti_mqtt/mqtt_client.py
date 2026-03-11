@@ -580,6 +580,28 @@ NORMAL_DEVICE_FIELDS = {
             'state_class': 'total_increasing',
         }
     ),
+    'total_inverter_power': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'Total Inverter Power',
+            'unit_of_measurement': 'W',
+            'device_class': 'power',
+            'state_class': 'measurement',
+        }
+    ),
+    'total_dc_energy': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'Total DC Energy',
+            'unit_of_measurement': 'kWh',
+            'device_class': 'energy',
+            'state_class': 'total_increasing',
+        }
+    ),
     
     'ac_control_enabled': MqttFieldConfig(
         type=MqttFieldType.BOOL,

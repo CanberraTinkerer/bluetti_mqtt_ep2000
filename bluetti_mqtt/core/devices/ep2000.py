@@ -37,8 +37,12 @@ class EP2000(BluettiDevice):
         self.struct.add_uint_field("pv_input_power_all_high", 145)
         self.struct.add_uint_field("grid_power_all_low", 146)
         self.struct.add_uint_field("grid_power_all_high", 147)
+        self.struct.add_uint_field("total_inverter_power_low", 148)
+        self.struct.add_uint_field("total_inverter_power_high", 149)
 
         # --- Energy statistics (32-bit swapped, scaled) ---
+        self.struct.add_uint_field("total_dc_energy_low", 150)
+        self.struct.add_uint_field("total_dc_energy_high", 151)
         self.struct.add_uint_field("total_ac_consumption_low", 152)
         self.struct.add_uint_field("total_ac_consumption_high", 153)
 
@@ -147,7 +151,7 @@ class EP2000(BluettiDevice):
             'adl400_ac_input_power_phase2', 'adl400_ac_input_voltage_phase2', 'adl400_ac_input_current_phase2',
             'adl400_ac_input_power_phase3', 'adl400_ac_input_voltage_phase3', 'adl400_ac_input_current_phase3',
             'pv_input_power_all', 'grid_power_all', 'consumption_power_all',
-            'total_dc_power',
+            'total_dc_power', 'total_inverter_power', 'total_dc_energy',
             'pv_dc_total_power', 'pv_ac_total_power', 'inverter_sum_power',
             'self_consumption_power'
         ]
@@ -162,6 +166,8 @@ class EP2000(BluettiDevice):
             'total_grid_consumption': [156, 157],
             'total_grid_feed': [158, 159],
             'total_dc_power': [140, 141],
+            'total_inverter_power': [148, 149],
+            'total_dc_energy': [150, 151],
             'pv_input_power_all': [144, 145],
             'grid_power_all': [146, 147],
             'consumption_power_all': [142, 143],
@@ -313,6 +319,18 @@ class EP2000(BluettiDevice):
             parsed.get('total_grid_feed_high')
         )
         parsed['total_grid_feed'] = round(total_grid_feed_kwh / 10.0, 2) if total_grid_feed_kwh is not None else None
+
+        parsed['total_inverter_power'] = self._combine_u32_swapped(
+            parsed.get('total_inverter_power_low'),
+            parsed.get('total_inverter_power_high')
+        )
+
+        total_dc_energy_kwh = self._combine_u32_swapped(
+            parsed.get('total_dc_energy_low'),
+            parsed.get('total_dc_energy_high')
+        )
+        parsed['total_dc_energy'] = round(total_dc_energy_kwh / 10.0, 2) if total_dc_energy_kwh is not None else None
+
 
         parsed['total_dc_power'] = self._combine_u32_swapped(
             parsed.get('total_dc_power_low'), 
