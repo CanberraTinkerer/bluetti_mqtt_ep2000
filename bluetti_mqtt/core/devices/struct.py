@@ -40,6 +40,16 @@ class UintField(DeviceField):
             return val >= self.range[0] and val <= self.range[1]
 
 
+class SignedIntField(DeviceField):
+    def __init__(self, name: str, address: int):
+        super().__init__(name, address, 1)
+
+    def parse(self, data: bytes) -> int:
+        val = struct.unpack('!H', data)[0]
+        # Convert to signed 16-bit
+        return val - 65536 if val > 0x7FFF else val
+
+
 class BoolField(DeviceField):
     def __init__(self, name: str, address: int):
         super().__init__(name, address, 1)
@@ -123,6 +133,9 @@ class DeviceStruct:
 
     def add_uint_field(self, name: str, address: int, range: Tuple[int, int] = None):
         self.fields.append(UintField(name, address, range))
+
+    def add_sint_field(self, name: str, address: int):
+        self.fields.append(SignedIntField(name, address))
 
     def add_bool_field(self, name: str, address: int):
         self.fields.append(BoolField(name, address))
