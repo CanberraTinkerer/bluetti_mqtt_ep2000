@@ -1,5 +1,6 @@
 import logging
 from typing import List, Dict
+from ..commands import ReadHoldingRegisters
 from .bluetti_device import BluettiDevice
 from .struct import DeviceStruct
 
@@ -218,6 +219,26 @@ class EP2000(BluettiDevice):
 
         logging.debug(f'Final parsed data: {parsed}')
         return parsed
+
+
+    @property
+    def polling_commands(self) -> List[ReadHoldingRegisters]:
+        return [
+            ReadHoldingRegisters(100, 60),
+            ReadHoldingRegisters(1100, 60),
+            ReadHoldingRegisters(1200, 100),
+            ReadHoldingRegisters(1300, 40),
+            ReadHoldingRegisters(1400, 60),
+            ReadHoldingRegisters(1509, 30),
+            ReadHoldingRegisters(2000, 60),
+            ReadHoldingRegisters(2240, 20),
+            ReadHoldingRegisters(2400, 40),
+            ReadHoldingRegisters(12002, 16),
+        ]
+
+    @property
+    def logging_commands(self) -> List[ReadHoldingRegisters]:
+        return self.polling_commands
     
     def _combine_u32(self, parsed: Dict, name: str, low_name: str, high_name: str):
         low = parsed.get(low_name)
