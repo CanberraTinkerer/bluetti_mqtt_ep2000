@@ -252,6 +252,8 @@ async def log(address: str, path: str):
 def main():
     parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter, description='EP2000 Logger')
     parser.add_argument('--deep-scan', metavar='FILE', help='Scan 1-31111 to FILE')
+    parser.add_argument('--deep-scan-start', type=int, default=1)
+    parser.add_argument('--deep-scan-count', type=int, default=31111)
     parser.add_argument('--scan-start', type=int)
     parser.add_argument('--scan-count', type=int)
     parser.add_argument('--watch-start', type=int)
@@ -264,7 +266,7 @@ def main():
     args = parser.parse_args()
 
     if args.deep_scan:
-        asyncio.run(deep_scan_registers(args.address, 1, 31111, args.deep_scan))
+        asyncio.run(deep_scan_registers(args.address, args.deep_scan_start, args.deep_scan_start + args.deep_scan_count - 1, args.deep_scan))
     elif args.scan_start is not None:
         asyncio.run(scan_registers(args.address, args.scan_start, args.scan_count))
     elif args.watch_start is not None:
