@@ -159,6 +159,11 @@ class EP2000(BluettiDevice):
         # --- WiFi name ---
         self.struct.add_swap_string_field("wifi_name", 12002, 16)
 
+        # --- Aliased Consumption Fields (Raw) ---
+        self.struct.add_sint_field("consumption_power_1212", 1212)
+        self.struct.add_sint_field("consumption_power_1220", 1220)
+        self.struct.add_sint_field("consumption_power_1228", 1228)
+
         super().__init__(address, "EP2000", sn)
 
     def has_field(self, name: str) -> bool:

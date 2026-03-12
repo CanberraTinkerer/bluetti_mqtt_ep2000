@@ -514,6 +514,39 @@ NORMAL_DEVICE_FIELDS = {
             'state_class': 'measurement',
         }
     ),
+    'consumption_power_1212': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'Consumption Power 1212',
+            'unit_of_measurement': 'W',
+            'device_class': 'power',
+            'state_class': 'measurement',
+        }
+    ),
+    'consumption_power_1220': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'Consumption Power 1220',
+            'unit_of_measurement': 'W',
+            'device_class': 'power',
+            'state_class': 'measurement',
+        }
+    ),
+    'consumption_power_1228': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'Consumption Power 1228',
+            'unit_of_measurement': 'W',
+            'device_class': 'power',
+            'state_class': 'measurement',
+        }
+    ),
     'pv_input_power_all': MqttFieldConfig(
         type=MqttFieldType.NUMERIC,
         setter=False,
