@@ -231,7 +231,7 @@ class EP2000(BluettiDevice):
         return [
             ReadHoldingRegisters(100, 60),
             ReadHoldingRegisters(1100, 60),
-            ReadHoldingRegisters(1200, 99),
+            ReadHoldingRegisters(1200, 92),
             ReadHoldingRegisters(1300, 40),
             ReadHoldingRegisters(1400, 60),
             ReadHoldingRegisters(1509, 30),
