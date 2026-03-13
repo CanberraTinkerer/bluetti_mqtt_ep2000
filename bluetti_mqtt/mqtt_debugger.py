@@ -54,7 +54,7 @@ def get_command_fields(args: Namespace) -> List[Dict[str, Any]]:
         return config
 
 
-async def main():
+async def async_main():
     """Main program function."""
     parser = ArgumentParser(
         description="Scans for Bluetti devices and connects to them to poll registers"
@@ -184,5 +184,13 @@ async def main():
         mqtt_client.disconnect()
         print("MQTT client disconnected.")
 
+
+def main():
+    """Synchronous entry point for the debugger."""
+    try:
+        asyncio.run(async_main())
+    except KeyboardInterrupt:
+        print("\nDebugger stopped by user.")
+
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
