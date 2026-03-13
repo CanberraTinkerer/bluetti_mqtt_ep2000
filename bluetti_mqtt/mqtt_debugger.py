@@ -18,7 +18,7 @@ import paho.mqtt.client as mqtt
 from bleak import BleakClient
 from bleak.exc import BleakError
 
-from bluetti_mqtt.bluetooth import bluetooth_client as bt
+from bluetti_mqtt import bluetooth as bt
 from bluetti_mqtt.bluetooth.exc import BadConnectionError, ParseError
 from bluetti_mqtt.core.commands import ReadHoldingRegisters
 from bluetti_mqtt.core.devices.bluetti_device import BluettiDevice

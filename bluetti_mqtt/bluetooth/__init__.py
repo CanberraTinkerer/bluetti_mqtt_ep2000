@@ -7,11 +7,52 @@ from bluetti_mqtt.core import BluettiDevice, AC200M, AC300, AC500, AC60, EP500, 
 from .client import BluetoothClient
 from .exc import BadConnectionError, ModbusError, ParseError
 from .manager import MultiDeviceManager
-from . import bluetooth_client as bt
-
 
 DEVICE_NAME_RE = re.compile(r'^(AC200M|AC300|AC500|AC60|EP500P|EP500|EP600|EB3A|EP2000|EBOX)(\d+)$')
 
+RESPONSE_TIMEOUT = 5
+WRITE_UUID = '0000ff02-0000-1000-8000-00805f9b34fb'
+NOTIFY_UUID = '0000ff01-0000-1000-8000-00805f9b34fb'
+
+async def send_command(client: BleakClient, command: BluettiDevice):
+    """Sends a command to the Bluetti device and returns the response."""
+    
+    notify_future = asyncio.get_running_loop().create_future()
+    notify_response = bytearray()
+
+    def notification_handler(_sender: int, data: bytearray):
+        """Handle notification responses."""
+        # Ignore notifications we don't expect
+        if not notify_future or notify_future.done():
+            return
+
+        # If something went wrong, we might get weird data.
+        if data == b'AT+NAME?\r' or data == b'AT+ADV?\r':
+            err = BadConnectionError('Got AT+ notification')
+            notify_future.set_exception(err)
+            return
+
+        # Save data
+        notify_response.extend(data)
+
+        if len(notify_response) == command.response_size():
+            if command.is_valid_response(notify_response):
+                notify_future.set_result(notify_response)
+            else:
+                notify_future.set_exception(ParseError('Failed checksum'))
+        elif command.is_exception_response(notify_response):
+            # We got a MODBUS command exception
+            msg = f'MODBUS Exception {command}: {notify_response[2]}'
+            notify_future.set_exception(ModbusError(msg))
+
+    await client.start_notify(NOTIFY_UUID, notification_handler)
+    
+    await client.write_gatt_char(WRITE_UUID, bytes(command))
+    
+    try:
+        return await asyncio.wait_for(notify_future, timeout=RESPONSE_TIMEOUT)
+    finally:
+        await client.stop_notify(NOTIFY_UUID)
 
 async def scan_devices():
     print('Scanning....')
