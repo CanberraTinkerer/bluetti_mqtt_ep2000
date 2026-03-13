@@ -93,10 +93,11 @@ async def async_main():
                 print("No devices found. Retrying in 60 seconds...")
                 await asyncio.sleep(60)
 
-        print(f"Connecting to {device.name} at {device.address}...")
+        display_name = f"{device.type} {device.sn}"
+        print(f"Connecting to {display_name} at {device.address}...")
         client = BluetoothClient(device.address)
         asyncio.create_task(client.run())
-        device_name = device.name.replace(" ", "_").lower()
+        device_name = display_name.replace(" ", "_").lower()
 
         while True:
             if not client.is_ready:
@@ -126,8 +127,8 @@ async def async_main():
                     "value_template": "{{ value_json.value }}",
                     "device": {
                         "identifiers": [device.address],
-                        "name": device.name,
-                        "model": device.name,
+                        "name": display_name,
+                        "model": device.type,
                         "manufacturer": "Bluetti"
                     }
                 }
