@@ -7,6 +7,7 @@ from bluetti_mqtt.core import BluettiDevice, AC200M, AC300, AC500, AC60, EP500, 
 from .client import BluetoothClient
 from .exc import BadConnectionError, ModbusError, ParseError
 from .manager import MultiDeviceManager
+from . import bluetooth_client as bt
 
 
 DEVICE_NAME_RE = re.compile(r'^(AC200M|AC300|AC500|AC60|EP500P|EP500|EP600|EB3A|EP2000|EBOX)(\d+)$')
