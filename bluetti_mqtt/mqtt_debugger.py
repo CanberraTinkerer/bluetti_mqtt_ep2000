@@ -222,12 +222,12 @@ async def async_main():
                             topic_suffix = f".{offset}"
                         state_topic = f"bluetti_debugger/{device_name}/{register}{topic_suffix}/state"
 
-                        state_payload = {"value": value, "PossibleName": output_name}
+                        state_payload = {"value": value, "PossibleName": output_name, "modbus_register": register}
                         if 'notes' in output:
                             state_payload["notes"] = output['notes']
 
                         mqtt_client.publish(state_topic, json.dumps(state_payload))
-                        print(f"Published {register}{id_suffix} ({output_name}): {value}")
+                        print(f"Published {register}{topic_suffix} ({output_name}): {value}")
 
                 except (BadConnectionError, BleakError, ModbusError, ParseError) as e:
                     print(f"Error polling register {register}: {e}")
@@ -237,7 +237,7 @@ async def async_main():
                             offset = output.get('offset', 0)
                             topic_suffix = f".{offset}"
                         state_topic = f"bluetti_debugger/{device_name}/{register}{topic_suffix}/state"
-                        state_payload = {"value": "INVALID", "PossibleName": output['name']}
+                        state_payload = {"value": "INVALID", "PossibleName": output['name'], "modbus_register": register}
                         mqtt_client.publish(state_topic, json.dumps(state_payload))
                 except Exception as e:
                     print(f"An error occurred while polling register {register}: {e}")
@@ -247,7 +247,7 @@ async def async_main():
                             offset = output.get('offset', 0)
                             topic_suffix = f".{offset}"
                         state_topic = f"bluetti_debugger/{device_name}/{register}{topic_suffix}/state"
-                        state_payload = {"value": "INVALID", "PossibleName": output['name']}
+                        state_payload = {"value": "INVALID", "PossibleName": output['name'], "modbus_register": register}
                         mqtt_client.publish(state_topic, json.dumps(state_payload))
 
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
