@@ -44,6 +44,10 @@ def to_32bit_signed(value: int) -> int:
     return value
 
 
+def apply_scale(value: int, scale: int) -> float:
+    return value / (10 ** scale)
+
+
 def bytes_to_ascii(response_bytes: bytes) -> str:
     return response_bytes.decode('ascii').strip('\x00')
 
@@ -114,6 +118,7 @@ async def async_main():
                 is_ascii = command_info.get('ascii', False)
                 is_signed = command_info.get('signed', False)
                 device_class = command_info.get('device_class', None)
+                scale = command_info.get('scale', 0)
                 unit = command_info.get('unit', None)
 
                 # Home Assistant auto-discovery
@@ -140,15 +145,17 @@ async def async_main():
                 mqtt_client.publish(discovery_topic, json.dumps(payload), retain=True)
 
                 # Determine number of registers to read
-                num_registers = length
-                if length == 32:
-                    num_registers = 2
+                if not is_ascii and length >= 16:
+                    num_registers = length // 16
+                else:
+                    num_registers = length
 
                 command = ReadHoldingRegisters(register, num_registers)
                 try:
                     future = await client.perform(command)
                     response = cast(bytes, await future)
                     data = command.parse_response(response)
+                    print(f"Read {register} ({name}) raw: {data.hex()}")
                     value = None
                     if is_ascii:
                         value = bytes_to_ascii(data)
@@ -164,6 +171,8 @@ async def async_main():
                         value = int.from_bytes(data, 'big')
                         if is_signed:
                             value = to_signed(value)
+                        if scale > 0:
+                            value = apply_scale(value, scale)
 
                     # Publish to MQTT
                     state_payload = {"value": value, "name": name}
