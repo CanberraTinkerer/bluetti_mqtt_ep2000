@@ -186,10 +186,14 @@ async def async_main():
                     base_value = None
                     if is_ascii:
                         base_value = bytes_to_ascii(data)
-                    elif length == 32:
+                    elif length == 32 and not is_ascii:
                         words = bytes_to_words(data)
                         # EP2000 uses Little Endian Word Order (Low Word First)
                         base_value = (words[1] << 16) | words[0]
+                    elif length == 64 and not is_ascii:
+                        words = bytes_to_words(data)
+                        # Little Endian 64-bit value (V4, V3, V2, V1)
+                        base_value = (words[3] << 48) | (words[2] << 32) | (words[1] << 16) | words[0]
                     else:
                         base_value = int.from_bytes(data, 'big')
 
