@@ -138,15 +138,17 @@ async def async_main():
                 # Home Assistant auto-discovery
                 for output in outputs:
                     output_name = output['name']
-                    # Generate unique ID suffix
+                    # Generate suffixes
+                    topic_suffix = ""
                     id_suffix = ""
                     if is_split:
                         offset = output.get('offset', 0)
-                        id_suffix = f".{offset}"
+                        topic_suffix = f".{offset}"
+                        id_suffix = f"_{offset}"
 
                     unique_id = f"{device_name}_{register}{id_suffix}"
                     discovery_topic = f"homeassistant/sensor/{unique_id}/config"
-                    state_topic = f"bluetti_debugger/{device_name}/{register}{id_suffix}/state"
+                    state_topic = f"bluetti_debugger/{device_name}/{register}{topic_suffix}/state"
 
                     payload = {
                         "name": f"{register} {output_name}" if is_split else str(register),
@@ -214,11 +216,11 @@ async def async_main():
                                 value = apply_scale(value, output['scale'])
 
                         # Topic generation (must match discovery)
-                        id_suffix = ""
+                        topic_suffix = ""
                         if is_split:
                             offset = output.get('offset', 0)
-                            id_suffix = f".{offset}"
-                        state_topic = f"bluetti_debugger/{device_name}/{register}{id_suffix}/state"
+                            topic_suffix = f".{offset}"
+                        state_topic = f"bluetti_debugger/{device_name}/{register}{topic_suffix}/state"
 
                         state_payload = {"value": value, "PossibleName": output_name}
                         if 'notes' in output:
@@ -230,21 +232,21 @@ async def async_main():
                 except (BadConnectionError, BleakError, ModbusError, ParseError) as e:
                     print(f"Error polling register {register}: {e}")
                     for output in outputs:
-                        id_suffix = ""
+                        topic_suffix = ""
                         if is_split:
                             offset = output.get('offset', 0)
-                            id_suffix = f".{offset}"
-                        state_topic = f"bluetti_debugger/{device_name}/{register}{id_suffix}/state"
+                            topic_suffix = f".{offset}"
+                        state_topic = f"bluetti_debugger/{device_name}/{register}{topic_suffix}/state"
                         state_payload = {"value": "INVALID", "PossibleName": output['name']}
                         mqtt_client.publish(state_topic, json.dumps(state_payload))
                 except Exception as e:
                     print(f"An error occurred while polling register {register}: {e}")
                     for output in outputs:
-                        id_suffix = ""
+                        topic_suffix = ""
                         if is_split:
                             offset = output.get('offset', 0)
-                            id_suffix = f".{offset}"
-                        state_topic = f"bluetti_debugger/{device_name}/{register}{id_suffix}/state"
+                            topic_suffix = f".{offset}"
+                        state_topic = f"bluetti_debugger/{device_name}/{register}{topic_suffix}/state"
                         state_payload = {"value": "INVALID", "PossibleName": output['name']}
                         mqtt_client.publish(state_topic, json.dumps(state_payload))
 
