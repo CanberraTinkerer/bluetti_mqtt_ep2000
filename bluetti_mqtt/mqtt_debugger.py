@@ -217,7 +217,7 @@ async def async_main():
                         id_suffix = ""
                         if is_split:
                             offset = output.get('offset', 0)
-                            id_suffix = f"_o{offset}"
+                            id_suffix = f".{offset}"
                         state_topic = f"bluetti_debugger/{device_name}/{register}{id_suffix}/state"
 
                         state_payload = {"value": value, "PossibleName": output_name}
@@ -233,7 +233,7 @@ async def async_main():
                         id_suffix = ""
                         if is_split:
                             offset = output.get('offset', 0)
-                            id_suffix = f"_o{offset}"
+                            id_suffix = f".{offset}"
                         state_topic = f"bluetti_debugger/{device_name}/{register}{id_suffix}/state"
                         state_payload = {"value": "INVALID", "PossibleName": output['name']}
                         mqtt_client.publish(state_topic, json.dumps(state_payload))
@@ -243,7 +243,7 @@ async def async_main():
                         id_suffix = ""
                         if is_split:
                             offset = output.get('offset', 0)
-                            id_suffix = f"_o{offset}"
+                            id_suffix = f".{offset}"
                         state_topic = f"bluetti_debugger/{device_name}/{register}{id_suffix}/state"
                         state_payload = {"value": "INVALID", "PossibleName": output['name']}
                         mqtt_client.publish(state_topic, json.dumps(state_payload))
