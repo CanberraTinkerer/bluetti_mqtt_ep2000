@@ -120,7 +120,7 @@ async def async_main():
                 discovery_topic = f"homeassistant/sensor/{device_name}_{register}/config"
                 state_topic = f"bluetti_debugger/{device_name}/{register}/state"
                 payload = {
-                    "name": name,
+                    "name": str(register),
                     "state_topic": state_topic,
                     "unique_id": f"{device_name}_{register}",
                     "json_attributes_topic": state_topic,
