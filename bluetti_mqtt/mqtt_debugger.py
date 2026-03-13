@@ -11,6 +11,7 @@ sensors.
 
 import asyncio
 import json
+from datetime import datetime
 from argparse import ArgumentParser, Namespace
 from typing import Any, Dict, List, cast
 
@@ -117,7 +118,13 @@ async def async_main():
                 await asyncio.sleep(1)
                 continue
 
-            commands_to_poll = get_command_fields(args)
+            try:
+                commands_to_poll = get_command_fields(args)
+            except Exception as e:
+                print(f"Error loading config file: {e}")
+                await asyncio.sleep(args.scan_interval)
+                continue
+
             print(f"Polling {len(commands_to_poll)} registers...")
             for command_info in commands_to_poll:
                 register = command_info['reg']
@@ -205,7 +212,8 @@ async def async_main():
                         state_payload["notes"] = notes
                     mqtt_client.publish(state_topic, json.dumps(state_payload))
 
-            print(f"Polling complete. Waiting for {args.scan_interval} seconds...")
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            print(f"[{timestamp}] Polling complete. Waiting for {args.scan_interval} seconds...")
             await asyncio.sleep(args.scan_interval)
 
     finally:
