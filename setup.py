@@ -17,6 +17,7 @@ setup(
             "bluetti-mqtt = bluetti_mqtt.server_cli:main",
             "bluetti-logger = bluetti_mqtt.logger_cli:main",
             "bluetti-discovery = bluetti_mqtt.discovery_cli:main",
+            "bluetti-debugger = bluetti_mqtt.mqtt_debugger:main",
         ]
     },
 )
