@@ -12,20 +12,20 @@ sensors.
 import asyncio
 import json
 from argparse import ArgumentParser, Namespace
-from typing import Any, Dict, List
+from typing import Any, Dict, List, cast
 
 import paho.mqtt.client as mqtt
-from bleak import BleakClient
 from bleak.exc import BleakError
 
-from bluetti_mqtt import bluetooth as bt
-from bluetti_mqtt.bluetooth.exc import BadConnectionError, ParseError
-from bluetti_mqtt.core.commands import ReadHoldingRegisters
-from bluetti_mqtt.core.devices.bluetti_device import BluettiDevice
-from bluetti_mqtt.logger_cli import (
+from bluetti_mqtt.bluetooth import (
+    BadConnectionError,
+    BluetoothClient,
+    ModbusError,
+    ParseError,
     check_addresses,
     scan_devices,
 )
+from bluetti_mqtt.core.commands import ReadHoldingRegisters
 
 
 def bytes_to_words(response_bytes: bytes):
@@ -78,7 +78,8 @@ async def main():
     mqtt_client.loop_start()
 
     try:
-        while True:
+        device = None
+        while not device:
             if args.address:
                 print(f"Checking for device at {args.address}...")
                 devices = await check_addresses({args.address})
@@ -86,102 +87,96 @@ async def main():
                 print("Scanning for devices...")
                 devices = await scan_devices()
 
-            if not devices:
+            if devices:
+                device = devices[0]
+            else:
                 print("No devices found. Retrying in 60 seconds...")
                 await asyncio.sleep(60)
+
+        print(f"Connecting to {device.name} at {device.address}...")
+        client = BluetoothClient(device.address)
+        asyncio.create_task(client.run())
+        device_name = device.name.replace(" ", "_").lower()
+
+        while True:
+            if not client.is_ready:
+                print("Waiting for connection...")
+                await asyncio.sleep(1)
                 continue
 
-            for device in devices:
-                print(f"Connecting to {device.name} at {device.address}...")
+            commands_to_poll = get_command_fields(args)
+            print(f"Polling {len(commands_to_poll)} registers...")
+            for command_info in commands_to_poll:
+                register = command_info['reg']
+                name = command_info['name']
+                length = command_info.get('len', 1)
+                is_ascii = command_info.get('ascii', False)
+                is_signed = command_info.get('signed', False)
+                device_class = command_info.get('device_class', None)
+                unit = command_info.get('unit', None)
+
+                # Home Assistant auto-discovery
+                discovery_topic = f"homeassistant/sensor/{device_name}_{register}/config"
+                state_topic = f"bluetti_debugger/{device_name}/{register}/state"
+                payload = {
+                    "name": name,
+                    "state_topic": state_topic,
+                    "unique_id": f"{device_name}_{register}",
+                    "json_attributes_topic": state_topic,
+                    "value_template": "{{ value_json.value }}",
+                    "device": {
+                        "identifiers": [device.address],
+                        "name": device.name,
+                        "model": device.name,
+                        "manufacturer": "Bluetti"
+                    }
+                }
+                if device_class:
+                    payload['device_class'] = device_class
+                if unit:
+                    payload['unit_of_measurement'] = unit
+
+                mqtt_client.publish(discovery_topic, json.dumps(payload), retain=True)
+
+                # Determine number of registers to read
+                num_registers = 1
+                if length == 32:
+                    num_registers = 2
+
+                command = ReadHoldingRegisters(register, num_registers)
                 try:
-                    async with BleakClient(device.address) as client:
-                        device_name = device.name.replace(" ", "_").lower()
-                        while await client.is_connected():
-                            commands_to_poll = get_command_fields(args)
-                            print(f"Polling {len(commands_to_poll)} registers...")
-                            for command_info in commands_to_poll:
-                                register = command_info['reg']
-                                name = command_info['name']
-                                length = command_info.get('len', 1)
-                                is_ascii = command_info.get('ascii', False)
-                                is_signed = command_info.get('signed', False)
-                                device_class = command_info.get('device_class', None)
-                                unit = command_info.get('unit', None)
+                    future = await client.perform(command)
+                    response = cast(bytes, await future)
+                    value = None
+                    if is_ascii:
+                        value = bytes_to_ascii(response)
+                    elif length == 32:
+                        words = bytes_to_words(response)
+                        combined = (words[0] << 16) | words[1]
+                        if is_signed:
+                            value = to_32bit_signed(combined)
+                        else:
+                            value = combined
+                    else:
+                        value = int.from_bytes(response, 'big')
+                        if is_signed:
+                            value = to_signed(value)
 
-                                # Home Assistant auto-discovery
-                                discovery_topic = f"homeassistant/sensor/{device_name}_{register}/config"
-                                state_topic = f"bluetti_debugger/{device_name}/{register}/state"
-                                payload = {
-                                    "name": name,
-                                    "state_topic": state_topic,
-                                    "unique_id": f"{device_name}_{register}",
-                                    "json_attributes_topic": state_topic,
-                                    "value_template": "{{ value_json.value }}",
-                                    "device": {
-                                        "identifiers": [device.address],
-                                        "name": device.name,
-                                        "model": device.name,
-                                        "manufacturer": "Bluetti"
-                                    }
-                                }
-                                if device_class:
-                                    payload['device_class'] = device_class
-                                if unit:
-                                    payload['unit_of_measurement'] = unit
+                    # Publish to MQTT
+                    state_payload = {"value": value, "name": name}
+                    mqtt_client.publish(state_topic, json.dumps(state_payload))
+                    print(f"Published Register {register} ({name}): {value}")
 
-                                mqtt_client.publish(discovery_topic, json.dumps(payload), retain=True)
-
-                                # Determine number of registers to read
-                                num_registers = 1
-                                if length == 32:
-                                    num_registers = 2
-
-                                command = ReadHoldingRegisters(register, num_registers)
-                                try:
-                                    response = await bt.send_command(client, command)
-                                    value = None
-                                    if is_ascii:
-                                        value = bytes_to_ascii(response)
-                                    elif length == 32:
-                                        words = bytes_to_words(response)
-                                        combined = (words[0] << 16) | words[1]
-                                        if is_signed:
-                                            value = to_32bit_signed(combined)
-                                        else:
-                                            value = combined
-                                    else:
-                                        value = int.from_bytes(response, 'big')
-                                        if is_signed:
-                                            value = to_signed(value)
-                                    
-                                    # Publish to MQTT
-                                    state_payload = {"value": value, "name": name}
-                                    mqtt_client.publish(state_topic, json.dumps(state_payload))
-                                    print(f"Published Register {register} ({name}): {value}")
-
-                                except (BadConnectionError, BleakError):
-                                    print(f"Connection failed while polling register {register}")
-                                    state_payload = {"value": "INVALID", "name": name}
-                                    mqtt_client.publish(state_topic, json.dumps(state_payload))
-                                    break
-                                except ParseError:
-                                    print(f"Failed to parse response for register {register}")
-                                    state_payload = {"value": "INVALID", "name": name}
-                                    mqtt_client.publish(state_topic, json.dumps(state_payload))
-                                except Exception as e:
-                                    print(f"An error occurred while polling register {register}: {e}")
-                                    state_payload = {"value": "INVALID", "name": name}
-                                    mqtt_client.publish(state_topic, json.dumps(state_payload))
-                            
-                            print(f"Polling complete. Waiting for {args.scan_interval} seconds...")
-                            await asyncio.sleep(args.scan_interval)
-
-                except BleakError as e:
-                    print(f"Failed to connect to {device.name}: {e}")
+                except (BadConnectionError, BleakError, ModbusError, ParseError) as e:
+                    print(f"Error polling register {register}: {e}")
+                    state_payload = {"value": "INVALID", "name": name}
+                    mqtt_client.publish(state_topic, json.dumps(state_payload))
                 except Exception as e:
-                    print(f"An unexpected error occurred with {device.name}: {e}")
+                    print(f"An error occurred while polling register {register}: {e}")
+                    state_payload = {"value": "INVALID", "name": name}
+                    mqtt_client.publish(state_topic, json.dumps(state_payload))
 
-            print(f"Scan complete. Waiting for {args.scan_interval} seconds...")
+            print(f"Polling complete. Waiting for {args.scan_interval} seconds...")
             await asyncio.sleep(args.scan_interval)
 
     finally:
