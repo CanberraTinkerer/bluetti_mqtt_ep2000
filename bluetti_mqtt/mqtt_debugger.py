@@ -93,7 +93,7 @@ async def async_main():
                 print("No devices found. Retrying in 60 seconds...")
                 await asyncio.sleep(60)
 
-        display_name = f"{device.type} {device.sn}"
+        display_name = f"{device.type} {device.sn} debug"
         print(f"Connecting to {display_name} at {device.address}...")
         client = BluetoothClient(device.address)
         asyncio.create_task(client.run())
