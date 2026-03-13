@@ -1,0 +1,18 @@
+
+[
+    {
+        "reg": 1100,
+        "name": "Device Type",
+        "len": 16
+    },
+    {
+        "reg": 1101,
+        "name": "Device SN",
+        "len": 16
+    },
+    {
+        "reg": 7000,
+        "name": "Device Temperature",
+        "len": 16
+    }
+]
