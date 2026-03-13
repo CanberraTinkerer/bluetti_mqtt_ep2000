@@ -140,7 +140,7 @@ async def async_main():
                 mqtt_client.publish(discovery_topic, json.dumps(payload), retain=True)
 
                 # Determine number of registers to read
-                num_registers = 1
+                num_registers = length
                 if length == 32:
                     num_registers = 2
 
@@ -148,18 +148,20 @@ async def async_main():
                 try:
                     future = await client.perform(command)
                     response = cast(bytes, await future)
+                    data = command.parse_response(response)
                     value = None
                     if is_ascii:
-                        value = bytes_to_ascii(response)
+                        value = bytes_to_ascii(data)
                     elif length == 32:
-                        words = bytes_to_words(response)
-                        combined = (words[0] << 16) | words[1]
+                        words = bytes_to_words(data)
+                        # EP2000 uses Little Endian Word Order (Low Word First)
+                        combined = (words[1] << 16) | words[0]
                         if is_signed:
                             value = to_32bit_signed(combined)
                         else:
                             value = combined
                     else:
-                        value = int.from_bytes(response, 'big')
+                        value = int.from_bytes(data, 'big')
                         if is_signed:
                             value = to_signed(value)
 
