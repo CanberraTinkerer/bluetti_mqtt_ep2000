@@ -128,37 +128,44 @@ async def async_main():
             print(f"Polling {len(commands_to_poll)} registers...")
             for command_info in commands_to_poll:
                 register = command_info['reg']
-                name = command_info['name']
                 length = command_info.get('len', 1)
                 is_ascii = command_info.get('ascii', False)
-                is_signed = command_info.get('signed', False)
-                device_class = command_info.get('device_class', None)
-                scale = command_info.get('scale', 0)
-                unit = command_info.get('unit', None)
-                notes = command_info.get('notes', None)
+
+                # Prepare outputs (support split fields)
+                outputs = command_info.get('outputs', [command_info])
+                is_split = 'outputs' in command_info
 
                 # Home Assistant auto-discovery
-                discovery_topic = f"homeassistant/sensor/{device_name}_{register}/config"
-                state_topic = f"bluetti_debugger/{device_name}/{register}/state"
-                payload = {
-                    "name": str(register),
-                    "state_topic": state_topic,
-                    "unique_id": f"{device_name}_{register}",
-                    "json_attributes_topic": state_topic,
-                    "value_template": "{{ value_json.value }}",
-                    "device": {
-                        "identifiers": [device.address],
-                        "name": display_name,
-                        "model": device.type,
-                        "manufacturer": "Bluetti"
-                    }
-                }
-                if device_class:
-                    payload['device_class'] = device_class
-                if unit:
-                    payload['unit_of_measurement'] = unit
+                for output in outputs:
+                    output_name = output['name']
+                    # Generate unique ID suffix
+                    id_suffix = ""
+                    if is_split:
+                        id_suffix = "_" + output_name.replace(" ", "_").lower()
 
-                mqtt_client.publish(discovery_topic, json.dumps(payload), retain=True)
+                    unique_id = f"{device_name}_{register}{id_suffix}"
+                    discovery_topic = f"homeassistant/sensor/{unique_id}/config"
+                    state_topic = f"bluetti_debugger/{device_name}/{register}{id_suffix}/state"
+
+                    payload = {
+                        "name": f"{register} {output_name}" if is_split else str(register),
+                        "state_topic": state_topic,
+                        "unique_id": unique_id,
+                        "json_attributes_topic": state_topic,
+                        "value_template": "{{ value_json.value }}",
+                        "device": {
+                            "identifiers": [device.address],
+                            "name": display_name,
+                            "model": device.type,
+                            "manufacturer": "Bluetti"
+                        }
+                    }
+                    if 'device_class' in output:
+                        payload['device_class'] = output['device_class']
+                    if 'unit' in output:
+                        payload['unit_of_measurement'] = output['unit']
+
+                    mqtt_client.publish(discovery_topic, json.dumps(payload), retain=True)
 
                 # Determine number of registers to read
                 if not is_ascii and length >= 16:
@@ -171,46 +178,67 @@ async def async_main():
                     future = await client.perform(command)
                     response = cast(bytes, await future)
                     data = command.parse_response(response)
-                    print(f"Read {register} ({name}) raw: {data.hex()}")
-                    value = None
+                    print(f"Read {register} raw: {data.hex()}")
+
+                    base_value = None
                     if is_ascii:
-                        value = bytes_to_ascii(data)
+                        base_value = bytes_to_ascii(data)
                     elif length == 32:
                         words = bytes_to_words(data)
                         # EP2000 uses Little Endian Word Order (Low Word First)
-                        combined = (words[1] << 16) | words[0]
-                        if is_signed:
-                            value = to_32bit_signed(combined)
-                        else:
-                            value = combined
-                        if scale > 0:
-                            value = apply_scale(value, scale)
+                        base_value = (words[1] << 16) | words[0]
                     else:
-                        value = int.from_bytes(data, 'big')
-                        if is_signed:
-                            value = to_signed(value)
-                        if scale > 0:
-                            value = apply_scale(value, scale)
+                        base_value = int.from_bytes(data, 'big')
 
-                    # Publish to MQTT
-                    state_payload = {"value": value, "PossibleName": name}
-                    if notes:
-                        state_payload["notes"] = notes
-                    mqtt_client.publish(state_topic, json.dumps(state_payload))
-                    print(f"Published Register {register} ({name}): {value}")
+                    # Process and Publish Outputs
+                    for output in outputs:
+                        output_name = output['name']
+                        value = base_value
+
+                        if not is_ascii and isinstance(value, int):
+                            if 'mask' in output:
+                                value &= output['mask']
+                            if 'offset' in output:
+                                value >>= output['offset']
+
+                            # Sign handling
+                            is_signed = output.get('signed', False)
+                            if is_signed and not is_split:
+                                if length == 32:
+                                    value = to_32bit_signed(value)
+                                else:
+                                    value = to_signed(value)
+
+                            if 'scale' in output:
+                                value = apply_scale(value, output['scale'])
+
+                        # Topic generation (must match discovery)
+                        id_suffix = ""
+                        if is_split:
+                            id_suffix = "_" + output_name.replace(" ", "_").lower()
+                        state_topic = f"bluetti_debugger/{device_name}/{register}{id_suffix}/state"
+
+                        state_payload = {"value": value, "PossibleName": output_name}
+                        if 'notes' in output:
+                            state_payload["notes"] = output['notes']
+
+                        mqtt_client.publish(state_topic, json.dumps(state_payload))
+                        print(f"Published {register}{id_suffix} ({output_name}): {value}")
 
                 except (BadConnectionError, BleakError, ModbusError, ParseError) as e:
                     print(f"Error polling register {register}: {e}")
-                    state_payload = {"value": "INVALID", "PossibleName": name}
-                    if notes:
-                        state_payload["notes"] = notes
-                    mqtt_client.publish(state_topic, json.dumps(state_payload))
+                    for output in outputs:
+                        id_suffix = "_" + output['name'].replace(" ", "_").lower() if is_split else ""
+                        state_topic = f"bluetti_debugger/{device_name}/{register}{id_suffix}/state"
+                        state_payload = {"value": "INVALID", "PossibleName": output['name']}
+                        mqtt_client.publish(state_topic, json.dumps(state_payload))
                 except Exception as e:
                     print(f"An error occurred while polling register {register}: {e}")
-                    state_payload = {"value": "INVALID", "PossibleName": name}
-                    if notes:
-                        state_payload["notes"] = notes
-                    mqtt_client.publish(state_topic, json.dumps(state_payload))
+                    for output in outputs:
+                        id_suffix = "_" + output['name'].replace(" ", "_").lower() if is_split else ""
+                        state_topic = f"bluetti_debugger/{device_name}/{register}{id_suffix}/state"
+                        state_payload = {"value": "INVALID", "PossibleName": output['name']}
+                        mqtt_client.publish(state_topic, json.dumps(state_payload))
 
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             print(f"[{timestamp}] Polling complete. Waiting for {args.scan_interval} seconds...")
