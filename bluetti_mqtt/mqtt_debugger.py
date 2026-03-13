@@ -120,6 +120,7 @@ async def async_main():
                 device_class = command_info.get('device_class', None)
                 scale = command_info.get('scale', 0)
                 unit = command_info.get('unit', None)
+                notes = command_info.get('notes', None)
 
                 # Home Assistant auto-discovery
                 discovery_topic = f"homeassistant/sensor/{device_name}_{register}/config"
@@ -175,17 +176,23 @@ async def async_main():
                             value = apply_scale(value, scale)
 
                     # Publish to MQTT
-                    state_payload = {"value": value, "name": name}
+                    state_payload = {"value": value, "PossibleName": name}
+                    if notes:
+                        state_payload["notes"] = notes
                     mqtt_client.publish(state_topic, json.dumps(state_payload))
                     print(f"Published Register {register} ({name}): {value}")
 
                 except (BadConnectionError, BleakError, ModbusError, ParseError) as e:
                     print(f"Error polling register {register}: {e}")
-                    state_payload = {"value": "INVALID", "name": name}
+                    state_payload = {"value": "INVALID", "PossibleName": name}
+                    if notes:
+                        state_payload["notes"] = notes
                     mqtt_client.publish(state_topic, json.dumps(state_payload))
                 except Exception as e:
                     print(f"An error occurred while polling register {register}: {e}")
-                    state_payload = {"value": "INVALID", "name": name}
+                    state_payload = {"value": "INVALID", "PossibleName": name}
+                    if notes:
+                        state_payload["notes"] = notes
                     mqtt_client.publish(state_topic, json.dumps(state_payload))
 
             print(f"Polling complete. Waiting for {args.scan_interval} seconds...")
