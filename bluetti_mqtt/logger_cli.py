@@ -6,6 +6,8 @@ from io import TextIOWrapper
 import json
 import sys
 import textwrap
+from decimal import Decimal
+from enum import Enum
 import time
 from typing import cast, List, Optional
 from bluetti_mqtt.bluetooth import (
@@ -57,6 +59,19 @@ async def log_command(client: BluetoothClient, device: BluettiDevice, command: D
 
 def bytes_to_regs(body: bytes) -> List[int]:
     return [int.from_bytes(body[i:i+2], 'big') for i in range(0, len(body), 2)]
+
+def serialize_value(val):
+    if isinstance(val, Decimal):
+        return float(val)
+    if isinstance(val, Enum):
+        return val.name
+    if isinstance(val, bytes):
+        # For string fields
+        return val.decode('ascii', errors='ignore')
+    if isinstance(val, list):
+        # For array fields
+        return [serialize_value(v) for v in val]
+    return val
 
 
 def decode_pvi_tuple(regs: List[int], base_index: int) -> Optional[tuple]:
@@ -156,40 +171,76 @@ def decode_auto(start: int, regs: List[int]):
 # ---------------------------------------------------------------------------
 
 async def deep_scan_registers(address: str, start_reg: int, end_reg: int, output_path: str):
+    # Get device info for smart parsing
     devices = await check_addresses({address})
-    if not devices: sys.exit('Device not found')
-    client = BluetoothClient(devices[0].address)
+    if not devices:
+        print('Warning: Device not found or unsupported, falling back to basic register scan.')
+        device = None
+        client = BluetoothClient(address)
+    else:
+        device = devices[0]
+        client = BluetoothClient(device.address)
+
     asyncio.get_running_loop().create_task(client.run())
     while not client.is_ready: await asyncio.sleep(1)
 
-    print(f"--- INDIVIDUAL DEEP SCAN: {start_reg} to {end_reg} ---")
+    print(f"--- DEEP SCAN: {start_reg} to {end_reg} for device {device.type if device else 'Unknown'} ---")
     current = start_reg
     
     with open(output_path, 'a') as f:
         while current <= end_reg:
             print(f"Checking Register {current}...", end='\r')
-            cmd = ReadHoldingRegisters(current, 1) # Just one register
-            
-            try:
-                fut = await client.perform(cmd)
-                res = cast(bytes, await asyncio.wait_for(fut, timeout=5.0))
-                body = cmd.parse_response(res)
-                
-                # Only log if it's not zero (optional, but saves space)
-#                if body.hex() != "0000":
-                f.write(json.dumps({'reg': current, 'val': int.from_bytes(body, 'big'), 'hex': body.hex(), 'ts': time.time()}) + '\n')
-                f.flush()
-                
-                current += 1 # Move to next register
-                
-            except Exception as e:
-                # If we hit an error, assume the rest of this 'page' is empty
-                #next_page = ((current // 100) + 1) * 100
-                #print(f"\n[!] Error at {current}. Skipping to {next_page} (Reason: {e})")
-                #current = next_page
-                f.write(json.dumps({'reg': current, 'val': 'invalid', 'hex': 'invalid', 'ts': time.time()}) + '\n')
-                f.flush()
-                current += 1 # Move to next register
+
+            # Check if the current register is a known field
+            field = None
+            if device:
+                field = next((f for f in device.struct.fields if f.address == current), None)
+
+            if field:
+                # Smart scan for a known field
+                cmd = ReadHoldingRegisters(current, field.size)
+                try:
+                    fut = await client.perform(cmd)
+                    res = cast(bytes, await asyncio.wait_for(fut, timeout=5.0))
+                    body = cmd.parse_response(res)
+                    parsed_val = field.parse(body)
+                    log_entry = {
+                        'regs': list(range(current, current + field.size)),
+                        'field_name': field.name,
+                        'val': serialize_value(parsed_val),
+                        'hex': body.hex(),
+                        'ts': time.time()
+                    }
+                    f.write(json.dumps(log_entry) + '\n')
+                    f.flush()
+                    current += field.size
+                except Exception as e:
+                    f.write(json.dumps({'reg': current, 'val': 'invalid', 'error': str(e), 'ts': time.time()}) + '\n')
+                    f.flush()
+                    current += 1
+            else:
+                # Dumb scan for an unknown register
+                cmd = ReadHoldingRegisters(current, 1)
+                try:
+                    fut = await client.perform(cmd)
+                    res = cast(bytes, await asyncio.wait_for(fut, timeout=5.0))
+                    body = cmd.parse_response(res)
+                    val = int.from_bytes(body, 'big')
+                    signed_val = val - 65536 if val > 0x7FFF else val
+                    log_entry = {
+                        'reg': current,
+                        'val': val,
+                        'signed_val': signed_val,
+                        'hex': body.hex(),
+                        'ts': time.time()
+                    }
+                    f.write(json.dumps(log_entry) + '\n')
+                    f.flush()
+                    current += 1
+                except Exception as e:
+                    f.write(json.dumps({'reg': current, 'val': 'invalid', 'error': str(e), 'ts': time.time()}) + '\n')
+                    f.flush()
+                    current += 1
                 
             # Tiny sleep to let the BLE radio breathe
             await asyncio.sleep(0.05)
