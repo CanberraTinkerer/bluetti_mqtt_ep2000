@@ -48,8 +48,16 @@ def apply_scale(value: int, scale: int) -> float:
     return value / (10 ** scale)
 
 
+def swap_bytes(data: bytes) -> bytes:
+    """Swaps the place of every other byte."""
+    arr = bytearray(data)
+    for i in range(0, len(arr) - 1, 2):
+        arr[i], arr[i + 1] = arr[i + 1], arr[i]
+    return bytes(arr)
+
+
 def bytes_to_ascii(response_bytes: bytes) -> str:
-    return response_bytes.decode('ascii').strip('\x00')
+    return swap_bytes(response_bytes).decode('ascii').strip('\x00')
 
 
 def get_command_fields(args: Namespace) -> List[Dict[str, Any]]:
@@ -168,6 +176,8 @@ async def async_main():
                             value = to_32bit_signed(combined)
                         else:
                             value = combined
+                        if scale > 0:
+                            value = apply_scale(value, scale)
                     else:
                         value = int.from_bytes(data, 'big')
                         if is_signed:
