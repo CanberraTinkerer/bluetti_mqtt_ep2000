@@ -141,7 +141,8 @@ async def async_main():
                     # Generate unique ID suffix
                     id_suffix = ""
                     if is_split:
-                        id_suffix = "_" + output_name.replace(" ", "_").lower()
+                        offset = output.get('offset', 0)
+                        id_suffix = f".{offset}"
 
                     unique_id = f"{device_name}_{register}{id_suffix}"
                     discovery_topic = f"homeassistant/sensor/{unique_id}/config"
@@ -215,7 +216,8 @@ async def async_main():
                         # Topic generation (must match discovery)
                         id_suffix = ""
                         if is_split:
-                            id_suffix = "_" + output_name.replace(" ", "_").lower()
+                            offset = output.get('offset', 0)
+                            id_suffix = f"_o{offset}"
                         state_topic = f"bluetti_debugger/{device_name}/{register}{id_suffix}/state"
 
                         state_payload = {"value": value, "PossibleName": output_name}
@@ -228,14 +230,20 @@ async def async_main():
                 except (BadConnectionError, BleakError, ModbusError, ParseError) as e:
                     print(f"Error polling register {register}: {e}")
                     for output in outputs:
-                        id_suffix = "_" + output['name'].replace(" ", "_").lower() if is_split else ""
+                        id_suffix = ""
+                        if is_split:
+                            offset = output.get('offset', 0)
+                            id_suffix = f"_o{offset}"
                         state_topic = f"bluetti_debugger/{device_name}/{register}{id_suffix}/state"
                         state_payload = {"value": "INVALID", "PossibleName": output['name']}
                         mqtt_client.publish(state_topic, json.dumps(state_payload))
                 except Exception as e:
                     print(f"An error occurred while polling register {register}: {e}")
                     for output in outputs:
-                        id_suffix = "_" + output['name'].replace(" ", "_").lower() if is_split else ""
+                        id_suffix = ""
+                        if is_split:
+                            offset = output.get('offset', 0)
+                            id_suffix = f"_o{offset}"
                         state_topic = f"bluetti_debugger/{device_name}/{register}{id_suffix}/state"
                         state_payload = {"value": "INVALID", "PossibleName": output['name']}
                         mqtt_client.publish(state_topic, json.dumps(state_payload))
