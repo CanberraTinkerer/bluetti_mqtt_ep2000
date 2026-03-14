@@ -11,6 +11,7 @@ sensors.
 
 import asyncio
 import json
+import time
 from datetime import datetime
 from argparse import ArgumentParser, Namespace
 from typing import Any, Dict, List, cast
