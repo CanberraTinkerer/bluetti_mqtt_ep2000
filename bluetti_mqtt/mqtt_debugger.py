@@ -186,14 +186,12 @@ async def async_main():
                     base_value = None
                     if is_ascii:
                         base_value = bytes_to_ascii(data)
-                    elif length == 32 and not is_ascii:
+                    elif length >= 32 and length % 16 == 0 and not is_ascii:
                         words = bytes_to_words(data)
-                        # EP2000 uses Little Endian Word Order (Low Word First)
-                        base_value = (words[1] << 16) | words[0]
-                    elif length == 64 and not is_ascii:
-                        words = bytes_to_words(data)
-                        # Little Endian 64-bit value (V4, V3, V2, V1)
-                        base_value = (words[3] << 48) | (words[2] << 32) | (words[1] << 16) | words[0]
+                        # Generic Little Endian Word Order (Word 0 is LSB)
+                        base_value = 0
+                        for i, word in enumerate(words):
+                            base_value |= word << (i * 16)
                     else:
                         # Check for byte swap for 16-bit registers
                         if command_info.get('byte_swap', False):
@@ -217,7 +215,7 @@ async def async_main():
                             if is_signed and not is_split:
                                 if length == 32:
                                     value = to_32bit_signed(value)
-                                else:
+                                elif length == 16:
                                     value = to_signed(value)
 
                             if 'scale' in output:
