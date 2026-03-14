@@ -117,6 +117,9 @@ async def async_main():
                 print("Waiting for connection...")
                 await asyncio.sleep(1)
                 continue
+            
+            # Start the timer
+            start_time = time.perf_counter()
 
             try:
                 commands_to_poll = get_command_fields(args)
@@ -256,8 +259,20 @@ async def async_main():
                         state_payload = {"value": "INVALID", "PossibleName": output['name'], "modbus_register": f"{register}{topic_suffix}"}
                         mqtt_client.publish(state_topic, json.dumps(state_payload))
 
+            # Calculate duration
+            end_time = time.perf_counter()
+            duration = end_time - start_time
+            # Format duration into human readable format
+            if duration >= 60:
+                minutes = int(duration // 60)
+                seconds = duration % 60
+                duration_str = f"{minutes}m {seconds:.2f}s"
+            else:
+                duration_str = f"{duration:.2f} seconds"
+
+
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            print(f"[{timestamp}] Polling complete. Waiting for {args.scan_interval} seconds...")
+            print(f"[{timestamp}] Polling complete. Duration: {duration_str}. Waiting for {args.scan_interval}s...")
             await asyncio.sleep(args.scan_interval)
 
     finally:
