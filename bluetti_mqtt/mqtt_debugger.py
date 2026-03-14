@@ -195,7 +195,11 @@ async def async_main():
                         # Little Endian 64-bit value (V4, V3, V2, V1)
                         base_value = (words[3] << 48) | (words[2] << 32) | (words[1] << 16) | words[0]
                     else:
-                        base_value = int.from_bytes(data, 'big')
+                        # Check for byte swap for 16-bit registers
+                        if command_info.get('byte_swap', False):
+                            base_value = int.from_bytes(data, 'little')
+                        else:
+                            base_value = int.from_bytes(data, 'big')
 
                     # Process and Publish Outputs
                     for output in outputs:
