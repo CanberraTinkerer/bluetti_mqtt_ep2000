@@ -12,6 +12,7 @@ sensors.
 import asyncio
 import json
 from datetime import datetime
+import time
 from argparse import ArgumentParser, Namespace
 from typing import Any, Dict, List, cast
 
@@ -113,6 +114,7 @@ async def async_main():
         device_name = display_name.replace(" ", "_").lower()
 
         while True:
+            polling_start_time = time.monotonic()
             if not client.is_ready:
                 print("Waiting for connection...")
                 await asyncio.sleep(1)
@@ -187,17 +189,21 @@ async def async_main():
                     if is_ascii:
                         base_value = bytes_to_ascii(data)
                     elif length >= 32 and length % 16 == 0 and not is_ascii:
+                    elif length == 32:
                         words = bytes_to_words(data)
                         # Generic Little Endian Word Order (Word 0 is LSB)
                         base_value = 0
                         for i, word in enumerate(words):
                             base_value |= word << (i * 16)
+                        # EP2000 uses Little Endian Word Order (Low Word First)
+                        base_value = (words[1] << 16) | words[0]
                     else:
                         # Check for byte swap for 16-bit registers
                         if command_info.get('byte_swap', False):
                             base_value = int.from_bytes(data, 'little')
                         else:
                             base_value = int.from_bytes(data, 'big')
+                        base_value = int.from_bytes(data, 'big')
 
                     # Process and Publish Outputs
                     for output in outputs:
@@ -216,6 +222,7 @@ async def async_main():
                                 if length == 32:
                                     value = to_32bit_signed(value)
                                 elif length == 16:
+                                else:
                                     value = to_signed(value)
 
                             if 'scale' in output:
@@ -229,11 +236,15 @@ async def async_main():
                         state_topic = f"bluetti_debugger/{device_name}/{register}{topic_suffix}/state"
 
                         state_payload = {"value": value, "PossibleName": output_name, "modbus_register": f"{register}{topic_suffix}"}
+                        state_payload = {"value": value, "PossibleName": output_name}
                         if 'notes' in output:
                             state_payload["notes"] = output['notes']
 
                         mqtt_client.publish(state_topic, json.dumps(state_payload))
                         print(f"Published {register}{topic_suffix} ({output_name}): {value}")
+
+            polling_end_time = time.monotonic()
+            polling_duration = polling_end_time - polling_start_time
 
                 except (BadConnectionError, BleakError, ModbusError, ParseError) as e:
                     print(f"Error polling register {register}: {e}")
@@ -244,6 +255,7 @@ async def async_main():
                             topic_suffix = f".{offset}"
                         state_topic = f"bluetti_debugger/{device_name}/{register}{topic_suffix}/state"
                         state_payload = {"value": "INVALID", "PossibleName": output['name'], "modbus_register": f"{register}{topic_suffix}"}
+                        state_payload = {"value": "INVALID", "PossibleName": output['name']}
                         mqtt_client.publish(state_topic, json.dumps(state_payload))
                 except Exception as e:
                     print(f"An error occurred while polling register {register}: {e}")
@@ -254,10 +266,12 @@ async def async_main():
                             topic_suffix = f".{offset}"
                         state_topic = f"bluetti_debugger/{device_name}/{register}{topic_suffix}/state"
                         state_payload = {"value": "INVALID", "PossibleName": output['name'], "modbus_register": f"{register}{topic_suffix}"}
+                        state_payload = {"value": "INVALID", "PossibleName": output['name']}
                         mqtt_client.publish(state_topic, json.dumps(state_payload))
 
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            print(f"[{timestamp}] Polling complete. Waiting for {args.scan_interval} seconds...")
+
+            print(f"[{timestamp}] Polling complete in {polling_duration:.2f} seconds. Waiting for {args.scan_interval} seconds...")
             await asyncio.sleep(args.scan_interval)
 
     finally:
