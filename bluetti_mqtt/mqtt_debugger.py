@@ -12,6 +12,7 @@ sensors.
 import asyncio
 import json
 import struct
+import os
 import time
 from datetime import datetime
 from argparse import ArgumentParser, Namespace
@@ -69,7 +70,67 @@ def get_command_fields(args: Namespace) -> List[Dict[str, Any]]:
         return config
 
 
-async def async_main():
+def group_commands(commands_to_poll: List[Dict[str, Any]], max_gap: int = 5, max_group_size: int = 32) -> List[Dict[str, Any]]:
+    """Groups individual register commands into larger reads to improve polling efficiency."""
+    if not commands_to_poll:
+        return []
+
+    # Sort commands by register to enable grouping
+    sorted_commands = sorted(commands_to_poll, key=lambda x: x['reg'])
+    
+    groups = []
+    current_group = []
+
+    def get_num_regs(cmd):
+        length = cmd.get('len', 1)
+        is_ascii = cmd.get('ascii', False)
+        # For non-ascii, length is in bits, so we divide by 16 to get register count
+        return length // 16 if not is_ascii and length >= 16 else length
+
+    for cmd in sorted_commands:
+        if not current_group:
+            current_group.append(cmd)
+            continue
+
+        group_start_reg = current_group[0]['reg']
+        last_cmd_in_group = current_group[-1]
+        group_end_reg = last_cmd_in_group['reg'] + get_num_regs(last_cmd_in_group)
+
+        gap = cmd['reg'] - group_end_reg
+        new_group_size = (cmd['reg'] + get_num_regs(cmd)) - group_start_reg
+
+        # Group if the new command is close to the last one and the total group size is within limits
+        if gap >= 0 and gap <= max_gap and new_group_size <= max_group_size:
+            current_group.append(cmd)
+        else:
+            groups.append(current_group)
+            current_group = [cmd]
+
+    if current_group:
+        groups.append(current_group)
+
+    # Finalize group structure with start address and total register count for each group
+    final_groups = []
+    for group in groups:
+        start_reg = group[0]['reg']
+        
+        # Find the end register of the group
+        end_reg = 0
+        for cmd in group:
+            cmd_end = cmd['reg'] + get_num_regs(cmd)
+            if cmd_end > end_reg:
+                end_reg = cmd_end
+
+        final_groups.append({
+            'start_reg': start_reg,
+            'num_regs': end_reg - start_reg,
+            'commands': group
+        })
+
+    return final_groups
+
+
+async def async_main():  # noqa: C901
     """Main program function."""
     parser = ArgumentParser(
         description="Scans for Bluetti devices and connects to them to poll registers"
@@ -114,197 +175,161 @@ async def async_main():
         asyncio.create_task(client.run())
         device_name = display_name.replace(" ", "_").lower()
 
+        last_config_mtime = 0
+        commands_to_poll = []
+
         while True:
             if not client.is_ready:
                 print("Waiting for connection...")
                 await asyncio.sleep(1)
                 continue
+
+            try:
+                current_config_mtime = os.path.getmtime(args.config)
+                if current_config_mtime != last_config_mtime:
+                    print("Config file has changed. Reloading and running discovery...")
+                    last_config_mtime = current_config_mtime
+                    commands_to_poll = get_command_fields(args)
+
+                    # Perform Home Assistant discovery
+                    print(f"Publishing {len(commands_to_poll)} Home Assistant auto-discovery configs...")
+                    for command_info in commands_to_poll:
+                        register = command_info['reg']
+                        outputs = command_info.get('outputs', [command_info])
+                        is_split = 'outputs' in command_info
+
+                        for output in outputs:
+                            output_name = output['name']
+                            topic_suffix = f".{output.get('offset', 0)}" if is_split else ""
+                            id_suffix = f"_{output.get('offset', 0)}" if is_split else ""
+                            unique_id = f"{device_name}_{register}{id_suffix}"
+                            discovery_topic = f"homeassistant/sensor/{unique_id}/config"
+                            state_topic = f"bluetti_debugger/{device_name}/{register}{topic_suffix}/state"
+
+                            payload = {
+                                "name": f"{register} {output_name}",
+                                "state_topic": state_topic,
+                                "unique_id": unique_id,
+                                "json_attributes_topic": state_topic,
+                                "value_template": "{{ value_json.value }}",
+                                "device": {
+                                    "identifiers": [device.address],
+                                    "name": display_name,
+                                    "model": device.type,
+                                    "manufacturer": "Bluetti"
+                                }
+                            }
+                            if 'device_class' in output:
+                                payload['device_class'] = output['device_class']
+                            if 'unit' in output:
+                                payload['unit_of_measurement'] = output['unit']
+
+                            mqtt_client.publish(discovery_topic, json.dumps(payload), retain=True)
+
+            except Exception as e:
+                print(f"Error loading or processing config file: {e}")
+                await asyncio.sleep(args.scan_interval)
+                continue
             
+            # Group commands for polling
+            grouped_commands = group_commands(commands_to_poll)
+
             # Start the timer
             start_time = time.perf_counter()
 
-            try:
-                commands_to_poll = get_command_fields(args)
-            except Exception as e:
-                print(f"Error loading config file: {e}")
-                await asyncio.sleep(args.scan_interval)
-                continue
-
-            print(f"Polling {len(commands_to_poll)} registers...")
-            for command_info in commands_to_poll:
-                register = command_info['reg']
-                length = command_info.get('len', 1)
-                is_ascii = command_info.get('ascii', False)
-
-                # Prepare outputs (support split fields)
-                outputs = command_info.get('outputs', [command_info])
-                is_split = 'outputs' in command_info
-
-                # Home Assistant auto-discovery
-                for output in outputs:
-                    output_name = output['name']
-                    # Generate suffixes
-                    topic_suffix = ""
-                    id_suffix = ""
-                    if is_split:
-                        offset = output.get('offset', 0)
-                        topic_suffix = f".{offset}"
-                        id_suffix = f"_{offset}"
-
-                    unique_id = f"{device_name}_{register}{id_suffix}"
-                    discovery_topic = f"homeassistant/sensor/{unique_id}/config"
-                    state_topic = f"bluetti_debugger/{device_name}/{register}{topic_suffix}/state"
-
-                    payload = {
-                        "name": f"{register} {output_name}" if is_split else str(register),
-                        "state_topic": state_topic,
-                        "unique_id": unique_id,
-                        "json_attributes_topic": state_topic,
-                        "value_template": "{{ value_json.value }}",
-                        "device": {
-                            "identifiers": [device.address],
-                            "name": display_name,
-                            "model": device.type,
-                            "manufacturer": "Bluetti"
-                        }
-                    }
-                    if 'device_class' in output:
-                        payload['device_class'] = output['device_class']
-                    if 'unit' in output:
-                        payload['unit_of_measurement'] = output['unit']
-
-                    mqtt_client.publish(discovery_topic, json.dumps(payload), retain=True)
-
-                # Determine number of registers to read
-                if not is_ascii and length >= 16:
-                    num_registers = length // 16
-                else:
-                    num_registers = length
-
-                command = ReadHoldingRegisters(register, num_registers)
+            print(f"Polling {len(commands_to_poll)} registers in {len(grouped_commands)} groups...")
+            for group in grouped_commands:
+                command = ReadHoldingRegisters(group['start_reg'], group['num_regs'])
                 try:
                     future = await client.perform(command)
                     response = cast(bytes, await future)
-                    data = command.parse_response(response)
-                    print(f"Read {register} raw: {data.hex()}")
+                    group_data = command.parse_response(response)
+                    print(f"Read group starting at {group['start_reg']} raw: {group_data.hex()}")
 
-                    base_value = None
-                    output_format = command_info.get('format')
-                    output_type = command_info.get('type')
+                    for command_info in group['commands']:
+                        try:
+                            register = command_info['reg']
+                            length = command_info.get('len', 1)
+                            is_ascii = command_info.get('ascii', False)
+                            is_split = 'outputs' in command_info
+                            outputs = command_info.get('outputs', [command_info])
 
-                    if output_type == 'float':
-                        # The EP2000 seems to use swapped word order for 32-bit values.
-                        # We need to swap the two 2-byte words before unpacking as a big-endian float.
-                        swapped_data = data[2:4] + data[0:2]
-                        base_value = struct.unpack('>f', swapped_data)[0]
-                        base_value = round(base_value, 3)
-                    elif output_format == 'ipv4':
-                        if len(data) == 4:
-                            # Packed IP: A.B.C.D
-                            octets = data
-                        else:
-                            # Assumes 1 octet per register (low byte)
-                            octets = [data[i] for i in range(1, len(data), 2)]
-                        base_value = '.'.join(map(str, octets))
-                    elif output_format == 'mac':
-                        if len(data) == 6:
-                            octets = data
-                        else:
-                            octets = [data[i] for i in range(1, len(data), 2)]
-                        base_value = ':'.join(f'{o:02X}' for o in octets)
-                    elif is_ascii:
-                        base_value = bytes_to_ascii(data)
-                    elif length >= 32 and length % 16 == 0 and not is_ascii:
-                        words = bytes_to_words(data)
-                        # Generic Little Endian Word Order (Word 0 is LSB)
-                        base_value = 0
-                        for i, word in enumerate(words):
-                            base_value |= word << (i * 16)
-                    else:
-                        # Check for byte swap for 16-bit registers
-                        if command_info.get('byte_swap', False):
-                            base_value = int.from_bytes(data, 'little')
-                        else:
-                            base_value = int.from_bytes(data, 'big')
+                            # Determine number of registers for this command and slice data
+                            num_registers = length // 16 if not is_ascii and length >= 16 else length
+                            start_byte = (register - group['start_reg']) * 2
+                            end_byte = start_byte + (num_registers * 2)
+                            data = group_data[start_byte:end_byte]
 
-                    # Process and Publish Outputs
-                    for output in outputs:
-                        output_name = output['name']
-                        value = base_value
+                            # Parse the sliced data
+                            base_value = None
+                            output_format = command_info.get('format')
+                            output_type = command_info.get('type')
 
-                        if not is_ascii and isinstance(value, int):
-                            if 'offset' in output:
-                                value >>= output['offset']
-                            if 'mask' in output:
-                                value &= output['mask']
+                            if output_type == 'float':
+                                swapped_data = data[2:4] + data[0:2]
+                                base_value = struct.unpack('>f', swapped_data)[0]
+                                base_value = round(base_value, 3)
+                            elif output_format == 'ipv4':
+                                octets = data if len(data) == 4 else [data[i] for i in range(1, len(data), 2)]
+                                base_value = '.'.join(map(str, octets))
+                            elif output_format == 'mac':
+                                octets = data if len(data) == 6 else [data[i] for i in range(1, len(data), 2)]
+                                base_value = ':'.join(f'{o:02X}' for o in octets)
+                            elif is_ascii:
+                                base_value = bytes_to_ascii(data)
+                            elif length >= 32 and length % 16 == 0 and not is_ascii:
+                                words = bytes_to_words(data)
+                                base_value = 0
+                                for i, word in enumerate(words):
+                                    base_value |= word << (i * 16)
+                            else:
+                                base_value = int.from_bytes(data, 'little' if command_info.get('byte_swap', False) else 'big')
 
-                            # Sign handling
-                            is_signed = output.get('signed', False)
-                            if is_signed and not is_split:
-                                if length == 32:
-                                    value = to_32bit_signed(value)
-                                elif length == 16:
-                                    value = to_signed(value)
+                            # Process and Publish Outputs
+                            for output in outputs:
+                                value = base_value
+                                if not is_ascii and isinstance(value, int):
+                                    if 'offset' in output: value >>= output['offset']
+                                    if 'mask' in output: value &= output['mask']
+                                    if output.get('signed', False) and not is_split:
+                                        if length == 32: value = to_32bit_signed(value)
+                                        elif length == 16: value = to_signed(value)
+                                    if 'subtract' in output: value -= output['subtract']
+                                    if 'scale' in output: value = apply_scale(value, output['scale'])
+                                    if 'values' in output and isinstance(value, int) and 0 <= value < len(output['values']):
+                                        value = output['values'][value]
 
-                            if 'subtract' in output:
-                                value -= output['subtract']
+                                topic_suffix = f".{output.get('offset', 0)}" if is_split else ""
+                                state_topic = f"bluetti_debugger/{device_name}/{register}{topic_suffix}/state"
+                                state_payload = {"value": value, "PossibleName": output['name'], "modbus_register": f"{register}{topic_suffix}"}
+                                if 'notes' in output: state_payload["notes"] = output['notes']
 
-                            if 'scale' in output:
-                                value = apply_scale(value, output['scale'])
+                                mqtt_client.publish(state_topic, json.dumps(state_payload))
+                                print(f"Published {register}{topic_suffix} ({output['name']}): {value}")
 
-                            if 'values' in output and isinstance(value, int):
-                                if 0 <= value < len(output['values']):
-                                    value = output['values'][value]
-
-                        # Topic generation (must match discovery)
-                        topic_suffix = ""
-                        if is_split:
-                            offset = output.get('offset', 0)
-                            topic_suffix = f".{offset}"
-                        state_topic = f"bluetti_debugger/{device_name}/{register}{topic_suffix}/state"
-
-                        state_payload = {"value": value, "PossibleName": output_name, "modbus_register": f"{register}{topic_suffix}"}
-                        if 'notes' in output:
-                            state_payload["notes"] = output['notes']
-
-                        mqtt_client.publish(state_topic, json.dumps(state_payload))
-                        print(f"Published {register}{topic_suffix} ({output_name}): {value}")
+                        except Exception as e:
+                            print(f"An error occurred while processing register {command_info.get('reg')}: {e}")
 
                 except (BadConnectionError, BleakError, ModbusError, ParseError) as e:
-                    print(f"Error polling register {register}: {e}")
-                    for output in outputs:
-                        topic_suffix = ""
-                        if is_split:
-                            offset = output.get('offset', 0)
-                            topic_suffix = f".{offset}"
-                        state_topic = f"bluetti_debugger/{device_name}/{register}{topic_suffix}/state"
-                        state_payload = {"value": "INVALID", "PossibleName": output['name'], "modbus_register": f"{register}{topic_suffix}"}
-                        mqtt_client.publish(state_topic, json.dumps(state_payload))
-                except Exception as e:
-                    print(f"An error occurred while polling register {register}: {e}")
-                    for output in outputs:
-                        topic_suffix = ""
-                        if is_split:
-                            offset = output.get('offset', 0)
-                            topic_suffix = f".{offset}"
-                        state_topic = f"bluetti_debugger/{device_name}/{register}{topic_suffix}/state"
-                        state_payload = {"value": "INVALID", "PossibleName": output['name'], "modbus_register": f"{register}{topic_suffix}"}
-                        mqtt_client.publish(state_topic, json.dumps(state_payload))
+                    print(f"Error polling group starting at {group['start_reg']}: {e}")
+                    # Mark all commands in the failed group as invalid
+                    for command_info in group['commands']:
+                        register = command_info['reg']
+                        is_split = 'outputs' in command_info
+                        outputs = command_info.get('outputs', [command_info])
+                        for output in outputs:
+                            topic_suffix = f".{output.get('offset', 0)}" if is_split else ""
+                            state_topic = f"bluetti_debugger/{device_name}/{register}{topic_suffix}/state"
+                            state_payload = {"value": "INVALID", "PossibleName": output['name'], "modbus_register": f"{register}{topic_suffix}"}
+                            mqtt_client.publish(state_topic, json.dumps(state_payload))
 
             # Calculate duration
             end_time = time.perf_counter()
             duration = end_time - start_time
-            # Format duration into human readable format
-            if duration >= 60:
-                minutes = int(duration // 60)
-                seconds = duration % 60
-                duration_str = f"{minutes}m {seconds:.2f}s"
-            else:
-                duration_str = f"{duration:.2f} seconds"
 
 
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            print(f"[{timestamp}] Polling complete. Duration: {duration_str}. Waiting for {args.scan_interval}s...")
+            print(f"[{timestamp}] Polling complete in {duration:.2f} seconds. Waiting for {args.scan_interval} seconds...")
             await asyncio.sleep(args.scan_interval)
 
     finally:

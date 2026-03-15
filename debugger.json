@@ -964,8 +964,49 @@
     {"reg":14012,"len":32,"name":"HMI Kernel Version"},
     {"reg":14014,"len":32,"name":"HMI File System Version"},
     {"reg":14016,"len":32,"name":"HMI UI Version"},
-    {"reg":14018,"len":32,"name":"HMI Base Version"}
+    {"reg":14018,"len":32,"name":"HMI Base Version"},
 
-	
-	
+    {"reg":14700,"name":"Smart Plug Settings Block Start","notes":"Block Start. Compound settings toggle."},
+    {"reg":14701,"name":"Smart Plug Master Switch","type":"enum","values":["Off","On"],"notes":"0: OFF, 1: ON"},
+    {"reg":14702,"name":"Smart Plug Enable Config 1","notes":"Bitfield for various automation modes."},
+    {"reg":14703,"name":"Smart Plug Enable Config 2","notes":"Extended bitfield for automation."},
+    {"reg":14704,"len":32,"name":"Smart Plug Time Sync","notes":"Current system time synchronized to the plug."},
+    {"reg":14706,"name":"Smart Plug Overload Power","unit":"W","device_class":"power","notes":"Max power before trip."},
+    {"reg":14707,"name":"Smart Plug Underload Power","unit":"W","device_class":"power","notes":"Min power before shutdown."},
+    {"reg":14708,"name":"Smart Plug Indicator Light","type":"enum","values":["Off","On"],"notes":"Physical LED on plug."},
+    {"reg":14709,"len":32,"name":"Smart Plug Timer Settings","notes":"Compound block for one-time timers."},
+    {"reg":14711,"outputs":[{"name":"Smart Plug Delay Minute","mask":255},{"name":"Smart Plug Delay Hour","offset":8,"mask":255}],"notes":"Countdown timer hours/minutes."},
+    {"reg":14712,"name":"Smart Plug Schedule 1 Config","notes":"Days of Week (Bitfield) + Active Flag."},
+    {"reg":14713,"name":"Smart Plug Schedule 1 Action","type":"enum","values":["Off","On"]},
+    {"reg":14714,"outputs":[{"name":"Smart Plug Schedule 1 Start Minute","mask":255},{"name":"Smart Plug Schedule 1 Start Hour","offset":8,"mask":255}]},
+    {"reg":14715,"outputs":[{"name":"Smart Plug Schedule 1 End Minute","mask":255},{"name":"Smart Plug Schedule 1 End Hour","offset":8,"mask":255}]},
+
+    {"reg":15000,"name":"PPS Charging Status","type":"enum","values":["Idle","Charging","Discharging"],"notes":"0: Idle, 1: Charging, 2: Discharging"},
+    {"reg":15001,"len":6,"ascii":true,"name":"PPS Model Name"},
+    {"reg":15007,"len":64,"name":"PPS Serial Number"},
+    {"reg":15011,"len":32,"name":"PPS Software Version"},
+    {"reg":15013,"len":32,"name":"PPS Charging Power","unit":"W","device_class":"power"},
+    {"reg":15015,"name":"PPS Charging Voltage","scale":1,"unit":"V","device_class":"voltage"},
+    {"reg":15016,"name":"PPS Charging Current","scale":1,"unit":"A","device_class":"current"},
+    {"reg":15017,"len":32,"scale":1,"name":"PPS Total Discharge Energy","unit":"kWh","device_class":"energy"},
+    {"reg":15019,"len":32,"scale":1,"name":"PPS Total Charge Energy","unit":"kWh","device_class":"energy"},
+
+    {"reg":15603,"name":"DC2 Target Voltage","unit":"V","device_class":"voltage"},
+    {"reg":15606,"name":"DC3 Target Current","unit":"A","device_class":"current"},
+    {"reg":15614,"name":"DC Input Mode","type":"enum","values":["PV","Car","Battery"],"notes":"0:PV, 1:Car, 2:Battery"},
+    {"reg":15618,"name":"Car Charging Switch","type":"enum","values":["Idle","Active"],"notes":"1: Active / 0: Idle"},
+    {"reg":15620,"name":"Charging Voltage Set","unit":"V","device_class":"voltage","notes":"Target DC bus voltage"},
+    {"reg":15621,"name":"DC3 Power Limit","unit":"W","device_class":"power"},
+    {"reg":15622,"name":"DC Power Limit","unit":"W","device_class":"power","notes":"Master wattage cap for charger"},
+    {"reg":15628,"name":"Inverter Sleep Mode","type":"enum","values":["Off","On"]},
+    {"reg":15631,"name":"Reverse Charging","type":"enum","values":["Off","Charging car"],"notes":"1: Charging car / 0: OFF"},
+
+    {"reg":16000,"name":"System Status Summary","type":"enum","values":["Standby","Charging","Discharging","Fault"],"notes":"V2 Protocol - May be encrypted"},
+    {"reg":16001,"name":"Active Warning Index","notes":"V2 Protocol - May be encrypted"},
+    {"reg":16002,"name":"Active Fault Index","notes":"V2 Protocol - May be encrypted"},
+    {"reg":16007,"name":"UPS Mode Status","type":"enum","values":["Standard","PV Priority","Time Control","Custom"],"notes":"V2 Protocol - May be encrypted"},
+    {"reg":16010,"name":"AC Output State","type":"enum","values":["Off","On"],"notes":"V2 Protocol - May be encrypted"},
+    {"reg":16011,"name":"DC Output State","type":"enum","values":["Off","On"],"notes":"V2 Protocol - May be encrypted"},
+    {"reg":16013,"name":"Eco Mode State","type":"enum","values":["Off","On"],"notes":"V2 Protocol - May be encrypted"},
+    {"reg":16015,"name":"Grid Charge Current","unit":"A","device_class":"current","notes":"V2 Protocol - May be encrypted"}
 ]
