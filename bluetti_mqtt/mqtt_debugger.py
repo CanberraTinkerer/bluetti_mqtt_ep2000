@@ -130,6 +130,65 @@ def group_commands(commands_to_poll: List[Dict[str, Any]], max_gap: int = 5, max
     return final_groups
 
 
+def process_and_publish(command_info: Dict[str, Any], data: bytes, device_name: str, mqtt_client: mqtt.Client):
+    try:
+        register = command_info['reg']
+        length = command_info.get('len', 1)
+        is_ascii = command_info.get('ascii', False)
+        is_split = 'outputs' in command_info
+        outputs = command_info.get('outputs', [command_info])
+
+        # Parse the sliced data
+        base_value = None
+        output_format = command_info.get('format')
+        output_type = command_info.get('type')
+
+        if output_type == 'float':
+            swapped_data = data[2:4] + data[0:2]
+            base_value = struct.unpack('>f', swapped_data)[0]
+            base_value = round(base_value, 3)
+        elif output_format == 'ipv4':
+            octets = data if len(data) == 4 else [data[i] for i in range(1, len(data), 2)]
+            base_value = '.'.join(map(str, octets))
+        elif output_format == 'mac':
+            octets = data if len(data) == 6 else [data[i] for i in range(1, len(data), 2)]
+            base_value = ':'.join(f'{o:02X}' for o in octets)
+        elif is_ascii:
+            base_value = bytes_to_ascii(data)
+        elif length >= 32 and length % 16 == 0 and not is_ascii:
+            words = bytes_to_words(data)
+            base_value = 0
+            for i, word in enumerate(words):
+                base_value |= word << (i * 16)
+        else:
+            base_value = int.from_bytes(data, 'little' if command_info.get('byte_swap', False) else 'big')
+
+        # Process and Publish Outputs
+        for output in outputs:
+            value = base_value
+            if not is_ascii and isinstance(value, int):
+                if 'offset' in output: value >>= output['offset']
+                if 'mask' in output: value &= output['mask']
+                if output.get('signed', False) and not is_split:
+                    if length == 32: value = to_32bit_signed(value)
+                    elif length == 16: value = to_signed(value)
+                if 'subtract' in output: value -= output['subtract']
+                if 'scale' in output: value = apply_scale(value, output['scale'])
+                if 'values' in output and isinstance(value, int) and 0 <= value < len(output['values']):
+                    value = output['values'][value]
+
+            topic_suffix = f".{output.get('offset', 0)}" if is_split else ""
+            state_topic = f"bluetti_debugger/{device_name}/{register}{topic_suffix}/state"
+            state_payload = {"value": value, "PossibleName": output['name'], "modbus_register": f"{register}{topic_suffix}"}
+            if 'notes' in output: state_payload["notes"] = output['notes']
+
+            mqtt_client.publish(state_topic, json.dumps(state_payload))
+            print(f"Published {register}{topic_suffix} ({output['name']}): {value}")
+
+    except Exception as e:
+        print(f"An error occurred while processing register {command_info.get('reg')}: {e}")
+
+
 async def async_main():  # noqa: C901
     """Main program function."""
     parser = ArgumentParser(
@@ -259,69 +318,35 @@ async def async_main():  # noqa: C901
                             start_byte = (register - group['start_reg']) * 2
                             end_byte = start_byte + (num_registers * 2)
                             data = group_data[start_byte:end_byte]
-
-                            # Parse the sliced data
-                            base_value = None
-                            output_format = command_info.get('format')
-                            output_type = command_info.get('type')
-
-                            if output_type == 'float':
-                                swapped_data = data[2:4] + data[0:2]
-                                base_value = struct.unpack('>f', swapped_data)[0]
-                                base_value = round(base_value, 3)
-                            elif output_format == 'ipv4':
-                                octets = data if len(data) == 4 else [data[i] for i in range(1, len(data), 2)]
-                                base_value = '.'.join(map(str, octets))
-                            elif output_format == 'mac':
-                                octets = data if len(data) == 6 else [data[i] for i in range(1, len(data), 2)]
-                                base_value = ':'.join(f'{o:02X}' for o in octets)
-                            elif is_ascii:
-                                base_value = bytes_to_ascii(data)
-                            elif length >= 32 and length % 16 == 0 and not is_ascii:
-                                words = bytes_to_words(data)
-                                base_value = 0
-                                for i, word in enumerate(words):
-                                    base_value |= word << (i * 16)
-                            else:
-                                base_value = int.from_bytes(data, 'little' if command_info.get('byte_swap', False) else 'big')
-
-                            # Process and Publish Outputs
-                            for output in outputs:
-                                value = base_value
-                                if not is_ascii and isinstance(value, int):
-                                    if 'offset' in output: value >>= output['offset']
-                                    if 'mask' in output: value &= output['mask']
-                                    if output.get('signed', False) and not is_split:
-                                        if length == 32: value = to_32bit_signed(value)
-                                        elif length == 16: value = to_signed(value)
-                                    if 'subtract' in output: value -= output['subtract']
-                                    if 'scale' in output: value = apply_scale(value, output['scale'])
-                                    if 'values' in output and isinstance(value, int) and 0 <= value < len(output['values']):
-                                        value = output['values'][value]
-
-                                topic_suffix = f".{output.get('offset', 0)}" if is_split else ""
-                                state_topic = f"bluetti_debugger/{device_name}/{register}{topic_suffix}/state"
-                                state_payload = {"value": value, "PossibleName": output['name'], "modbus_register": f"{register}{topic_suffix}"}
-                                if 'notes' in output: state_payload["notes"] = output['notes']
-
-                                mqtt_client.publish(state_topic, json.dumps(state_payload))
-                                print(f"Published {register}{topic_suffix} ({output['name']}): {value}")
-
+                            process_and_publish(command_info, data, device_name, mqtt_client)
                         except Exception as e:
                             print(f"An error occurred while processing register {command_info.get('reg')}: {e}")
 
                 except (BadConnectionError, BleakError, ModbusError, ParseError) as e:
-                    print(f"Error polling group starting at {group['start_reg']}: {e}")
-                    # Mark all commands in the failed group as invalid
+                    print(f"Error polling group starting at {group['start_reg']}: {e}. Falling back to individual polling.")
+                    # Fallback: Try polling each command in the group individually
                     for command_info in group['commands']:
-                        register = command_info['reg']
-                        is_split = 'outputs' in command_info
-                        outputs = command_info.get('outputs', [command_info])
-                        for output in outputs:
-                            topic_suffix = f".{output.get('offset', 0)}" if is_split else ""
-                            state_topic = f"bluetti_debugger/{device_name}/{register}{topic_suffix}/state"
-                            state_payload = {"value": "INVALID", "PossibleName": output['name'], "modbus_register": f"{register}{topic_suffix}"}
-                            mqtt_client.publish(state_topic, json.dumps(state_payload))
+                        try:
+                            register = command_info['reg']
+                            length = command_info.get('len', 1)
+                            is_ascii = command_info.get('ascii', False)
+                            num_registers = length // 16 if not is_ascii and length >= 16 else length
+                            
+                            single_command = ReadHoldingRegisters(register, num_registers)
+                            future = await client.perform(single_command)
+                            response = cast(bytes, await future)
+                            data = single_command.parse_response(response)
+                            process_and_publish(command_info, data, device_name, mqtt_client)
+                        except (BadConnectionError, BleakError, ModbusError, ParseError) as e:
+                            print(f"Error individual polling register {command_info['reg']}: {e}")
+                            register = command_info['reg']
+                            is_split = 'outputs' in command_info
+                            outputs = command_info.get('outputs', [command_info])
+                            for output in outputs:
+                                topic_suffix = f".{output.get('offset', 0)}" if is_split else ""
+                                state_topic = f"bluetti_debugger/{device_name}/{register}{topic_suffix}/state"
+                                state_payload = {"value": "INVALID", "PossibleName": output['name'], "modbus_register": f"{register}{topic_suffix}"}
+                                mqtt_client.publish(state_topic, json.dumps(state_payload))
 
             # Calculate duration
             end_time = time.perf_counter()
