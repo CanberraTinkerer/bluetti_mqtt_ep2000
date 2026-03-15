@@ -11,6 +11,7 @@ sensors.
 
 import asyncio
 import json
+import struct
 import time
 from datetime import datetime
 from argparse import ArgumentParser, Namespace
@@ -189,14 +190,27 @@ async def async_main():
 
                     base_value = None
                     output_format = command_info.get('format')
+                    output_type = command_info.get('type')
 
-                    if output_format == 'ipv4':
-                        # Assumes 4 registers, 8 bytes, with octets in the low byte of each big-endian word
-                        octets = [data[i] for i in range(1, len(data), 2)]
+                    if output_type == 'float':
+                        # The EP2000 seems to use swapped word order for 32-bit values.
+                        # We need to swap the two 2-byte words before unpacking as a big-endian float.
+                        swapped_data = data[2:4] + data[0:2]
+                        base_value = struct.unpack('>f', swapped_data)[0]
+                        base_value = round(base_value, 3)
+                    elif output_format == 'ipv4':
+                        if len(data) == 4:
+                            # Packed IP: A.B.C.D
+                            octets = data
+                        else:
+                            # Assumes 1 octet per register (low byte)
+                            octets = [data[i] for i in range(1, len(data), 2)]
                         base_value = '.'.join(map(str, octets))
                     elif output_format == 'mac':
-                        # Assumes 6 registers, 12 bytes, with octets in the low byte of each big-endian word
-                        octets = [data[i] for i in range(1, len(data), 2)]
+                        if len(data) == 6:
+                            octets = data
+                        else:
+                            octets = [data[i] for i in range(1, len(data), 2)]
                         base_value = ':'.join(f'{o:02X}' for o in octets)
                     elif is_ascii:
                         base_value = bytes_to_ascii(data)
