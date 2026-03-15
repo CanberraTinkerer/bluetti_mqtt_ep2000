@@ -228,6 +228,10 @@ async def async_main():
                             if 'scale' in output:
                                 value = apply_scale(value, output['scale'])
 
+                            if 'values' in output and isinstance(value, int):
+                                if 0 <= value < len(output['values']):
+                                    value = output['values'][value]
+
                         # Topic generation (must match discovery)
                         topic_suffix = ""
                         if is_split:
