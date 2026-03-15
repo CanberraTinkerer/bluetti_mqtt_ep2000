@@ -222,6 +222,9 @@ async def async_main():
                                 elif length == 16:
                                     value = to_signed(value)
 
+                            if 'subtract' in output:
+                                value -= output['subtract']
+
                             if 'scale' in output:
                                 value = apply_scale(value, output['scale'])
 
