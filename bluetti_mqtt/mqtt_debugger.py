@@ -209,10 +209,10 @@ async def async_main():
                         value = base_value
 
                         if not is_ascii and isinstance(value, int):
-                            if 'mask' in output:
-                                value &= output['mask']
                             if 'offset' in output:
                                 value >>= output['offset']
+                            if 'mask' in output:
+                                value &= output['mask']
 
                             # Sign handling
                             is_signed = output.get('signed', False)
