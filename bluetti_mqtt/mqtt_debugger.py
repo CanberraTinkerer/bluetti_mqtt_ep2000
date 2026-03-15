@@ -30,6 +30,14 @@ from bluetti_mqtt.bluetooth import (
     scan_devices,
 )
 from bluetti_mqtt.core.commands import ReadHoldingRegisters
+from bluetti_mqtt.core.utils import modbus_crc
+
+try:
+    from Crypto.Cipher import AES
+    from Crypto.Util.Padding import pad, unpad
+    HAS_CRYPTO = True
+except ImportError:
+    HAS_CRYPTO = False
 
 
 def bytes_to_words(response_bytes: bytes):
@@ -64,6 +72,65 @@ def bytes_to_ascii(response_bytes: bytes) -> str:
     return swap_bytes(response_bytes).decode('ascii').strip('\x00')
 
 
+class ReadHoldingRegistersV2(ReadHoldingRegisters):
+    """
+    A V2-compatible ReadHoldingRegisters command that encrypts the payload
+    (Address + Length) using AES-128-ECB before sending.
+    """
+    KEY = bytes.fromhex("459FC535808941F17091E0993EE3E93D")
+
+    def __init__(self, starting_address: int, quantity: int):
+        # Initialize parent just to set properties, we will overwrite self.cmd
+        super().__init__(starting_address, quantity)
+
+        if not HAS_CRYPTO:
+            raise RuntimeError("pycryptodome is required for V2 encryption")
+
+        # Create the plaintext payload: [Start_H, Start_L, Qty_H, Qty_L]
+        payload = struct.pack('!HH', starting_address, quantity)
+        
+        # Pad to 16-byte block size (PKCS7 standard)
+        padded_payload = pad(payload, 16)
+        
+        # Encrypt
+        cipher = AES.new(self.KEY, AES.MODE_ECB)
+        encrypted_payload = cipher.encrypt(padded_payload)
+
+        # Build the full Modbus frame: [Addr][Func][Encrypted_Data][CRC]
+        # Addr=1, Func=3
+        self.cmd = bytearray(len(encrypted_payload) + 4)
+        self.cmd[0] = 1
+        self.cmd[1] = 3
+        self.cmd[2:-2] = encrypted_payload
+        
+        # Calculate and append CRC
+        struct.pack_into('<H', self.cmd, -2, modbus_crc(self.cmd[:-2]))
+
+    def response_size(self):
+        # The response will contain: [Addr][Func][ByteCount][Encrypted_Data][CRC]
+        # Encrypted_Data length will be the plaintext data length (2 * qty)
+        # padded to the next multiple of 16.
+        data_len = 2 * self.quantity
+        padded_len = (data_len + 16 - 1) // 16 * 16
+        # If data_len is exactly 16, pad() usually adds a full block of 16 bytes padding
+        if data_len % 16 == 0:
+            padded_len += 16
+            
+        return 3 + padded_len + 2
+
+    def parse_response(self, response: bytes):
+        # Body is everything after [Addr][Func][ByteCount] and before [CRC]
+        encrypted_body = response[3:-2]
+        cipher = AES.new(self.KEY, AES.MODE_ECB)
+        decrypted_body = cipher.decrypt(encrypted_body)
+        # Remove padding to get back to the register data
+        try:
+            return unpad(decrypted_body, 16)
+        except ValueError:
+            # Fallback if unpad fails (e.g. wrong key or weird device behavior)
+            return decrypted_body[:self.quantity * 2]
+
+
 def get_command_fields(args: Namespace) -> List[Dict[str, Any]]:
     with open(args.config, "r") as config_file:
         config = json.load(config_file)
@@ -80,16 +147,26 @@ def group_commands(commands_to_poll: List[Dict[str, Any]], max_gap: int = 5, max
     
     groups = []
     current_group = []
+    current_group_encrypted = False
 
     def get_num_regs(cmd):
         length = cmd.get('len', 1)
         is_ascii = cmd.get('ascii', False)
         # For non-ascii, length is in bits, so we divide by 16 to get register count
         return length // 16 if not is_ascii and length >= 16 else length
+    
+    def is_encrypted(cmd):
+        # Check explicit flag or infer from notes
+        if cmd.get('encrypted', False):
+            return True
+        notes = cmd.get('notes', '').lower()
+        return "v2 protocol" in notes or "may be encrypted" in notes
 
     for cmd in sorted_commands:
+        cmd_encrypted = is_encrypted(cmd)
         if not current_group:
             current_group.append(cmd)
+            current_group_encrypted = cmd_encrypted
             continue
 
         group_start_reg = current_group[0]['reg']
@@ -99,12 +176,15 @@ def group_commands(commands_to_poll: List[Dict[str, Any]], max_gap: int = 5, max
         gap = cmd['reg'] - group_end_reg
         new_group_size = (cmd['reg'] + get_num_regs(cmd)) - group_start_reg
 
-        # Group if the new command is close to the last one and the total group size is within limits
-        if gap >= 0 and gap <= max_gap and new_group_size <= max_group_size:
+        # Group if gap/size are okay AND encryption status matches
+        if (gap >= 0 and gap <= max_gap and 
+            new_group_size <= max_group_size and 
+            cmd_encrypted == current_group_encrypted):
             current_group.append(cmd)
         else:
             groups.append(current_group)
             current_group = [cmd]
+            current_group_encrypted = cmd_encrypted
 
     if current_group:
         groups.append(current_group)
@@ -113,6 +193,7 @@ def group_commands(commands_to_poll: List[Dict[str, Any]], max_gap: int = 5, max
     final_groups = []
     for group in groups:
         start_reg = group[0]['reg']
+        encrypted = is_encrypted(group[0])
         
         # Find the end register of the group
         end_reg = 0
@@ -124,7 +205,8 @@ def group_commands(commands_to_poll: List[Dict[str, Any]], max_gap: int = 5, max
         final_groups.append({
             'start_reg': start_reg,
             'num_regs': end_reg - start_reg,
-            'commands': group
+            'commands': group,
+            'encrypted': encrypted
         })
 
     return final_groups
@@ -134,6 +216,8 @@ def process_and_publish(command_info: Dict[str, Any], data: bytes, device_name: 
     try:
         register = command_info['reg']
         length = command_info.get('len', 1)
+        if not isinstance(length, int): # Handle cases where len might be malformed
+            length = 1
         is_ascii = command_info.get('ascii', False)
         is_split = 'outputs' in command_info
         outputs = command_info.get('outputs', [command_info])
@@ -298,7 +382,11 @@ async def async_main():  # noqa: C901
 
             print(f"Polling {len(commands_to_poll)} registers in {len(grouped_commands)} groups...")
             for group in grouped_commands:
-                command = ReadHoldingRegisters(group['start_reg'], group['num_regs'])
+                if group['encrypted'] and HAS_CRYPTO:
+                    command = ReadHoldingRegistersV2(group['start_reg'], group['num_regs'])
+                else:
+                    command = ReadHoldingRegisters(group['start_reg'], group['num_regs'])
+                
                 try:
                     future = await client.perform(command)
                     response = cast(bytes, await future)
@@ -327,12 +415,18 @@ async def async_main():  # noqa: C901
                     # Fallback: Try polling each command in the group individually
                     for command_info in group['commands']:
                         try:
+                            # Recalculate if this specific command is encrypted
+                            cmd_encrypted = group['encrypted'] # Assume same as group
                             register = command_info['reg']
                             length = command_info.get('len', 1)
                             is_ascii = command_info.get('ascii', False)
                             num_registers = length // 16 if not is_ascii and length >= 16 else length
                             
-                            single_command = ReadHoldingRegisters(register, num_registers)
+                            if cmd_encrypted and HAS_CRYPTO:
+                                single_command = ReadHoldingRegistersV2(register, num_registers)
+                            else:
+                                single_command = ReadHoldingRegisters(register, num_registers)
+                                
                             future = await client.perform(single_command)
                             response = cast(bytes, await future)
                             data = single_command.parse_response(response)
