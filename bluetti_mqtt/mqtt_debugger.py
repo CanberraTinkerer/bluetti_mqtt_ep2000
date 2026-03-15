@@ -433,6 +433,24 @@ async def async_main():  # noqa: C901
                             process_and_publish(command_info, data, device_name, mqtt_client)
                         except (BadConnectionError, BleakError, ModbusError, ParseError) as e:
                             print(f"Error individual polling register {command_info['reg']}: {e}")
+                            
+                            # Fallback 2: If encrypted failed, try plaintext
+                            success_plaintext = False
+                            if cmd_encrypted and HAS_CRYPTO:
+                                try:
+                                    print(f"Retrying register {command_info['reg']} with plaintext...")
+                                    single_command = ReadHoldingRegisters(register, num_registers)
+                                    future = await client.perform(single_command)
+                                    response = cast(bytes, await future)
+                                    data = single_command.parse_response(response)
+                                    process_and_publish(command_info, data, device_name, mqtt_client)
+                                    success_plaintext = True
+                                except Exception as e2:
+                                    print(f"Error plaintext fallback register {command_info['reg']}: {e2}")
+                            
+                            if success_plaintext:
+                                continue
+
                             register = command_info['reg']
                             is_split = 'outputs' in command_info
                             outputs = command_info.get('outputs', [command_info])
