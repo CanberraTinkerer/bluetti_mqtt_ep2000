@@ -188,7 +188,17 @@ async def async_main():
                     print(f"Read {register} raw: {data.hex()}")
 
                     base_value = None
-                    if is_ascii:
+                    output_format = command_info.get('format')
+
+                    if output_format == 'ipv4':
+                        # Assumes 4 registers, 8 bytes, with octets in the low byte of each big-endian word
+                        octets = [data[i] for i in range(1, len(data), 2)]
+                        base_value = '.'.join(map(str, octets))
+                    elif output_format == 'mac':
+                        # Assumes 6 registers, 12 bytes, with octets in the low byte of each big-endian word
+                        octets = [data[i] for i in range(1, len(data), 2)]
+                        base_value = ':'.join(f'{o:02X}' for o in octets)
+                    elif is_ascii:
                         base_value = bytes_to_ascii(data)
                     elif length >= 32 and length % 16 == 0 and not is_ascii:
                         words = bytes_to_words(data)
