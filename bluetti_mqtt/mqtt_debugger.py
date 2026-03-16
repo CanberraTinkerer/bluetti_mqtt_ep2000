@@ -212,7 +212,7 @@ def group_commands(commands_to_poll: List[Dict[str, Any]], max_gap: int = 5, max
     return final_groups
 
 
-def process_and_publish(command_info: Dict[str, Any], data: bytes, device_name: str, mqtt_client: mqtt.Client):
+def process_and_publish(command_info: Dict[str, Any], data: bytes, device_name: str, mqtt_client: mqtt.Client, encrypted: bool):
     try:
         register = command_info['reg']
         length = command_info.get('len', 1)
@@ -263,7 +263,13 @@ def process_and_publish(command_info: Dict[str, Any], data: bytes, device_name: 
 
             topic_suffix = f".{output.get('offset', 0)}" if is_split else ""
             state_topic = f"bluetti_debugger/{device_name}/{register}{topic_suffix}/state"
-            state_payload = {"value": value, "PossibleName": output['name'], "modbus_register": f"{register}{topic_suffix}"}
+            state_payload = {
+                "value": value, 
+                "PossibleName": output['name'], 
+                "modbus_register": f"{register}{topic_suffix}",
+                "encrypted": encrypted,
+                "valid": True
+            }
             if 'notes' in output: state_payload["notes"] = output['notes']
 
             mqtt_client.publish(state_topic, json.dumps(state_payload))
@@ -271,6 +277,25 @@ def process_and_publish(command_info: Dict[str, Any], data: bytes, device_name: 
 
     except Exception as e:
         print(f"An error occurred while processing register {command_info.get('reg')}: {e}")
+
+
+def publish_invalid(command_info: Dict[str, Any], device_name: str, mqtt_client: mqtt.Client, encrypted: bool):
+    register = command_info['reg']
+    is_split = 'outputs' in command_info
+    outputs = command_info.get('outputs', [command_info])
+    for output in outputs:
+        topic_suffix = f".{output.get('offset', 0)}" if is_split else ""
+        state_topic = f"bluetti_debugger/{device_name}/{register}{topic_suffix}/state"
+        state_payload = {
+            "value": None,
+            "PossibleName": output['name'],
+            "modbus_register": f"{register}{topic_suffix}",
+            "encrypted": encrypted,
+            "valid": False
+        }
+        if 'notes' in output:
+            state_payload["notes"] = output['notes']
+        mqtt_client.publish(state_topic, json.dumps(state_payload))
 
 
 async def async_main():  # noqa: C901
@@ -406,7 +431,7 @@ async def async_main():  # noqa: C901
                             start_byte = (register - group['start_reg']) * 2
                             end_byte = start_byte + (num_registers * 2)
                             data = group_data[start_byte:end_byte]
-                            process_and_publish(command_info, data, device_name, mqtt_client)
+                            process_and_publish(command_info, data, device_name, mqtt_client, group['encrypted'])
                         except Exception as e:
                             print(f"An error occurred while processing register {command_info.get('reg')}: {e}")
 
@@ -430,7 +455,7 @@ async def async_main():  # noqa: C901
                             future = await client.perform(single_command)
                             response = cast(bytes, await future)
                             data = single_command.parse_response(response)
-                            process_and_publish(command_info, data, device_name, mqtt_client)
+                            process_and_publish(command_info, data, device_name, mqtt_client, cmd_encrypted)
                         except (BadConnectionError, BleakError, ModbusError, ParseError) as e:
                             print(f"Error individual polling register {command_info['reg']}: {e}")
                             
@@ -443,22 +468,14 @@ async def async_main():  # noqa: C901
                                     future = await client.perform(single_command)
                                     response = cast(bytes, await future)
                                     data = single_command.parse_response(response)
-                                    process_and_publish(command_info, data, device_name, mqtt_client)
+                                    process_and_publish(command_info, data, device_name, mqtt_client, False)
                                     success_plaintext = True
                                 except Exception as e2:
                                     print(f"Error plaintext fallback register {command_info['reg']}: {e2}")
                             
                             if success_plaintext:
                                 continue
-
-                            register = command_info['reg']
-                            is_split = 'outputs' in command_info
-                            outputs = command_info.get('outputs', [command_info])
-                            for output in outputs:
-                                topic_suffix = f".{output.get('offset', 0)}" if is_split else ""
-                                state_topic = f"bluetti_debugger/{device_name}/{register}{topic_suffix}/state"
-                                state_payload = {"value": "INVALID", "PossibleName": output['name'], "modbus_register": f"{register}{topic_suffix}"}
-                                mqtt_client.publish(state_topic, json.dumps(state_payload))
+                            publish_invalid(command_info, device_name, mqtt_client, cmd_encrypted)
 
             # Calculate duration
             end_time = time.perf_counter()
