@@ -239,6 +239,7 @@ def group_commands(commands_to_poll: List[Dict[str, Any]], max_gap: int = 5, max
 def process_and_publish(command_info: Dict[str, Any], data: bytes, device_name: str, mqtt_client: mqtt.Client, encrypted: bool):
     try:
         register = command_info['reg']
+        slave_id = get_target_slave_id(command_info)
         length = command_info.get('len', 1)
         if not isinstance(length, int): # Handle cases where len might be malformed
             length = 1
@@ -297,6 +298,7 @@ def process_and_publish(command_info: Dict[str, Any], data: bytes, device_name: 
                 "value": value, 
                 "PossibleName": output['name'], 
                 "modbus_register": f"{register}{topic_suffix}",
+                "slave_id": slave_id,
                 "encrypted": encrypted,
                 "valid": True
             }
@@ -311,6 +313,7 @@ def process_and_publish(command_info: Dict[str, Any], data: bytes, device_name: 
 
 def publish_invalid(command_info: Dict[str, Any], device_name: str, mqtt_client: mqtt.Client, encrypted: bool):
     register = command_info['reg']
+    slave_id = get_target_slave_id(command_info)
     is_split = 'outputs' in command_info
     outputs = command_info.get('outputs', [command_info])
     for output in outputs:
@@ -320,6 +323,7 @@ def publish_invalid(command_info: Dict[str, Any], device_name: str, mqtt_client:
             "value": None,
             "PossibleName": output['name'],
             "modbus_register": f"{register}{topic_suffix}",
+            "slave_id": slave_id,
             "encrypted": encrypted,
             "valid": False
         }
