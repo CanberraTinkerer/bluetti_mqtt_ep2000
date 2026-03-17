@@ -170,7 +170,7 @@ def decode_auto(start: int, regs: List[int]):
 # MODES
 # ---------------------------------------------------------------------------
 
-async def deep_scan_registers(address: str, start_reg: int, end_reg: int, output_path: str):
+async def deep_scan_registers(address: str, start_reg: int, end_reg: int, output_path: str, slave_id: int = 1):
     # Get device info for smart parsing
     devices = await check_addresses({address})
     if not devices:
@@ -184,7 +184,7 @@ async def deep_scan_registers(address: str, start_reg: int, end_reg: int, output
     asyncio.get_running_loop().create_task(client.run())
     while not client.is_ready: await asyncio.sleep(1)
 
-    print(f"--- DEEP SCAN: {start_reg} to {end_reg} for device {device.type if device else 'Unknown'} ---")
+    print(f"--- DEEP SCAN: {start_reg} to {end_reg} (Slave {slave_id}) for device {device.type if device else 'Unknown'} ---")
     current = start_reg
     
     with open(output_path, 'a') as f:
@@ -198,7 +198,7 @@ async def deep_scan_registers(address: str, start_reg: int, end_reg: int, output
 
             if field:
                 # Smart scan for a known field
-                cmd = ReadHoldingRegisters(current, field.size)
+                cmd = ReadHoldingRegisters(current, field.size, slave_id=slave_id)
                 try:
                     fut = await client.perform(cmd)
                     res = cast(bytes, await asyncio.wait_for(fut, timeout=5.0))
@@ -209,18 +209,19 @@ async def deep_scan_registers(address: str, start_reg: int, end_reg: int, output
                         'field_name': field.name,
                         'val': serialize_value(parsed_val),
                         'hex': body.hex(),
-                        'ts': time.time()
+                        'ts': time.time(),
+                        'slave_id': slave_id
                     }
                     f.write(json.dumps(log_entry) + '\n')
                     f.flush()
                     current += field.size
                 except Exception as e:
-                    f.write(json.dumps({'reg': current, 'val': 'invalid', 'error': str(e), 'ts': time.time()}) + '\n')
+                    f.write(json.dumps({'reg': current, 'val': 'invalid', 'error': str(e), 'ts': time.time(), 'slave_id': slave_id}) + '\n')
                     f.flush()
                     current += 1
             else:
                 # Dumb scan for an unknown register
-                cmd = ReadHoldingRegisters(current, 1)
+                cmd = ReadHoldingRegisters(current, 1, slave_id=slave_id)
                 try:
                     fut = await client.perform(cmd)
                     res = cast(bytes, await asyncio.wait_for(fut, timeout=5.0))
@@ -232,13 +233,14 @@ async def deep_scan_registers(address: str, start_reg: int, end_reg: int, output
                         'val': val,
                         'signed_val': signed_val,
                         'hex': body.hex(),
-                        'ts': time.time()
+                        'ts': time.time(),
+                        'slave_id': slave_id
                     }
                     f.write(json.dumps(log_entry) + '\n')
                     f.flush()
                     current += 1
                 except Exception as e:
-                    f.write(json.dumps({'reg': current, 'val': 'invalid', 'error': str(e), 'ts': time.time()}) + '\n')
+                    f.write(json.dumps({'reg': current, 'val': 'invalid', 'error': str(e), 'ts': time.time(), 'slave_id': slave_id}) + '\n')
                     f.flush()
                     current += 1
                 
@@ -305,6 +307,7 @@ def main():
     parser.add_argument('--deep-scan', action='store_true', help='Perform a deep scan of registers to the file specified by --log')
     parser.add_argument('--deep-scan-start', type=int, default=1)
     parser.add_argument('--deep-scan-count', type=int, default=31111)
+    parser.add_argument('--slave-id', type=int, default=1, help='Modbus Slave ID (default: 1)')
     parser.add_argument('--scan-start', type=int)
     parser.add_argument('--scan-count', type=int)
     parser.add_argument('--watch-start', type=int)
@@ -319,7 +322,7 @@ def main():
     if args.deep_scan:
         if not args.log:
             parser.error('argument --log is required when using --deep-scan')
-        asyncio.run(deep_scan_registers(args.address, args.deep_scan_start, args.deep_scan_start + args.deep_scan_count - 1, args.log))
+        asyncio.run(deep_scan_registers(args.address, args.deep_scan_start, args.deep_scan_start + args.deep_scan_count - 1, args.log, slave_id=args.slave_id))
     elif args.scan_start is not None:
         asyncio.run(scan_registers(args.address, args.scan_start, args.scan_count))
     elif args.watch_start is not None:
