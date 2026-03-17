@@ -3,11 +3,11 @@ from .utils import modbus_crc
 
 
 class DeviceCommand:
-    def __init__(self, function_code: int, data: bytes):
+    def __init__(self, function_code: int, data: bytes, slave_id: int = 1):
         self.function_code = function_code
 
         self.cmd = bytearray(len(data) + 4)
-        self.cmd[0] = 1  # MODBUS address
+        self.cmd[0] = slave_id  # MODBUS address
         self.cmd[1] = function_code
         self.cmd[2:-2] = data
         struct.pack_into('<H', self.cmd, -2, modbus_crc(self.cmd[:-2]))
@@ -42,11 +42,11 @@ class DeviceCommand:
 
 
 class ReadHoldingRegisters(DeviceCommand):
-    def __init__(self, starting_address: int, quantity: int):
+    def __init__(self, starting_address: int, quantity: int, slave_id: int = 1):
         self.starting_address = starting_address
         self.quantity = quantity
 
-        super().__init__(3, struct.pack('!HH', starting_address, quantity))
+        super().__init__(3, struct.pack('!HH', starting_address, quantity), slave_id=slave_id)
 
     def response_size(self):
         # 3 byte header
@@ -64,11 +64,11 @@ class ReadHoldingRegisters(DeviceCommand):
 
 
 class WriteSingleRegister(DeviceCommand):
-    def __init__(self, address: int, value: int):
+    def __init__(self, address: int, value: int, slave_id: int = 1):
         self.address = address
         self.value = value
 
-        super().__init__(6, struct.pack('!HH', address, value))
+        super().__init__(6, struct.pack('!HH', address, value), slave_id=slave_id)
 
     def response_size(self):
         return 8
@@ -83,7 +83,7 @@ class WriteSingleRegister(DeviceCommand):
 
 
 class WriteMultipleRegisters(DeviceCommand):
-    def __init__(self, starting_address: int, data: bytes):
+    def __init__(self, starting_address: int, data: bytes, slave_id: int = 1):
         if len(data) % 2 != 0:
             raise ValueError('data size must be multiple of 2')
 
@@ -94,7 +94,7 @@ class WriteMultipleRegisters(DeviceCommand):
         half_len = len(data) >> 1
         struct.pack_into('!HHB', body, 0, starting_address, half_len, len(data))
         body[5:] = data
-        super().__init__(16, body)
+        super().__init__(16, body, slave_id=slave_id)
 
     def response_size(self):
         return 8

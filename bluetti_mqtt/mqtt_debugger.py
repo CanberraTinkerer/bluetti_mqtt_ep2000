@@ -79,9 +79,9 @@ class ReadHoldingRegistersV2(ReadHoldingRegisters):
     """
     KEY = bytes.fromhex("459FC535808941F17091E0993EE3E93D")
 
-    def __init__(self, starting_address: int, quantity: int):
+    def __init__(self, starting_address: int, quantity: int, slave_id: int = 1):
         # Initialize parent just to set properties, we will overwrite self.cmd
-        super().__init__(starting_address, quantity)
+        super().__init__(starting_address, quantity, slave_id=slave_id)
 
         if not HAS_CRYPTO:
             raise RuntimeError("pycryptodome is required for V2 encryption")
@@ -99,7 +99,7 @@ class ReadHoldingRegistersV2(ReadHoldingRegisters):
         # Build the full Modbus frame: [Addr][Func][Encrypted_Data][CRC]
         # Addr=1, Func=3
         self.cmd = bytearray(len(encrypted_payload) + 4)
-        self.cmd[0] = 1
+        self.cmd[0] = slave_id
         self.cmd[1] = 3
         self.cmd[2:-2] = encrypted_payload
         
@@ -134,6 +134,26 @@ def get_command_fields(args: Namespace) -> List[Dict[str, Any]]:
         return config
 
 
+def get_target_slave_id(cmd: Dict[str, Any]) -> int:
+    """
+    Determines the Modbus Slave ID based on the register address,
+    allowing for overrides in the command definition.
+    """
+    # 1. Check for explicit slave_id in the command definition
+    if 'slave_id' in cmd:
+        return cmd['slave_id']
+
+    # 2. Fallback to range-based logic
+    reg = cmd['reg']
+    # Expansion Pack (BMS) ranges
+    if 16100 <= reg < 16200: return 41
+    if 21000 <= reg < 23000: return 41
+    # Balcony PV range
+    if reg >= 17400: return 31
+    # Default Inverter
+    return 1
+
+
 def group_commands(commands_to_poll: List[Dict[str, Any]], max_gap: int = 5, max_group_size: int = 32) -> List[Dict[str, Any]]:
     """Groups individual register commands into larger reads to improve polling efficiency."""
     if not commands_to_poll:
@@ -145,6 +165,7 @@ def group_commands(commands_to_poll: List[Dict[str, Any]], max_gap: int = 5, max
     groups = []
     current_group = []
     current_group_encrypted = False
+    current_group_slave_id = 1
 
     def get_num_regs(cmd):
         length = cmd.get('len', 1)
@@ -161,9 +182,11 @@ def group_commands(commands_to_poll: List[Dict[str, Any]], max_gap: int = 5, max
 
     for cmd in sorted_commands:
         cmd_encrypted = is_encrypted(cmd)
+        cmd_slave_id = get_target_slave_id(cmd)
         if not current_group:
             current_group.append(cmd)
             current_group_encrypted = cmd_encrypted
+            current_group_slave_id = cmd_slave_id
             continue
 
         group_start_reg = current_group[0]['reg']
@@ -173,15 +196,17 @@ def group_commands(commands_to_poll: List[Dict[str, Any]], max_gap: int = 5, max
         gap = cmd['reg'] - group_end_reg
         new_group_size = (cmd['reg'] + get_num_regs(cmd)) - group_start_reg
 
-        # Group if gap/size are okay AND encryption status matches
+        # Group if gap/size are okay AND encryption status matches AND slave ID matches
         if (gap >= 0 and gap <= max_gap and 
             new_group_size <= max_group_size and 
-            cmd_encrypted == current_group_encrypted):
+            cmd_encrypted == current_group_encrypted and
+            cmd_slave_id == current_group_slave_id):
             current_group.append(cmd)
         else:
             groups.append(current_group)
             current_group = [cmd]
             current_group_encrypted = cmd_encrypted
+            current_group_slave_id = cmd_slave_id
 
     if current_group:
         groups.append(current_group)
@@ -191,6 +216,7 @@ def group_commands(commands_to_poll: List[Dict[str, Any]], max_gap: int = 5, max
     for group in groups:
         start_reg = group[0]['reg']
         encrypted = is_encrypted(group[0])
+        slave_id = get_target_slave_id(group[0])
         
         # Find the end register of the group
         end_reg = 0
@@ -203,7 +229,8 @@ def group_commands(commands_to_poll: List[Dict[str, Any]], max_gap: int = 5, max
             'start_reg': start_reg,
             'num_regs': end_reg - start_reg,
             'commands': group,
-            'encrypted': encrypted
+            'encrypted': encrypted,
+            'slave_id': slave_id
         })
 
     return final_groups
@@ -410,10 +437,11 @@ async def async_main():  # noqa: C901
 
             print(f"Polling {len(commands_to_poll)} registers in {len(grouped_commands)} groups...")
             for group in grouped_commands:
+                slave_id = group.get('slave_id', 1)
                 if group['encrypted'] and HAS_CRYPTO:
-                    command = ReadHoldingRegistersV2(group['start_reg'], group['num_regs'])
+                    command = ReadHoldingRegistersV2(group['start_reg'], group['num_regs'], slave_id=slave_id)
                 else:
-                    command = ReadHoldingRegisters(group['start_reg'], group['num_regs'])
+                    command = ReadHoldingRegisters(group['start_reg'], group['num_regs'], slave_id=slave_id)
                 
                 try:
                     future = await client.perform(command)
@@ -449,11 +477,12 @@ async def async_main():  # noqa: C901
                             length = command_info.get('len', 1)
                             is_ascii = command_info.get('ascii', False)
                             num_registers = length // 16 if not is_ascii and length >= 16 else length
+                            slave_id = get_target_slave_id(command_info)
                             
                             if cmd_encrypted and HAS_CRYPTO:
-                                single_command = ReadHoldingRegistersV2(register, num_registers)
+                                single_command = ReadHoldingRegistersV2(register, num_registers, slave_id=slave_id)
                             else:
-                                single_command = ReadHoldingRegisters(register, num_registers)
+                                single_command = ReadHoldingRegisters(register, num_registers, slave_id=slave_id)
                                 
                             future = await client.perform(single_command)
                             response = cast(bytes, await future)
@@ -467,7 +496,7 @@ async def async_main():  # noqa: C901
                             if cmd_encrypted and HAS_CRYPTO:
                                 try:
                                     print(f"Retrying register {command_info['reg']} with plaintext...")
-                                    single_command = ReadHoldingRegisters(register, num_registers)
+                                    single_command = ReadHoldingRegisters(register, num_registers, slave_id=slave_id)
                                     future = await client.perform(single_command)
                                     response = cast(bytes, await future)
                                     data = single_command.parse_response(response)
