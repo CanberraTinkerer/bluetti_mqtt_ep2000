@@ -107,15 +107,12 @@ class ReadHoldingRegistersV2(ReadHoldingRegisters):
         struct.pack_into('<H', self.cmd, -2, modbus_crc(self.cmd[:-2]))
 
     def response_size(self):
-        # The response will contain: [Addr][Func][ByteCount][Encrypted_Data][CRC]
-        # Encrypted_Data length will be the plaintext data length (2 * qty)
-        # padded to the next multiple of 16.
+        # The response contains: [Addr][Func][ByteCount][Encrypted_Data][CRC]
+        # Encrypted_Data length is the plaintext data length (2 * qty) padded
+        # to the next multiple of 16 using PKCS7. With PKCS7, if data is
+        # already a multiple of block size, a full block of padding is added.
         data_len = 2 * self.quantity
-        padded_len = (data_len + 16 - 1) // 16 * 16
-        # If data_len is exactly 16, pad() usually adds a full block of 16 bytes padding
-        if data_len % 16 == 0:
-            padded_len += 16
-            
+        padded_len = (data_len // 16 + 1) * 16
         return 3 + padded_len + 2
 
     def parse_response(self, response: bytes):
@@ -240,10 +237,16 @@ def process_and_publish(command_info: Dict[str, Any], data: bytes, device_name: 
         elif is_ascii:
             base_value = bytes_to_ascii(data)
         elif length >= 32 and length % 16 == 0 and not is_ascii:
-            words = bytes_to_words(data)
-            base_value = 0
-            for i, word in enumerate(words):
-                base_value |= word << (i * 16)
+            # Legacy behavior: assume 32-bit+ values are word-swapped unless 'no_word_swap' is set.
+            # This is for compatibility with older device definitions. V2 protocol likely uses standard big-endian.
+            if not command_info.get('no_word_swap', False):
+                words = bytes_to_words(data)
+                base_value = 0
+                for i, word in enumerate(words):
+                    base_value |= word << (i * 16)
+            else:
+                # If word swapping is off, parse as a standard big-endian integer
+                base_value = int.from_bytes(data, 'big')
         else:
             base_value = int.from_bytes(data, 'little' if command_info.get('byte_swap', False) else 'big')
 
