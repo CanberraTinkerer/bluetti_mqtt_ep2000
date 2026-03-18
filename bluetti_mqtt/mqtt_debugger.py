@@ -306,7 +306,7 @@ def process_and_publish(command_info: Dict[str, Any], data: bytes, device_name: 
             if 'notes' in output: state_payload["notes"] = output['notes']
 
             mqtt_client.publish(state_topic, json.dumps(state_payload))
-            print(f"Published {register}{topic_suffix} ({output['name']}): {value}")
+            print(f"Published {register}{topic_suffix} (Slave {slave_id}) ({output['name']}): {value}")
 
     except Exception as e:
         print(f"An error occurred while processing register {command_info.get('reg')}: {e}")
@@ -455,7 +455,7 @@ async def async_main():  # noqa: C901
                     future = await client.perform(command)
                     response = cast(bytes, await future)
                     group_data = command.parse_response(response)
-                    print(f"Read group starting at {group['start_reg']} raw: {group_data.hex()}")
+                    print(f"Read group (Slave {slave_id}) starting at {group['start_reg']} raw: {group_data.hex()}")
 
                     for command_info in group['commands']:
                         try:
@@ -516,6 +516,9 @@ async def async_main():  # noqa: C901
                             if success_plaintext:
                                 continue
                             publish_invalid(command_info, device_name, mqtt_client, cmd_encrypted)
+
+                # Tiny sleep between groups to allow device to switch contexts (e.g. Slave 1 -> 41)
+                await asyncio.sleep(0.1)
 
             # Calculate duration
             end_time = time.perf_counter()
