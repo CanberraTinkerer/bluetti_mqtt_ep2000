@@ -160,7 +160,7 @@ def group_commands(commands_to_poll: List[Dict[str, Any]], max_gap: int = 5, max
         return []
 
     # Sort commands by register to enable grouping
-    sorted_commands = sorted(commands_to_poll, key=lambda x: x['reg'])
+    sorted_commands = sorted(commands_to_poll, key=lambda x: (get_target_slave_id(x), x['reg']))
     
     groups = []
     current_group = []
@@ -292,8 +292,9 @@ def process_and_publish(command_info: Dict[str, Any], data: bytes, device_name: 
                 if 'values' in output and isinstance(value, int) and 0 <= value < len(output['values']):
                     value = output['values'][value]
 
+            slave_suffix = f"_s{slave_id}" if slave_id != 1 else ""
             topic_suffix = f".{output.get('offset', 0)}" if is_split else ""
-            state_topic = f"bluetti_debugger/{device_name}/{register}{topic_suffix}/state"
+            state_topic = f"bluetti_debugger/{device_name}/{register}{topic_suffix}{slave_suffix}/state"
             state_payload = {
                 "value": value, 
                 "PossibleName": output['name'], 
@@ -317,8 +318,9 @@ def publish_invalid(command_info: Dict[str, Any], device_name: str, mqtt_client:
     is_split = 'outputs' in command_info
     outputs = command_info.get('outputs', [command_info])
     for output in outputs:
+        slave_suffix = f"_s{slave_id}" if slave_id != 1 else ""
         topic_suffix = f".{output.get('offset', 0)}" if is_split else ""
-        state_topic = f"bluetti_debugger/{device_name}/{register}{topic_suffix}/state"
+        state_topic = f"bluetti_debugger/{device_name}/{register}{topic_suffix}{slave_suffix}/state"
         state_payload = {
             "value": None,
             "PossibleName": output['name'],
@@ -402,11 +404,13 @@ async def async_main():  # noqa: C901
 
                         for output in outputs:
                             output_name = output['name']
+                            slave_id = get_target_slave_id(command_info)
+                            slave_suffix = f"_s{slave_id}" if slave_id != 1 else ""
                             topic_suffix = f".{output.get('offset', 0)}" if is_split else ""
                             id_suffix = f"_{output.get('offset', 0)}" if is_split else ""
-                            unique_id = f"{device_name}_{register}{id_suffix}"
+                            unique_id = f"{device_name}_{register}{id_suffix}{slave_suffix}"
                             discovery_topic = f"homeassistant/sensor/{unique_id}/config"
-                            state_topic = f"bluetti_debugger/{device_name}/{register}{topic_suffix}/state"
+                            state_topic = f"bluetti_debugger/{device_name}/{register}{topic_suffix}{slave_suffix}/state"
 
                             payload = {
                                 "name": f"{register} {output_name}",
