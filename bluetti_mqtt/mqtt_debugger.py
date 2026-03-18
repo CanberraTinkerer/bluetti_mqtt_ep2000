@@ -454,6 +454,10 @@ async def async_main():  # noqa: C901
                 try:
                     future = await client.perform(command)
                     response = cast(bytes, await future)
+                    
+                    if len(response) > 0 and response[0] != slave_id:
+                        print(f"  [WARN] Response Unit ID {response[0]} does not match requested {slave_id}!")
+
                     group_data = command.parse_response(response)
                     print(f"Read group (Slave {slave_id}) starting at {group['start_reg']} raw: {group_data.hex()}")
 
@@ -517,8 +521,8 @@ async def async_main():  # noqa: C901
                                 continue
                             publish_invalid(command_info, device_name, mqtt_client, cmd_encrypted)
 
-                # Tiny sleep between groups to allow device to switch contexts (e.g. Slave 1 -> 41)
-                await asyncio.sleep(0.1)
+                # Sleep between groups to allow device to switch contexts (e.g. Slave 1 -> 41)
+                await asyncio.sleep(1.0)
 
             # Calculate duration
             end_time = time.perf_counter()
