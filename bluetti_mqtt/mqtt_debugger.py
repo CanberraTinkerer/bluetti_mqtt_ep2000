@@ -141,7 +141,7 @@ def get_target_slave_id(cmd: Dict[str, Any]) -> int:
     """
     # 1. Check for explicit slave_id in the command definition
     if 'slave_id' in cmd:
-        return cmd['slave_id']
+        return int(cmd['slave_id'])
 
     # 2. Fallback to range-based logic
     reg = cmd['reg']
@@ -449,6 +449,7 @@ async def async_main():  # noqa: C901
 
             for group in grouped_commands:
                 slave_id = group.get('slave_id', 1)
+                print(f"Preparing polling command for {group['start_reg']} count {group['num_regs']} (Slave {slave_id})")
 
                 # Sleep only if we are switching to a different slave
                 if previous_slave_id is not None and slave_id != previous_slave_id:
