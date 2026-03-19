@@ -348,6 +348,7 @@ async def async_main():  # noqa: C901
     parser.add_argument("--mqtt-port", type=int, default=1883, help="MQTT broker port")
     parser.add_argument("--mqtt-username", type=str, help="MQTT username")
     parser.add_argument("--mqtt-password", type=str, help="MQTT password")
+    parser.add_argument("--slave-switch-delay", type=float, default=2.0, help="Delay in seconds when switching slave IDs")
 
     args = parser.parse_args()
 
@@ -445,16 +446,16 @@ async def async_main():  # noqa: C901
 
             print(f"Polling {len(commands_to_poll)} registers in {len(grouped_commands)} groups...")
             
-            previous_slave_id = None
+            previous_slave_id = 1
 
             for group in grouped_commands:
                 slave_id = group.get('slave_id', 1)
                 print(f"Preparing polling command for {group['start_reg']} count {group['num_regs']} (Slave {slave_id})")
 
                 # Sleep only if we are switching to a different slave
-                if previous_slave_id is not None and slave_id != previous_slave_id:
-                    print(f"Switching from Slave {previous_slave_id} to {slave_id}, sleeping for 1.0s...")
-                    await asyncio.sleep(1.0)
+                if slave_id != previous_slave_id:
+                    print(f"Switching from Slave {previous_slave_id} to {slave_id}, sleeping for {args.slave_switch_delay}s...")
+                    await asyncio.sleep(args.slave_switch_delay)
                 
                 previous_slave_id = slave_id
 
