@@ -444,8 +444,19 @@ async def async_main():  # noqa: C901
             start_time = time.perf_counter()
 
             print(f"Polling {len(commands_to_poll)} registers in {len(grouped_commands)} groups...")
+            
+            previous_slave_id = None
+
             for group in grouped_commands:
                 slave_id = group.get('slave_id', 1)
+
+                # Sleep only if we are switching to a different slave
+                if previous_slave_id is not None and slave_id != previous_slave_id:
+                    print(f"Switching from Slave {previous_slave_id} to {slave_id}, sleeping for 1.0s...")
+                    await asyncio.sleep(1.0)
+                
+                previous_slave_id = slave_id
+
                 if group['encrypted'] and HAS_CRYPTO:
                     command = ReadHoldingRegistersV2(group['start_reg'], group['num_regs'], slave_id=slave_id)
                 else:
@@ -520,9 +531,6 @@ async def async_main():  # noqa: C901
                             if success_plaintext:
                                 continue
                             publish_invalid(command_info, device_name, mqtt_client, cmd_encrypted)
-
-                # Sleep between groups to allow device to switch contexts (e.g. Slave 1 -> 41)
-                await asyncio.sleep(1.0)
 
             # Calculate duration
             end_time = time.perf_counter()
