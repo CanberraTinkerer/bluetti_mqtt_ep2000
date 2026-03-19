@@ -463,10 +463,14 @@ async def async_main():  # noqa: C901
                 else:
                     command = ReadHoldingRegisters(group['start_reg'], group['num_regs'], slave_id=slave_id)
                 
+                print(f"  TX Packet: {bytes(command).hex()}")
                 try:
                     future = await client.perform(command)
                     response = cast(bytes, await future)
                     
+                    if len(response) > 0:
+                         print(f"  RX Packet: SlaveID={response[0]} Func={response[1]} Len={len(response)}")
+
                     if len(response) > 0 and response[0] != slave_id:
                         print(f"  [WARN] Response Unit ID {response[0]} does not match requested {slave_id}!")
 
