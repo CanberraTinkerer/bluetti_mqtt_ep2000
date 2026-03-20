@@ -14,6 +14,7 @@ import json
 import struct
 import os
 import time
+import logging
 from datetime import datetime
 from argparse import ArgumentParser, Namespace
 from typing import Any, Dict, List, cast
@@ -333,6 +334,15 @@ def publish_invalid(command_info: Dict[str, Any], device_name: str, mqtt_client:
             state_payload["notes"] = output['notes']
         mqtt_client.publish(state_topic, json.dumps(state_payload))
 
+# Filter to suppress noisy tracebacks from the background Bluetooth client
+class BriefConnectionErrors(logging.Filter):
+    def filter(self, record):
+        if "Error connecting to device" in record.getMessage() and record.exc_info:
+            # Remove the traceback to reduce noise
+            record.exc_info = None
+            # Append a note so user knows it is retrying
+            record.msg = f"{record.msg} - Retrying..."
+        return True
 
 async def async_main():  # noqa: C901
     """Main program function."""
@@ -351,6 +361,10 @@ async def async_main():  # noqa: C901
     parser.add_argument("--slave-switch-delay", type=float, default=2.0, help="Delay in seconds when switching slave IDs")
 
     args = parser.parse_args()
+
+    # Configure logging to catch the background client errors and suppress tracebacks
+    logging.basicConfig(level=logging.WARNING, format='%(asctime)s %(levelname)s: %(message)s', datefmt='%H:%M:%S')
+    logging.getLogger().addFilter(BriefConnectionErrors())
 
     mqtt_client = mqtt.Client()
     if args.mqtt_username:
@@ -382,12 +396,19 @@ async def async_main():  # noqa: C901
 
         last_config_mtime = 0
         commands_to_poll = []
+        waiting_for_connection = False
 
         while True:
             if not client.is_ready:
-                print("Waiting for connection...")
+                if not waiting_for_connection:
+                    print("Waiting for connection...")
+                    waiting_for_connection = True
                 await asyncio.sleep(1)
                 continue
+            
+            if waiting_for_connection:
+                 print("Connected!")
+                 waiting_for_connection = False
 
             try:
                 current_config_mtime = os.path.getmtime(args.config)
