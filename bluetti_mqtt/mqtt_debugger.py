@@ -477,6 +477,18 @@ async def async_main():  # noqa: C901
                 if slave_id != previous_slave_id:
                     print(f"Switching from Slave {previous_slave_id} to {slave_id}, sleeping for {args.slave_switch_delay}s...")
                     await asyncio.sleep(args.slave_switch_delay)
+
+                    # Perform dummy read to prevent cross-slave contamination
+                    print(f"  Performing dummy read for Slave {slave_id}...")
+                    try:
+                        if group['encrypted'] and HAS_CRYPTO:
+                            dummy_cmd = ReadHoldingRegistersV2(1, 1, slave_id=slave_id)
+                        else:
+                            dummy_cmd = ReadHoldingRegisters(1, 1, slave_id=slave_id)
+                        await client.perform(dummy_cmd)
+                    except Exception as e:
+                        print(f"  Dummy read ignored: {e}")
+                    await asyncio.sleep(0.05)
                 
                 previous_slave_id = slave_id
 
