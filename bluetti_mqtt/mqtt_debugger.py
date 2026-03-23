@@ -359,6 +359,8 @@ async def async_main():  # noqa: C901
     parser.add_argument("--mqtt-username", type=str, help="MQTT username")
     parser.add_argument("--mqtt-password", type=str, help="MQTT password")
     parser.add_argument("--slave-switch-delay", type=float, default=2.0, help="Delay in seconds when switching slave IDs")
+    parser.add_argument("--disconnect-on-slave-change", action="store_true", help="Disconnect and reconnect Bluetooth when switching slaves (slow but reliable)")
+    parser.add_argument("--max-group-size", type=int, default=32, help="Max registers per Modbus read command")
 
     args = parser.parse_args()
 
@@ -391,7 +393,7 @@ async def async_main():  # noqa: C901
         display_name = f"{device.type} {device.sn} debug"
         print(f"Connecting to {display_name} at {device.address}...")
         client = BluetoothClient(device.address)
-        asyncio.create_task(client.run())
+        client_task = asyncio.create_task(client.run())
         device_name = display_name.replace(" ", "_").lower()
 
         last_config_mtime = 0
@@ -460,7 +462,7 @@ async def async_main():  # noqa: C901
                 continue
             
             # Group commands for polling
-            grouped_commands = group_commands(commands_to_poll)
+            grouped_commands = group_commands(commands_to_poll, max_group_size=args.max_group_size)
 
             # Start the timer
             start_time = time.perf_counter()
@@ -475,20 +477,40 @@ async def async_main():  # noqa: C901
 
                 # Sleep only if we are switching to a different slave
                 if slave_id != previous_slave_id:
-                    print(f"Switching from Slave {previous_slave_id} to {slave_id}, sleeping for {args.slave_switch_delay}s...")
-                    await asyncio.sleep(args.slave_switch_delay)
+                    if args.disconnect_on_slave_change:
+                        print(f"Switching from Slave {previous_slave_id} to {slave_id}: Reconnecting...")
+                        # Stop existing client
+                        client_task.cancel()
+                        try:
+                            await client_task
+                        except asyncio.CancelledError:
+                            pass
+                        
+                        # Wait briefly for OS stack to clear
+                        await asyncio.sleep(2.0)
 
-                    # Perform dummy read to prevent cross-slave contamination
-                    print(f"  Performing dummy read for Slave {slave_id}...")
-                    try:
-                        if group['encrypted'] and HAS_CRYPTO:
-                            dummy_cmd = ReadHoldingRegistersV2(1, 1, slave_id=slave_id)
-                        else:
-                            dummy_cmd = ReadHoldingRegisters(1, 1, slave_id=slave_id)
-                        await client.perform(dummy_cmd)
-                    except Exception as e:
-                        print(f"  Dummy read ignored: {e}")
-                    await asyncio.sleep(0.05)
+                        # Recreate client
+                        client = BluetoothClient(device.address)
+                        client_task = asyncio.create_task(client.run())
+                        
+                        while not client.is_ready:
+                            await asyncio.sleep(0.1)
+                        print("Reconnected.")
+                    else:
+                        print(f"Switching from Slave {previous_slave_id} to {slave_id}, sleeping for {args.slave_switch_delay}s...")
+                        await asyncio.sleep(args.slave_switch_delay)
+
+                        # Perform dummy read to prevent cross-slave contamination
+                        print(f"  Performing dummy read for Slave {slave_id}...")
+                        try:
+                            if group['encrypted'] and HAS_CRYPTO:
+                                dummy_cmd = ReadHoldingRegistersV2(1, 1, slave_id=slave_id)
+                            else:
+                                dummy_cmd = ReadHoldingRegisters(1, 1, slave_id=slave_id)
+                            await client.perform(dummy_cmd)
+                        except Exception as e:
+                            print(f"  Dummy read ignored: {e}")
+                        await asyncio.sleep(0.05)
                 
                 previous_slave_id = slave_id
 
