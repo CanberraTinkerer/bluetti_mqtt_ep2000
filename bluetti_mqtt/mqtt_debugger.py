@@ -74,59 +74,54 @@ def bytes_to_ascii(response_bytes: bytes) -> str:
 
 
 class ReadHoldingRegistersV2(ReadHoldingRegisters):
-    """
-    A V2-compatible ReadHoldingRegisters command that encrypts the payload
-    (Address + Length) using AES-128-ECB before sending.
-    """
     KEY = bytes.fromhex("459FC535808941F17091E0993EE3E93D")
 
     def __init__(self, starting_address: int, quantity: int, slave_id: int = 1):
-        # Initialize parent just to set properties, we will overwrite self.cmd
         super().__init__(starting_address, quantity, slave_id=slave_id)
 
-        if not HAS_CRYPTO:
-            raise RuntimeError("pycryptodome is required for V2 encryption")
-
-        # Create the plaintext payload: [Start_H, Start_L, Qty_H, Qty_L]
+        # 1. Create the plaintext payload: [Start_H, Start_L, Qty_H, Qty_L]
+        # Modbus Read Request is 4 bytes of data
         payload = struct.pack('!HH', starting_address, quantity)
         
-        # Pad to 16-byte block size (PKCS7 standard)
-        padded_payload = pad(payload, 16)
+        # 2. Manual Zero Padding to 16 bytes (NOT PKCS7)
+        padded_payload = payload.ljust(16, b'\x00')
         
-        # Encrypt
+        # 3. Encrypt
         cipher = AES.new(self.KEY, AES.MODE_ECB)
         encrypted_payload = cipher.encrypt(padded_payload)
 
-        # Build the full Modbus frame: [Addr][Func][Encrypted_Data][CRC]
-        # Addr=1, Func=3
-        self.cmd = bytearray(len(encrypted_payload) + 4)
-        self.cmd[0] = slave_id
-        self.cmd[1] = 3
-        self.cmd[2:-2] = encrypted_payload
+        # 4. Build the Modbus frame
+        # [SlaveID][Func][Encrypted_Data(16 bytes)][CRC(2 bytes)]
+        self.cmd = bytearray()
+        self.cmd.append(slave_id)
+        self.cmd.append(3)
+        self.cmd.extend(encrypted_payload)
         
-        # Calculate and append CRC
-        struct.pack_into('<H', self.cmd, -2, modbus_crc(self.cmd[:-2]))
+        # 5. CRC
+        crc = modbus_crc(self.cmd)
+        self.cmd.extend(struct.pack('<H', crc))
 
     def response_size(self):
-        # The response contains: [Addr][Func][ByteCount][Encrypted_Data][CRC]
-        # Encrypted_Data length is the plaintext data length (2 * qty) padded
-        # to the next multiple of 16 using PKCS7. With PKCS7, if data is
-        # already a multiple of block size, a full block of padding is added.
+        # Response is: [ID][Func][ByteCount][EncryptedData][CRC]
+        # For V2, EncryptedData is always a multiple of 16
         data_len = 2 * self.quantity
-        padded_len = (data_len // 16 + 1) * 16
-        return 3 + padded_len + 2
+        # Calculate how many 16-byte blocks the response will occupy
+        num_blocks = (data_len + 15) // 16 
+        if num_blocks == 0: num_blocks = 1
+        return 3 + (num_blocks * 16) + 2
 
     def parse_response(self, response: bytes):
-        # Body is everything after [Addr][Func][ByteCount] and before [CRC]
+        # Header is 3 bytes, CRC is 2 bytes
         encrypted_body = response[3:-2]
+        if len(encrypted_body) % 16 != 0:
+            print(f"Warning: Encrypted response length {len(encrypted_body)} not a multiple of 16")
+            
         cipher = AES.new(self.KEY, AES.MODE_ECB)
         decrypted_body = cipher.decrypt(encrypted_body)
-        # Remove padding to get back to the register data
-        try:
-            return unpad(decrypted_body, 16)
-        except ValueError:
-            # Fallback if unpad fails (e.g. wrong key or weird device behavior)
-            return decrypted_body[:self.quantity * 2]
+        
+        # Return only the requested number of registers (2 bytes each)
+        # We ignore the trailing zero-padding bytes
+        return decrypted_body[:self.quantity * 2]
 
 
 def get_command_fields(args: Namespace) -> List[Dict[str, Any]]:
