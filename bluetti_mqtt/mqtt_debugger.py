@@ -502,7 +502,8 @@ async def async_main():  # noqa: C901
                                 dummy_cmd = ReadHoldingRegistersV2(1, 1, slave_id=slave_id)
                             else:
                                 dummy_cmd = ReadHoldingRegisters(1, 1, slave_id=slave_id)
-                            await client.perform(dummy_cmd)
+                            future = await client.perform(dummy_cmd)
+                            await future
                         except Exception as e:
                             print(f"  Dummy read ignored: {e}")
                         await asyncio.sleep(0.05)
