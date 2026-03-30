@@ -106,7 +106,7 @@ class ReadHoldingRegistersV2(ReadHoldingRegisters):
 
         # 5. CRC calculated over the entire packet (Header + Payload)
         crc = bluetti_custom_crc(self.cmd)
-        self.cmd.extend(struct.pack('<H', crc))
+        self.cmd.extend(struct.pack('!H', crc))
 
     def response_size(self):
         # Response: [Header: 10] [EncryptedBody: N*16] [CRC: 2]
@@ -120,7 +120,7 @@ class ReadHoldingRegistersV2(ReadHoldingRegisters):
         if len(response) < 12:
             return False
         crc = bluetti_custom_crc(response[:-2])
-        return crc == struct.unpack('<H', response[-2:])[0]
+        return crc == struct.unpack('!H', response[-2:])[0]
 
     def is_exception_response(self, response: bytes):
         return False
@@ -173,7 +173,7 @@ class WriteSingleRegisterV2(WriteSingleRegister):
 
         # 5. CRC calculated over the entire packet (Header + Payload)
         crc = bluetti_custom_crc(self.cmd)
-        self.cmd.extend(struct.pack('<H', crc))
+        self.cmd.extend(struct.pack('!H', crc))
 
     def response_size(self):
         # Response: [Header: 10] [EncryptedBody: 16] [CRC: 2]
@@ -184,7 +184,7 @@ class WriteSingleRegisterV2(WriteSingleRegister):
         if len(response) < 12:
             return False
         crc = bluetti_custom_crc(response[:-2])
-        return crc == struct.unpack('<H', response[-2:])[0]
+        return crc == struct.unpack('!H', response[-2:])[0]
 
     def is_exception_response(self, response: bytes):
         return False
