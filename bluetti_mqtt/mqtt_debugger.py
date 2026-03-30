@@ -30,7 +30,7 @@ from bluetti_mqtt.bluetooth import (
     check_addresses,
     scan_devices,
 )
-from bluetti_mqtt.core.commands import ReadHoldingRegisters
+from bluetti_mqtt.core.commands import ReadHoldingRegisters, WriteSingleRegister
 from bluetti_mqtt.core.utils import modbus_crc
 
 try:
@@ -123,6 +123,32 @@ class ReadHoldingRegistersV2(ReadHoldingRegisters):
         # We ignore the trailing zero-padding bytes
         return decrypted_body[:self.quantity * 2]
 
+class WriteSingleRegisterV2(WriteSingleRegister):
+    KEY = bytes.fromhex("459FC535808941F17091E0993EE3E93D")
+
+    def __init__(self, address: int, value: int, slave_id: int = 1):
+        super().__init__(address, value, slave_id=slave_id)
+
+        # 1. Create plaintext payload: [Addr_H, Addr_L, Val_H, Val_L]
+        payload = struct.pack('!HH', address, value)
+        
+        # 2. Manual Zero Padding to 16 bytes
+        padded_payload = payload.ljust(16, b'\x00')
+        
+        # 3. Encrypt
+        cipher = AES.new(self.KEY, AES.MODE_ECB)
+        encrypted_payload = cipher.encrypt(padded_payload)
+
+        # 4. Build the Modbus frame
+        self.cmd = bytearray()
+        self.cmd.append(slave_id)
+        self.cmd.append(6) # Function Code 6 (Write Single)
+        self.cmd.extend(encrypted_payload)
+        
+        # 5. CRC
+        crc = modbus_crc(self.cmd)
+        self.cmd.extend(struct.pack('<H', crc))
+
 
 def get_command_fields(args: Namespace) -> List[Dict[str, Any]]:
     with open(args.config, "r") as config_file:
@@ -156,12 +182,19 @@ def group_commands(commands_to_poll: List[Dict[str, Any]], max_gap: int = 5, max
         return []
 
     # Sort commands by register to enable grouping
-    sorted_commands = sorted(commands_to_poll, key=lambda x: (get_target_slave_id(x), x['reg']))
+    sorted_commands = sorted(commands_to_poll, key=lambda x: (
+        get_target_slave_id(x), 
+        x.get('trigger_reg', 0) or 0, 
+        x.get('trigger_val', 0) or 0, 
+        x['reg']
+    ))
     
     groups = []
     current_group = []
     current_group_encrypted = False
     current_group_slave_id = 1
+    current_group_trigger_reg = None
+    current_group_trigger_val = None
 
     def get_num_regs(cmd):
         length = cmd.get('len', 1)
@@ -179,10 +212,15 @@ def group_commands(commands_to_poll: List[Dict[str, Any]], max_gap: int = 5, max
     for cmd in sorted_commands:
         cmd_encrypted = is_encrypted(cmd)
         cmd_slave_id = get_target_slave_id(cmd)
+        cmd_trigger_reg = cmd.get('trigger_reg')
+        cmd_trigger_val = cmd.get('trigger_val')
+
         if not current_group:
             current_group.append(cmd)
             current_group_encrypted = cmd_encrypted
             current_group_slave_id = cmd_slave_id
+            current_group_trigger_reg = cmd_trigger_reg
+            current_group_trigger_val = cmd_trigger_val
             continue
 
         group_start_reg = current_group[0]['reg']
@@ -192,17 +230,21 @@ def group_commands(commands_to_poll: List[Dict[str, Any]], max_gap: int = 5, max
         gap = cmd['reg'] - group_end_reg
         new_group_size = (cmd['reg'] + get_num_regs(cmd)) - group_start_reg
 
-        # Group if gap/size are okay AND encryption status matches AND slave ID matches
+        # Group if gap/size are okay AND encryption status matches AND slave ID matches AND triggers match
         if (gap >= 0 and gap <= max_gap and 
             new_group_size <= max_group_size and 
             cmd_encrypted == current_group_encrypted and
-            cmd_slave_id == current_group_slave_id):
+            cmd_slave_id == current_group_slave_id and
+            cmd_trigger_reg == current_group_trigger_reg and
+            cmd_trigger_val == current_group_trigger_val):
             current_group.append(cmd)
         else:
             groups.append(current_group)
             current_group = [cmd]
             current_group_encrypted = cmd_encrypted
             current_group_slave_id = cmd_slave_id
+            current_group_trigger_reg = cmd_trigger_reg
+            current_group_trigger_val = cmd_trigger_val
 
     if current_group:
         groups.append(current_group)
@@ -213,6 +255,8 @@ def group_commands(commands_to_poll: List[Dict[str, Any]], max_gap: int = 5, max
         start_reg = group[0]['reg']
         encrypted = is_encrypted(group[0])
         slave_id = get_target_slave_id(group[0])
+        trigger_reg = group[0].get('trigger_reg')
+        trigger_val = group[0].get('trigger_val')
         
         # Find the end register of the group
         end_reg = 0
@@ -226,7 +270,9 @@ def group_commands(commands_to_poll: List[Dict[str, Any]], max_gap: int = 5, max
             'num_regs': end_reg - start_reg,
             'commands': group,
             'encrypted': encrypted,
-            'slave_id': slave_id
+            'slave_id': slave_id,
+            'trigger_reg': trigger_reg,
+            'trigger_val': trigger_val
         })
 
     return final_groups
@@ -509,6 +555,23 @@ async def async_main():  # noqa: C901
                         await asyncio.sleep(0.05)
                 
                 previous_slave_id = slave_id
+
+                # Handle Trigger Register Write if defined for this group
+                if group.get('trigger_reg') is not None:
+                    t_reg = group['trigger_reg']
+                    t_val = group['trigger_val']
+                    print(f"  Sending trigger: Write {t_val} to {t_reg} (Slave {slave_id})")
+                    if group['encrypted'] and HAS_CRYPTO:
+                        trigger_cmd = WriteSingleRegisterV2(t_reg, t_val, slave_id=slave_id)
+                    else:
+                        trigger_cmd = WriteSingleRegister(t_reg, t_val, slave_id=slave_id)
+                    
+                    try:
+                        t_future = await client.perform(trigger_cmd)
+                        await t_future
+                        await asyncio.sleep(0.1) # Brief pause before reading stats
+                    except Exception as e:
+                        print(f"  Trigger failed: {e}")
 
                 if group['encrypted'] and HAS_CRYPTO:
                     command = ReadHoldingRegistersV2(group['start_reg'], group['num_regs'], slave_id=slave_id)
