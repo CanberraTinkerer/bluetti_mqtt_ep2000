@@ -56,5 +56,6 @@ def bluetti_custom_crc(data: bytes) -> int:
         state_low = new_low
         state_high = new_high
         
-    # Bluetti V2 swaps the standard byte positions: (LowResult << 8) | HighResult
-    return ((state_low << 8) | state_high) & 0xFFFF
+    # Java return: ((b2 & 255) << 8) | (i2 & 255)
+    # This means (final_high_byte_state << 8) | final_low_byte_state
+    return ((state_high << 8) | state_low) & 0xFFFF
