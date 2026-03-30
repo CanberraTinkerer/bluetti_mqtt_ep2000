@@ -80,6 +80,7 @@ class ReadHoldingRegistersV2(ReadHoldingRegisters):
 
     def __init__(self, starting_address: int, quantity: int, slave_id: int = 1):
         super().__init__(starting_address, quantity, slave_id=slave_id)
+        self.slave_id = slave_id # Store slave_id as an instance attribute
         # 1. Build Modbus PDU: [Slave][Func][Addr_H][Addr_L][Count_H][Count_L]
         pdu = struct.pack('!BBHH', slave_id, 3, starting_address, quantity)
         
@@ -146,6 +147,7 @@ class WriteSingleRegisterV2(WriteSingleRegister):
 
     def __init__(self, address: int, value: int, slave_id: int = 1):
         super().__init__(address, value, slave_id=slave_id)
+        self.slave_id = slave_id # Store slave_id as an instance attribute
         # 1. Build Modbus PDU: [Slave][Func][Addr_H][Addr_L][Val_H][Val_L]
         pdu = struct.pack('!BBHH', slave_id, 6, address, value)
         
