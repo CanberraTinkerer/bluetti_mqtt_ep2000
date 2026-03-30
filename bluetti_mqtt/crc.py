@@ -71,5 +71,5 @@ def bluetti_custom_crc(data: bytes) -> int:
         state_low = new_low
         state_high = new_high
         
-    # Result is assembled as Big-Endian internal value: (High << 8) | Low
-    return ((state_high << 8) | state_low) & 0xFFFF
+    # Bluetti V2 swaps the standard byte positions: (LowResult << 8) | HighResult
+    return ((state_low << 8) | state_high) & 0xFFFF
