@@ -560,18 +560,32 @@ async def async_main():  # noqa: C901
                 if group.get('trigger_reg') is not None:
                     t_reg = group['trigger_reg']
                     t_val = group['trigger_val']
-                    print(f"  Sending trigger: Write {t_val} to {t_reg} (Slave {slave_id})")
+                    print(f"  --- TRIGGER START ---")
+                    print(f"  Action: Write {t_val} to {t_reg} (Slave {slave_id})")
+                    
+                    # Show the raw modbus intention before encryption/padding
+                    plaintext_payload = struct.pack('!HH', t_reg, t_val)
+                    print(f"    Plaintext Payload: {plaintext_payload.hex()}")
+
                     if group['encrypted'] and HAS_CRYPTO:
                         trigger_cmd = WriteSingleRegisterV2(t_reg, t_val, slave_id=slave_id)
                     else:
                         trigger_cmd = WriteSingleRegister(t_reg, t_val, slave_id=slave_id)
                     
+                    tx_packet = bytes(trigger_cmd)
+                    print(f"    TX Packet: {tx_packet.hex()}")
+
                     try:
                         t_future = await client.perform(trigger_cmd)
-                        await t_future
+                        t_res = cast(bytes, await t_future)
+                        
+                        if t_res:
+                            print(f"    RX Packet: {t_res.hex()}")
+                        print("    Result: Success (Write accepted)")
                         await asyncio.sleep(0.1) # Brief pause before reading stats
                     except Exception as e:
-                        print(f"  Trigger failed: {e}")
+                        print(f"    Result: Failed - {e}")
+                    print(f"  --- TRIGGER END ---")
 
                 if group['encrypted'] and HAS_CRYPTO:
                     command = ReadHoldingRegistersV2(group['start_reg'], group['num_regs'], slave_id=slave_id)
