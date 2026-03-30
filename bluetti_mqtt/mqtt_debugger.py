@@ -87,8 +87,8 @@ class ReadHoldingRegistersV2(ReadHoldingRegisters):
         encrypted_payload = cipher.encrypt(pad(pdu, 16))
 
         # 3. Build V2 Frame: [Header: 10][EncryptedPayload][CRC: 2]
-        # Header format: [0x01][7 zeros][Len][CmdType: 0x17 for Read]
-        self.cmd = bytearray([0x01, 0, 0, 0, 0, 0, 0, 0, len(encrypted_payload), 0x17])
+        # Header format: [ProtocolID: 0x0017][6 zeros][Len][CmdType: 0x17]
+        self.cmd = bytearray([0x00, 0x17, 0, 0, 0, 0, 0, 0, len(encrypted_payload), 0x17])
         self.cmd.extend(encrypted_payload)
         
         # 4. CRC
@@ -97,10 +97,20 @@ class ReadHoldingRegistersV2(ReadHoldingRegisters):
 
     def response_size(self):
         # Response: [Header: 10] [EncryptedBody: N*16] [CRC: 2]
-        data_len = 2 * self.quantity
-        num_blocks = (data_len + 15) // 16
-        if num_blocks == 0: num_blocks = 1
+        # The encrypted PDU is: [Slave][Func][ByteCount][Data...]
+        pdu_len = 3 + 2 * self.quantity
+        # PKCS7 padding always adds between 1 and 16 bytes
+        num_blocks = (pdu_len // 16) + 1
         return 10 + (num_blocks * 16) + 2
+
+    def is_valid_response(self, response: bytes):
+        if len(response) < 12:
+            return False
+        crc = modbus_crc(response[:-2])
+        return crc == struct.unpack('<H', response[-2:])[0]
+
+    def is_exception_response(self, response: bytes):
+        return False
 
     def parse_response(self, response: bytes):
         # V2 Header is 10 bytes, CRC is 2 bytes
@@ -110,6 +120,8 @@ class ReadHoldingRegistersV2(ReadHoldingRegisters):
             
         cipher = AES.new(self.KEY, AES.MODE_CBC, self.IV)
         decrypted_body = unpad(cipher.decrypt(encrypted_body), 16)
+        if len(decrypted_body) >= 3 and decrypted_body[1] > 0x80:
+            raise ModbusError(f'V2 Exception: {decrypted_body[2]}')
 
         # Return only the requested number of registers (2 bytes each)
         # The decrypted body for P0x17 usually contains [Slave][Func][ByteCount][Data...]
@@ -129,13 +141,35 @@ class WriteSingleRegisterV2(WriteSingleRegister):
         cipher = AES.new(self.KEY, AES.MODE_CBC, self.IV)
         encrypted_payload = cipher.encrypt(pad(pdu, 16))
 
-        # 3. Build V2 Frame: Header CMD 0x18
-        self.cmd = bytearray([0x01, 0, 0, 0, 0, 0, 0, 0, len(encrypted_payload), 0x18])
+        # 3. Build V2 Frame: [ProtocolID: 0x0018][6 zeros][Len][CmdType: 0x18]
+        self.cmd = bytearray([0x00, 0x18, 0, 0, 0, 0, 0, 0, len(encrypted_payload), 0x18])
         self.cmd.extend(encrypted_payload)
         
         # 4. CRC
         crc = modbus_crc(self.cmd)
         self.cmd.extend(struct.pack('<H', crc))
+
+    def response_size(self):
+        # Response: [Header: 10] [EncryptedBody: 16] [CRC: 2]
+        # FC 6 PDU is 6 bytes -> 1 block (16 bytes)
+        return 28
+
+    def is_valid_response(self, response: bytes):
+        if len(response) < 12:
+            return False
+        crc = modbus_crc(response[:-2])
+        return crc == struct.unpack('<H', response[-2:])[0]
+
+    def is_exception_response(self, response: bytes):
+        return False
+
+    def parse_response(self, response: bytes):
+        encrypted_body = response[10:-2]
+        cipher = AES.new(self.KEY, AES.MODE_CBC, self.IV)
+        decrypted_body = unpad(cipher.decrypt(encrypted_body), 16)
+        if len(decrypted_body) >= 3 and decrypted_body[1] > 0x80:
+            raise ModbusError(f'V2 Exception: {decrypted_body[2]}')
+        return struct.unpack('!H', decrypted_body[4:6])[0]
 
 
 def get_command_fields(args: Namespace) -> List[Dict[str, Any]]:
@@ -551,13 +585,14 @@ async def async_main():  # noqa: C901
                     print(f"  --- TRIGGER START ---")
                     print(f"  Action: Write {t_val} to {t_reg} (Slave {slave_id})")
                     
-                    # Show the raw modbus intention before encryption/padding
-                    plaintext_payload = struct.pack('!HH', t_reg, t_val)
-                    print(f"    Plaintext Payload: {plaintext_payload.hex()}")
-
                     if group['encrypted'] and HAS_CRYPTO:
+                        # Show the full Modbus PDU that will be encrypted
+                        pdu = struct.pack('!BBHH', slave_id, 6, t_reg, t_val)
+                        print(f"    Plaintext PDU: {pdu.hex()}")
                         trigger_cmd = WriteSingleRegisterV2(t_reg, t_val, slave_id=slave_id)
                     else:
+                        pdu = struct.pack('!HH', t_reg, t_val)
+                        print(f"    Plaintext Payload: {pdu.hex()}")
                         trigger_cmd = WriteSingleRegister(t_reg, t_val, slave_id=slave_id)
                     
                     tx_packet = bytes(trigger_cmd)

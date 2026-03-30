@@ -1491,13 +1491,15 @@
     {"reg": 21022, "name": "Unknown Reg 21022", "notes": "non-zero", "encrypted": true, "slave_id": 41},
     {"reg": 21023, "name": "Unknown Reg 21023", "notes": "non-zero", "encrypted": true, "slave_id": 41},
 
-    {"reg": 3500, "name": "PV Total Energy", "len": 32, "scale": 1, "unit": "kWh", "device_class": "energy", "trigger_reg": 2027, "trigger_val": 0, "encrypted": true},
-    {"reg": 3502, "name": "PV 2023 Energy", "len": 32, "scale": 1, "unit": "kWh", "device_class": "energy", "trigger_reg": 2027, "trigger_val": 0, "encrypted": true},
-    {"reg": 3504, "name": "PV 2024 Energy", "len": 32, "scale": 1, "unit": "kWh", "device_class": "energy", "trigger_reg": 2027, "trigger_val": 0, "encrypted": true},
-    {"reg": 3506, "name": "PV 2025 Energy", "len": 32, "scale": 1, "unit": "kWh", "device_class": "energy", "trigger_reg": 2027, "trigger_val": 0, "encrypted": true},
+    {"reg": 3500, "name": "PV Cumulative Energy", "len": 32, "scale": 1, "unit": "kWh", "device_class": "energy", "trigger_reg": 2027, "trigger_val": 0, "encrypted": true},
+    {"reg": 3506, "name": "PV 2024 Energy", "len": 32, "scale": 1, "unit": "kWh", "device_class": "energy", "trigger_reg": 2027, "trigger_val": 0, "encrypted": true},
+    {"reg": 3508, "name": "PV 2025 Energy", "len": 32, "scale": 1, "unit": "kWh", "device_class": "energy", "trigger_reg": 2027, "trigger_val": 0, "encrypted": true},
 
-    {"reg": 3500, "name": "Grid Import Total", "len": 32, "scale": 1, "unit": "kWh", "device_class": "energy", "trigger_reg": 2027, "trigger_val": 2, "encrypted": true},
-    {"reg": 3502, "name": "Grid Import 2023", "len": 32, "scale": 1, "unit": "kWh", "device_class": "energy", "trigger_reg": 2027, "trigger_val": 2, "encrypted": true},
-    {"reg": 3504, "name": "Grid Import 2024", "len": 32, "scale": 1, "unit": "kWh", "device_class": "energy", "trigger_reg": 2027, "trigger_val": 2, "encrypted": true},
-    {"reg": 3506, "name": "Grid Import 2025", "len": 32, "scale": 1, "unit": "kWh", "device_class": "energy", "trigger_reg": 2027, "trigger_val": 2, "encrypted": true}    
+    {"reg": 3500, "name": "Grid Import Cumulative", "len": 32, "scale": 1, "unit": "kWh", "device_class": "energy", "trigger_reg": 2027, "trigger_val": 2, "encrypted": true},
+    {"reg": 3506, "name": "Grid Import 2024", "len": 32, "scale": 1, "unit": "kWh", "device_class": "energy", "trigger_reg": 2027, "trigger_val": 2, "encrypted": true},
+
+    {"reg": 3602, "name": "PV 2024 Total", "len": 32, "scale": 1, "unit": "kWh", "device_class": "energy", "trigger_reg": 2027, "trigger_val": 0, "encrypted": true},
+    {"reg": 3604, "name": "PV Jan Energy", "len": 32, "scale": 1, "unit": "kWh", "device_class": "energy", "trigger_reg": 2027, "trigger_val": 0, "encrypted": true},
+    {"reg": 3606, "name": "PV Feb Energy", "len": 32, "scale": 1, "unit": "kWh", "device_class": "energy", "trigger_reg": 2027, "trigger_val": 0, "encrypted": true},
+    {"reg": 3608, "name": "PV Mar Energy", "len": 32, "scale": 1, "unit": "kWh", "device_class": "energy", "trigger_reg": 2027, "trigger_val": 0, "encrypted": true}
 ]
