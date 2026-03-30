@@ -56,20 +56,20 @@ def bluetti_custom_crc(data: bytes) -> int:
     Returns:
         The 16-bit CRC value as an integer.
     """
-    # Initial state (i2 and b2 in Java b/c.java)
-    i2 = 255
-    b2 = 255
+    # Initial state (corresponds to i2 and b2 in the Java implementation)
+    state_low = 0xFF
+    state_high = 0xFF
     
     for byte_val in data:
-        # XOR current high with byte and mask to index range (i3)
-        idx = (i2 ^ byte_val) & 0xFF
+        # Determine lookup index by XORing current state byte with input data byte
+        idx = (state_low ^ byte_val) & 0xFF
         
         # Update state using lookup tables
-        i4 = b2 ^ BLUETTI_F27A[idx]
-        b3 = BLUETTI_F28B[idx]
+        new_low = (state_high ^ BLUETTI_F27A[idx]) & 0xFF
+        new_high = BLUETTI_F28B[idx] & 0xFF
         
-        i2 = i4 & 0xFF
-        b2 = b3 & 0xFF
+        state_low = new_low
+        state_high = new_high
         
-    # Result is assembled as: (b2 << 8) | i2
-    return ((b2 << 8) | i2) & 0xFFFF
+    # Result is assembled as Big-Endian internal value: (High << 8) | Low
+    return ((state_high << 8) | state_low) & 0xFFFF

@@ -106,6 +106,7 @@ class ReadHoldingRegistersV2(ReadHoldingRegisters):
 
         # 5. CRC calculated over the entire packet (Header + Payload)
         crc = bluetti_custom_crc(self.cmd)
+        print(f"DEBUG: Calculated Read V2 CRC: {hex(crc)}")
         self.cmd.extend(struct.pack('!H', crc))
 
     def response_size(self):
@@ -173,6 +174,7 @@ class WriteSingleRegisterV2(WriteSingleRegister):
 
         # 5. CRC calculated over the entire packet (Header + Payload)
         crc = bluetti_custom_crc(self.cmd)
+        print(f"DEBUG: Calculated Write V2 CRC: {hex(crc)}")
         self.cmd.extend(struct.pack('!H', crc))
 
     def response_size(self):
