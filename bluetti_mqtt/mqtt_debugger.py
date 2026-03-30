@@ -30,6 +30,7 @@ from bluetti_mqtt.bluetooth import (
     check_addresses,
     scan_devices,
 )
+from bluetti_mqtt.crc import bluetti_custom_crc
 from bluetti_mqtt.core.commands import ReadHoldingRegisters, WriteSingleRegister
 from bluetti_mqtt.core.utils import modbus_crc
 
@@ -86,13 +87,24 @@ class ReadHoldingRegistersV2(ReadHoldingRegisters):
         cipher = AES.new(self.KEY, AES.MODE_CBC, self.IV)
         encrypted_payload = cipher.encrypt(pad(pdu, 16))
 
-        # 3. Build V2 Frame: [Header: 10][Encrypted Payload][CRC: 2]
-        # Header format: [SlaveID][7 zeros][Len][CmdType: 0x17]
-        header = bytearray([slave_id, 0, 0, 0, 0, 0, 0, 0, len(encrypted_payload), 0x17])
+        # 3. Build V2 Frame Header (10 bytes)
+        # Structure: [0x00][0x17][SlaveID][CommandType (0x17)][PayloadLen_H][PayloadLen_L][Reserved (4 bytes)]
+        payload_len = len(encrypted_payload)
+        header = bytearray([
+            0x00,           # Protocol ID Byte 1
+            0x17,           # Protocol ID Byte 2 (V2 Protocol)
+            self.slave_id,  # Slave ID
+            0x17,           # Command Type for Read Multiple (P0x17)
+            (payload_len >> 8) & 0xFF,  # Length High
+            payload_len & 0xFF,         # Length Low
+            0x00, 0x00, 0x00, 0x00      # Reserved
+        ])
+        
+        # 4. Concatenate header and encrypted payload for CRC calculation
         self.cmd = header + encrypted_payload
 
-        # 4. CRC calculated over the entire frame (Header + Payload)
-        crc = modbus_crc(self.cmd)
+        # 5. CRC calculated over the entire packet (Header + Payload)
+        crc = bluetti_custom_crc(self.cmd)
         self.cmd.extend(struct.pack('<H', crc))
 
     def response_size(self):
@@ -106,7 +118,7 @@ class ReadHoldingRegistersV2(ReadHoldingRegisters):
     def is_valid_response(self, response: bytes):
         if len(response) < 12:
             return False
-        crc = modbus_crc(response[:-2])
+        crc = bluetti_custom_crc(response[:-2])
         return crc == struct.unpack('<H', response[-2:])[0]
 
     def is_exception_response(self, response: bytes):
@@ -120,7 +132,7 @@ class ReadHoldingRegistersV2(ReadHoldingRegisters):
             
         cipher = AES.new(self.KEY, AES.MODE_CBC, self.IV)
         decrypted_body = unpad(cipher.decrypt(encrypted_body), 16)
-        if len(decrypted_body) >= 3 and decrypted_body[1] > 0x80:
+        if len(decrypted_body) >= 3 and (decrypted_body[1] & 0xFF) > 0x80:
             raise ModbusError(f'V2 Exception: {decrypted_body[2]}')
 
         # Return only the requested number of registers (2 bytes each)
@@ -141,13 +153,24 @@ class WriteSingleRegisterV2(WriteSingleRegister):
         cipher = AES.new(self.KEY, AES.MODE_CBC, self.IV)
         encrypted_payload = cipher.encrypt(pad(pdu, 16))
 
-        # 3. Build V2 Frame: [Header: 10][Encrypted Payload][CRC: 2]
-        # Header format: [SlaveID][7 zeros][Len][CmdType: 0x18]
-        header = bytearray([slave_id, 0, 0, 0, 0, 0, 0, 0, len(encrypted_payload), 0x18])
+        # 3. Build V2 Frame Header (10 bytes)
+        # Structure: [0x00][0x17][SlaveID][CommandType (0x18)][PayloadLen_H][PayloadLen_L][Reserved (4 bytes)]
+        payload_len = len(encrypted_payload)
+        header = bytearray([
+            0x00,           # Protocol ID Byte 1
+            0x17,           # Protocol ID Byte 2 (V2 Protocol)
+            self.slave_id,  # Slave ID
+            0x18,           # Command Type for Write Single (P0x18)
+            (payload_len >> 8) & 0xFF,  # Length High
+            payload_len & 0xFF,         # Length Low
+            0x00, 0x00, 0x00, 0x00      # Reserved
+        ])
+
+        # 4. Concatenate header and encrypted payload for CRC calculation
         self.cmd = header + encrypted_payload
 
-        # 4. CRC calculated over the entire frame (Header + Payload)
-        crc = modbus_crc(self.cmd)
+        # 5. CRC calculated over the entire packet (Header + Payload)
+        crc = bluetti_custom_crc(self.cmd)
         self.cmd.extend(struct.pack('<H', crc))
 
     def response_size(self):
@@ -158,7 +181,7 @@ class WriteSingleRegisterV2(WriteSingleRegister):
     def is_valid_response(self, response: bytes):
         if len(response) < 12:
             return False
-        crc = modbus_crc(response[:-2])
+        crc = bluetti_custom_crc(response[:-2])
         return crc == struct.unpack('<H', response[-2:])[0]
 
     def is_exception_response(self, response: bytes):
@@ -168,7 +191,7 @@ class WriteSingleRegisterV2(WriteSingleRegister):
         encrypted_body = response[10:-2]
         cipher = AES.new(self.KEY, AES.MODE_CBC, self.IV)
         decrypted_body = unpad(cipher.decrypt(encrypted_body), 16)
-        if len(decrypted_body) >= 3 and decrypted_body[1] > 0x80:
+        if len(decrypted_body) >= 3 and (decrypted_body[1] & 0xFF) > 0x80:
             raise ModbusError(f'V2 Exception: {decrypted_body[2]}')
         return struct.unpack('!H', decrypted_body[4:6])[0]
 
