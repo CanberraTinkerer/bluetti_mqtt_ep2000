@@ -86,11 +86,12 @@ class ReadHoldingRegistersV2(ReadHoldingRegisters):
         cipher = AES.new(self.KEY, AES.MODE_CBC, self.IV)
         encrypted_payload = cipher.encrypt(pad(pdu, 16))
 
-        # 3. Build V2 Frame: [Header: 10][EncryptedPayload][CRC: 2]
+        # 3. Build V2 Frame: [Header: 10][Encrypted Payload][CRC: 2]
         # Header format: [SlaveID][7 zeros][Len][CmdType: 0x17]
-        self.cmd = bytearray([slave_id, 0, 0, 0, 0, 0, 0, 0, len(encrypted_payload), 0x17])
-        
-        # 4. CRC
+        header = bytearray([slave_id, 0, 0, 0, 0, 0, 0, 0, len(encrypted_payload), 0x17])
+        self.cmd = header + encrypted_payload
+
+        # 4. CRC calculated over the entire frame (Header + Payload)
         crc = modbus_crc(self.cmd)
         self.cmd.extend(struct.pack('<H', crc))
 
@@ -140,10 +141,12 @@ class WriteSingleRegisterV2(WriteSingleRegister):
         cipher = AES.new(self.KEY, AES.MODE_CBC, self.IV)
         encrypted_payload = cipher.encrypt(pad(pdu, 16))
 
-        # 3. Build V2 Frame: [SlaveID][7 zeros][Len][CmdType: 0x18]
-        self.cmd = bytearray([slave_id, 0, 0, 0, 0, 0, 0, 0, len(encrypted_payload), 0x18])
-        
-        # 4. CRC
+        # 3. Build V2 Frame: [Header: 10][Encrypted Payload][CRC: 2]
+        # Header format: [SlaveID][7 zeros][Len][CmdType: 0x18]
+        header = bytearray([slave_id, 0, 0, 0, 0, 0, 0, 0, len(encrypted_payload), 0x18])
+        self.cmd = header + encrypted_payload
+
+        # 4. CRC calculated over the entire frame (Header + Payload)
         crc = modbus_crc(self.cmd)
         self.cmd.extend(struct.pack('<H', crc))
 
