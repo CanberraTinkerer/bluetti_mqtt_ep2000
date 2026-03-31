@@ -53,33 +53,41 @@ class BluetoothClient:
         await self.command_queue.put((cmd, future))
         return future
 
-    async def perform_with_fallback(self, cmd: DeviceCommand):
-        """Try V2 command first, fallback to V1 if it fails."""
+    async def perform_with_fallback(self, cmd: DeviceCommand, device_protocol: str = "v2"):
+        """Perform command with protocol fallback logic.
+
+        If device_protocol == "v1": treat all reads/writes as plaintext.
+        If device_protocol == "v2": try V2 first, then try V1 on timeout.
+        """
         from bluetti_mqtt.mqtt_debugger import ReadHoldingRegisters, WriteSingleRegister
         from bluetti_mqtt.mqtt_debugger import ReadHoldingRegistersV2, WriteSingleRegisterV2
 
-        # First try the original command (assumed to be V2)
+        def convert_to_v1(original_cmd: DeviceCommand):
+            if isinstance(original_cmd, ReadHoldingRegistersV2):
+                return ReadHoldingRegisters(original_cmd.starting_address, original_cmd.quantity, original_cmd.slave_id)
+            if isinstance(original_cmd, WriteSingleRegisterV2):
+                return WriteSingleRegister(original_cmd.address, original_cmd.value, original_cmd.slave_id)
+            return original_cmd
+
+        # If forced v1, convert and execute directly
+        if device_protocol == "v1":
+            v1_cmd = convert_to_v1(cmd)
+            return await self.perform(v1_cmd)
+
+        # Normal v2 behavior: try original cmd first
         try:
             return await self.perform(cmd)
         except BadConnectionError as e:
             if "too many retries" not in str(e):
-                raise  # Re-raise if it's not a timeout issue
+                raise
 
-            logging.debug(f"V2 command failed for {self.address}, trying V1 fallback")
+            logging.debug(f"V2 command failed for {self.address} (too many retries), trying V1 fallback")
+            v1_cmd = convert_to_v1(cmd)
 
-            # Create V1 equivalent command
-            if isinstance(cmd, ReadHoldingRegistersV2):
-                v1_cmd = ReadHoldingRegisters(cmd.starting_address, cmd.quantity, cmd.slave_id)
-            elif isinstance(cmd, WriteSingleRegisterV2):
-                v1_cmd = WriteSingleRegister(cmd.address, cmd.value, cmd.slave_id)
-            else:
-                raise e  # Not a V2 command we can convert
-
-            # Try V1 command
             try:
                 return await self.perform(v1_cmd)
             except Exception:
-                raise e  # Re-raise original V2 error if V1 also fails
+                raise e
 
     async def run(self):
         try:
