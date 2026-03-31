@@ -89,7 +89,7 @@ class TestDeviceConnection(unittest.TestCase):
             self.skipTest("No device address provided")
         
         print(f"\n📱 Connecting to device: {self.device_address}")
-        client = BluetoothClient(self.device_address)
+        client = BluetoothClient(self.device_address, device_name="test_device")
         client_task = asyncio.create_task(client.run())
         
         try:
@@ -143,7 +143,7 @@ class TestTriggerWriteOnDevice(unittest.TestCase):
         async def run_test():
             print(f"\n📝 Testing PV Trigger Write to Device {self.device_address}")
             
-            client = BluetoothClient(self.device_address)
+            client = BluetoothClient(self.device_address, device_name="test_device")
             client_task = asyncio.create_task(client.run())
             
             try:
@@ -226,7 +226,7 @@ class TestTriggerWriteOnDevice(unittest.TestCase):
         async def run_test():
             print(f"\n📝 Testing Grid Trigger Write to Device {self.device_address}")
             
-            client = BluetoothClient(self.device_address)
+            client = BluetoothClient(self.device_address, device_name="test_device")
             client_task = asyncio.create_task(client.run())
             
             try:
@@ -304,7 +304,7 @@ class TestTriggerWriteOnDevice(unittest.TestCase):
         async def run_test():
             print(f"\n📝 Testing Load Consumption Trigger Write to Device {self.device_address}")
             
-            client = BluetoothClient(self.device_address)
+            client = BluetoothClient(self.device_address, device_name="test_device")
             client_task = asyncio.create_task(client.run())
             
             try:
@@ -365,7 +365,7 @@ class TestTriggerWriteOnDevice(unittest.TestCase):
         async def run_test():
             print(f"\n📝 Testing Grid Export Trigger Write to Device {self.device_address}")
             
-            client = BluetoothClient(self.device_address)
+            client = BluetoothClient(self.device_address, device_name="test_device")
             client_task = asyncio.create_task(client.run())
             
             try:
@@ -442,7 +442,7 @@ class TestRegister3500ReadOnDevice(unittest.TestCase):
         async def run_test():
             print(f"\n📖 Testing Register 3500 Read After PV Trigger")
             
-            client = BluetoothClient(self.device_address)
+            client = BluetoothClient(self.device_address, device_name="test_device")
             client_task = asyncio.create_task(client.run())
             
             try:
@@ -520,7 +520,7 @@ class TestRegister3500ReadOnDevice(unittest.TestCase):
         async def run_test():
             print(f"\n📖 Testing Register 3500 Read After Grid Import Trigger")
             
-            client = BluetoothClient(self.device_address)
+            client = BluetoothClient(self.device_address, device_name="test_device")
             client_task = asyncio.create_task(client.run())
             
             try:
@@ -598,7 +598,7 @@ class TestRegister3500ReadOnDevice(unittest.TestCase):
         async def run_test():
             print(f"\n📖 Testing Register 3500 Read After Load Consumption Trigger")
             
-            client = BluetoothClient(self.device_address)
+            client = BluetoothClient(self.device_address, device_name="test_device")
             client_task = asyncio.create_task(client.run())
             
             try:
@@ -677,7 +677,7 @@ class TestRegister3500ReadOnDevice(unittest.TestCase):
         async def run_test():
             print(f"\n📖 Testing Register 3500 Read After Grid Export Trigger")
             
-            client = BluetoothClient(self.device_address)
+            client = BluetoothClient(self.device_address, device_name="test_device")
             client_task = asyncio.create_task(client.run())
             
             try:
@@ -764,7 +764,7 @@ class TestFullTriggerPollingSequence(unittest.TestCase):
         async def run_test():
             print(f"\n🔄 Testing Full PV Polling Sequence (Using poll_device_registers)")
 
-            client = BluetoothClient(self.device_address)
+            client = BluetoothClient(self.device_address, device_name="test_device")
             client_task = asyncio.create_task(client.run())
 
             try:
@@ -827,7 +827,7 @@ class TestFullTriggerPollingSequence(unittest.TestCase):
         async def run_test():
             print(f"\n🔄 Testing Full Grid Polling Sequence (Using poll_device_registers)")
 
-            client = BluetoothClient(self.device_address)
+            client = BluetoothClient(self.device_address, device_name="test_device")
             client_task = asyncio.create_task(client.run())
 
             try:
@@ -888,7 +888,7 @@ class TestFullTriggerPollingSequence(unittest.TestCase):
         async def run_test():
             print(f"\n🔄 Testing Full Load Consumption Polling Sequence (Using poll_device_registers)")
 
-            client = BluetoothClient(self.device_address)
+            client = BluetoothClient(self.device_address, device_name="test_device")
             client_task = asyncio.create_task(client.run())
 
             try:
@@ -949,7 +949,7 @@ class TestFullTriggerPollingSequence(unittest.TestCase):
         async def run_test():
             print(f"\n🔄 Testing Full Grid Export Polling Sequence (Using poll_device_registers)")
 
-            client = BluetoothClient(self.device_address)
+            client = BluetoothClient(self.device_address, device_name="test_device")
             client_task = asyncio.create_task(client.run())
 
             try:
@@ -1033,7 +1033,7 @@ class TestExceptionHandlingOnDevice(unittest.TestCase):
         async def run_test():
             print(f"\n⚠️  Testing Exception 3 Without Trigger")
             
-            client = BluetoothClient(self.device_address)
+            client = BluetoothClient(self.device_address, device_name="test_device")
             client_task = asyncio.create_task(client.run())
             
             try:
