@@ -356,9 +356,13 @@ def process_and_publish(command_info: Dict[str, Any], data: bytes, device_name: 
             base_value = ':'.join(f'{o:02X}' for o in octets)
         elif is_ascii:
             base_value = bytes_to_ascii(data)
+        elif length == 32 and not is_ascii:
+            # V2 protocol 32-bit values use CDAB byte order (word-swapped)
+            # Example: raw_data[0,1,2,3] -> (data[2]<<24) | (data[3]<<16) | (data[0]<<8) | data[1]
+            base_value = (data[2] << 24) | (data[3] << 16) | (data[0] << 8) | data[1]
         elif length >= 32 and length % 16 == 0 and not is_ascii:
             # Legacy behavior: assume 32-bit+ values are word-swapped unless 'no_word_swap' is set.
-            # This is for compatibility with older device definitions. V2 protocol likely uses standard big-endian.
+            # This is for compatibility with older device definitions.
             if not command_info.get('no_word_swap', False):
                 words = bytes_to_words(data)
                 base_value = 0
@@ -434,6 +438,209 @@ class BriefConnectionErrors(logging.Filter):
             # Append a note so user knows it is retrying
             record.msg = f"{record.msg} - Retrying..."
         return True
+
+
+async def poll_device_registers(
+    client: BluetoothClient,
+    client_task: asyncio.Task,
+    commands_to_poll: List[Dict[str, Any]],
+    device_name: str,
+    mqtt_client: mqtt.Client,
+    device_address: str,
+    slave_switch_delay: float = 2.0,
+    disconnect_on_slave_change: bool = False,
+    max_group_size: int = 32,
+) -> float:
+    """
+    Poll device registers and publish to MQTT.
+
+    This function contains the core polling logic extracted from async_main
+    to make it testable and reusable.
+
+    Args:
+        client: Connected BluetoothClient instance
+        client_task: The asyncio task running the client
+        commands_to_poll: List of command configurations to poll
+        device_name: Device name for MQTT topics
+        mqtt_client: MQTT client for publishing
+        device_address: Device Bluetooth address
+        slave_switch_delay: Delay when switching slave IDs
+        disconnect_on_slave_change: Whether to disconnect/reconnect on slave changes
+        max_group_size: Maximum registers per Modbus read command
+
+    Returns:
+        Duration of the polling operation in seconds
+    """
+    # Group commands for polling
+    grouped_commands = group_commands(commands_to_poll, max_group_size=max_group_size)
+
+    # Start the timer
+    start_time = time.perf_counter()
+
+    print(f"Polling {len(commands_to_poll)} registers in {len(grouped_commands)} groups...")
+
+    previous_slave_id = 1
+
+    for group in grouped_commands:
+        slave_id = group.get('slave_id', 1)
+        print(f"Preparing polling command for {group['start_reg']} count {group['num_regs']} (Slave {slave_id})")
+
+        # Sleep only if we are switching to a different slave
+        if slave_id != previous_slave_id:
+            if disconnect_on_slave_change:
+                print(f"Switching from Slave {previous_slave_id} to {slave_id}: Reconnecting...")
+                # Stop existing client
+                client_task.cancel()
+                try:
+                    await client_task
+                except asyncio.CancelledError:
+                    pass
+
+                # Wait briefly for OS stack to clear
+                await asyncio.sleep(2.0)
+
+                # Recreate client
+                client = BluetoothClient(device_address)
+                client_task = asyncio.create_task(client.run())
+
+                while not client.is_ready:
+                    await asyncio.sleep(0.1)
+                print("Reconnected.")
+            else:
+                print(f"Switching from Slave {previous_slave_id} to {slave_id}, sleeping for {slave_switch_delay}s...")
+                await asyncio.sleep(slave_switch_delay)
+
+                # Perform dummy read to prevent cross-slave contamination
+                print(f"  Performing dummy read for Slave {slave_id}...")
+                try:
+                    if group['encrypted'] and HAS_CRYPTO:
+                        dummy_cmd = ReadHoldingRegistersV2(1, 1, slave_id=slave_id)
+                    else:
+                        dummy_cmd = ReadHoldingRegisters(1, 1, slave_id=slave_id)
+                    future = await client.perform(dummy_cmd)
+                    await future
+                except Exception as e:
+                    print(f"  Dummy read ignored: {e}")
+                await asyncio.sleep(0.05)
+
+        previous_slave_id = slave_id
+
+        # Handle Trigger Register Write if defined for this group
+        if group.get('trigger_reg') is not None:
+            t_reg = group['trigger_reg']
+            t_val = group['trigger_val']
+            print(f"  --- TRIGGER START ---")
+            print(f"  Action: Write {t_val} to {t_reg} (Slave {slave_id})")
+
+            if group['encrypted'] and HAS_CRYPTO:
+                # Show the full Modbus PDU that will be encrypted
+                pdu = struct.pack('!BBHH', slave_id, 6, t_reg, t_val)
+                print(f"    Plaintext PDU: {pdu.hex()}")
+                trigger_cmd = WriteSingleRegisterV2(t_reg, t_val, slave_id=slave_id)
+            else:
+                pdu = struct.pack('!HH', t_reg, t_val)
+                print(f"    Plaintext Payload: {pdu.hex()}")
+                trigger_cmd = WriteSingleRegister(t_reg, t_val, slave_id=slave_id)
+
+            tx_packet = bytes(trigger_cmd)
+            print(f"    TX Packet: {tx_packet.hex()}")
+
+            try:
+                t_future = await client.perform(trigger_cmd)
+                t_res = cast(bytes, await t_future)
+
+                if t_res:
+                    print(f"    RX Packet: {t_res.hex()}")
+                print("    Result: Success (Write accepted)")
+                await asyncio.sleep(0.1) # Brief pause before reading stats
+            except Exception as e:
+                print(f"    Result: Failed - {e}")
+            print(f"  --- TRIGGER END ---")
+
+        if group['encrypted'] and HAS_CRYPTO:
+            command = ReadHoldingRegistersV2(group['start_reg'], group['num_regs'], slave_id=slave_id)
+        else:
+            command = ReadHoldingRegisters(group['start_reg'], group['num_regs'], slave_id=slave_id)
+
+        print(f"  TX Packet: {bytes(command).hex()}")
+        try:
+            future = await client.perform(command)
+            response = cast(bytes, await future)
+
+            if len(response) > 0:
+                 print(f"  RX Packet: SlaveID={response[0]} Func={response[1]} Len={len(response)}")
+
+            if len(response) > 0 and response[0] != slave_id:
+                print(f"  [WARN] Response Unit ID {response[0]} does not match requested {slave_id}!")
+
+            group_data = command.parse_response(response)
+            print(f"Read group (Slave {slave_id}) starting at {group['start_reg']} raw: {group_data.hex()}")
+
+            for command_info in group['commands']:
+                try:
+                    register = command_info['reg']
+                    length = command_info.get('len', 1)
+                    is_ascii = command_info.get('ascii', False)
+                    is_split = 'outputs' in command_info
+                    outputs = command_info.get('outputs', [command_info])
+
+                    # Determine number of registers for this command and slice data
+                    num_registers = length // 16 if not is_ascii and length >= 16 else length
+                    start_byte = (register - group['start_reg']) * 2
+                    end_byte = start_byte + (num_registers * 2)
+                    data = group_data[start_byte:end_byte]
+                    process_and_publish(command_info, data, device_name, mqtt_client, group['encrypted'])
+                except Exception as e:
+                    print(f"An error occurred while processing register {command_info.get('reg')}: {e}")
+
+        except (BadConnectionError, BleakError, ModbusError, ParseError) as e:
+            print(f"Error polling group starting at {group['start_reg']}: {e}. Falling back to individual polling.")
+            # Fallback: Try polling each command in the group individually
+            for command_info in group['commands']:
+                try:
+                    # Recalculate if this specific command is encrypted
+                    cmd_encrypted = group['encrypted'] # Assume same as group
+                    register = command_info['reg']
+                    length = command_info.get('len', 1)
+                    is_ascii = command_info.get('ascii', False)
+                    num_registers = length // 16 if not is_ascii and length >= 16 else length
+                    slave_id = get_target_slave_id(command_info)
+
+                    if cmd_encrypted and HAS_CRYPTO:
+                        single_command = ReadHoldingRegistersV2(register, num_registers, slave_id=slave_id)
+                    else:
+                        single_command = ReadHoldingRegisters(register, num_registers, slave_id=slave_id)
+
+                    future = await client.perform(single_command)
+                    response = cast(bytes, await future)
+                    data = single_command.parse_response(response)
+                    process_and_publish(command_info, data, device_name, mqtt_client, cmd_encrypted)
+                except (BadConnectionError, BleakError, ModbusError, ParseError) as e:
+                    print(f"Error individual polling register {command_info['reg']}: {e}")
+
+                    # Fallback 2: If encrypted failed, try plaintext
+                    success_plaintext = False
+                    if cmd_encrypted and HAS_CRYPTO:
+                        try:
+                            print(f"Retrying register {command_info['reg']} with plaintext...")
+                            single_command = ReadHoldingRegisters(register, num_registers, slave_id=slave_id)
+                            future = await client.perform(single_command)
+                            response = cast(bytes, await future)
+                            data = single_command.parse_response(response)
+                            process_and_publish(command_info, data, device_name, mqtt_client, False)
+                            success_plaintext = True
+                        except Exception as e2:
+                            print(f"Error plaintext fallback register {command_info['reg']}: {e2}")
+
+                    if success_plaintext:
+                        continue
+                    publish_invalid(command_info, device_name, mqtt_client, cmd_encrypted)
+
+    # Calculate duration
+    end_time = time.perf_counter()
+    duration = end_time - start_time
+    return duration
+
 
 async def async_main():  # noqa: C901
     """Main program function."""
@@ -551,176 +758,19 @@ async def async_main():  # noqa: C901
                 print(f"Error loading or processing config file: {e}")
                 await asyncio.sleep(args.scan_interval)
                 continue
-            
-            # Group commands for polling
-            grouped_commands = group_commands(commands_to_poll, max_group_size=args.max_group_size)
 
-            # Start the timer
-            start_time = time.perf_counter()
-
-            print(f"Polling {len(commands_to_poll)} registers in {len(grouped_commands)} groups...")
-            
-            previous_slave_id = 1
-
-            for group in grouped_commands:
-                slave_id = group.get('slave_id', 1)
-                print(f"Preparing polling command for {group['start_reg']} count {group['num_regs']} (Slave {slave_id})")
-
-                # Sleep only if we are switching to a different slave
-                if slave_id != previous_slave_id:
-                    if args.disconnect_on_slave_change:
-                        print(f"Switching from Slave {previous_slave_id} to {slave_id}: Reconnecting...")
-                        # Stop existing client
-                        client_task.cancel()
-                        try:
-                            await client_task
-                        except asyncio.CancelledError:
-                            pass
-                        
-                        # Wait briefly for OS stack to clear
-                        await asyncio.sleep(2.0)
-
-                        # Recreate client
-                        client = BluetoothClient(device.address)
-                        client_task = asyncio.create_task(client.run())
-                        
-                        while not client.is_ready:
-                            await asyncio.sleep(0.1)
-                        print("Reconnected.")
-                    else:
-                        print(f"Switching from Slave {previous_slave_id} to {slave_id}, sleeping for {args.slave_switch_delay}s...")
-                        await asyncio.sleep(args.slave_switch_delay)
-
-                        # Perform dummy read to prevent cross-slave contamination
-                        print(f"  Performing dummy read for Slave {slave_id}...")
-                        try:
-                            if group['encrypted'] and HAS_CRYPTO:
-                                dummy_cmd = ReadHoldingRegistersV2(1, 1, slave_id=slave_id)
-                            else:
-                                dummy_cmd = ReadHoldingRegisters(1, 1, slave_id=slave_id)
-                            future = await client.perform(dummy_cmd)
-                            await future
-                        except Exception as e:
-                            print(f"  Dummy read ignored: {e}")
-                        await asyncio.sleep(0.05)
-                
-                previous_slave_id = slave_id
-
-                # Handle Trigger Register Write if defined for this group
-                if group.get('trigger_reg') is not None:
-                    t_reg = group['trigger_reg']
-                    t_val = group['trigger_val']
-                    print(f"  --- TRIGGER START ---")
-                    print(f"  Action: Write {t_val} to {t_reg} (Slave {slave_id})")
-                    
-                    if group['encrypted'] and HAS_CRYPTO:
-                        # Show the full Modbus PDU that will be encrypted
-                        pdu = struct.pack('!BBHH', slave_id, 6, t_reg, t_val)
-                        print(f"    Plaintext PDU: {pdu.hex()}")
-                        trigger_cmd = WriteSingleRegisterV2(t_reg, t_val, slave_id=slave_id)
-                    else:
-                        pdu = struct.pack('!HH', t_reg, t_val)
-                        print(f"    Plaintext Payload: {pdu.hex()}")
-                        trigger_cmd = WriteSingleRegister(t_reg, t_val, slave_id=slave_id)
-                    
-                    tx_packet = bytes(trigger_cmd)
-                    print(f"    TX Packet: {tx_packet.hex()}")
-
-                    try:
-                        t_future = await client.perform(trigger_cmd)
-                        t_res = cast(bytes, await t_future)
-                        
-                        if t_res:
-                            print(f"    RX Packet: {t_res.hex()}")
-                        print("    Result: Success (Write accepted)")
-                        await asyncio.sleep(0.1) # Brief pause before reading stats
-                    except Exception as e:
-                        print(f"    Result: Failed - {e}")
-                    print(f"  --- TRIGGER END ---")
-
-                if group['encrypted'] and HAS_CRYPTO:
-                    command = ReadHoldingRegistersV2(group['start_reg'], group['num_regs'], slave_id=slave_id)
-                else:
-                    command = ReadHoldingRegisters(group['start_reg'], group['num_regs'], slave_id=slave_id)
-                
-                print(f"  TX Packet: {bytes(command).hex()}")
-                try:
-                    future = await client.perform(command)
-                    response = cast(bytes, await future)
-                    
-                    if len(response) > 0:
-                         print(f"  RX Packet: SlaveID={response[0]} Func={response[1]} Len={len(response)}")
-
-                    if len(response) > 0 and response[0] != slave_id:
-                        print(f"  [WARN] Response Unit ID {response[0]} does not match requested {slave_id}!")
-
-                    group_data = command.parse_response(response)
-                    print(f"Read group (Slave {slave_id}) starting at {group['start_reg']} raw: {group_data.hex()}")
-
-                    for command_info in group['commands']:
-                        try:
-                            register = command_info['reg']
-                            length = command_info.get('len', 1)
-                            is_ascii = command_info.get('ascii', False)
-                            is_split = 'outputs' in command_info
-                            outputs = command_info.get('outputs', [command_info])
-
-                            # Determine number of registers for this command and slice data
-                            num_registers = length // 16 if not is_ascii and length >= 16 else length
-                            start_byte = (register - group['start_reg']) * 2
-                            end_byte = start_byte + (num_registers * 2)
-                            data = group_data[start_byte:end_byte]
-                            process_and_publish(command_info, data, device_name, mqtt_client, group['encrypted'])
-                        except Exception as e:
-                            print(f"An error occurred while processing register {command_info.get('reg')}: {e}")
-
-                except (BadConnectionError, BleakError, ModbusError, ParseError) as e:
-                    print(f"Error polling group starting at {group['start_reg']}: {e}. Falling back to individual polling.")
-                    # Fallback: Try polling each command in the group individually
-                    for command_info in group['commands']:
-                        try:
-                            # Recalculate if this specific command is encrypted
-                            cmd_encrypted = group['encrypted'] # Assume same as group
-                            register = command_info['reg']
-                            length = command_info.get('len', 1)
-                            is_ascii = command_info.get('ascii', False)
-                            num_registers = length // 16 if not is_ascii and length >= 16 else length
-                            slave_id = get_target_slave_id(command_info)
-                            
-                            if cmd_encrypted and HAS_CRYPTO:
-                                single_command = ReadHoldingRegistersV2(register, num_registers, slave_id=slave_id)
-                            else:
-                                single_command = ReadHoldingRegisters(register, num_registers, slave_id=slave_id)
-                                
-                            future = await client.perform(single_command)
-                            response = cast(bytes, await future)
-                            data = single_command.parse_response(response)
-                            process_and_publish(command_info, data, device_name, mqtt_client, cmd_encrypted)
-                        except (BadConnectionError, BleakError, ModbusError, ParseError) as e:
-                            print(f"Error individual polling register {command_info['reg']}: {e}")
-                            
-                            # Fallback 2: If encrypted failed, try plaintext
-                            success_plaintext = False
-                            if cmd_encrypted and HAS_CRYPTO:
-                                try:
-                                    print(f"Retrying register {command_info['reg']} with plaintext...")
-                                    single_command = ReadHoldingRegisters(register, num_registers, slave_id=slave_id)
-                                    future = await client.perform(single_command)
-                                    response = cast(bytes, await future)
-                                    data = single_command.parse_response(response)
-                                    process_and_publish(command_info, data, device_name, mqtt_client, False)
-                                    success_plaintext = True
-                                except Exception as e2:
-                                    print(f"Error plaintext fallback register {command_info['reg']}: {e2}")
-                            
-                            if success_plaintext:
-                                continue
-                            publish_invalid(command_info, device_name, mqtt_client, cmd_encrypted)
-
-            # Calculate duration
-            end_time = time.perf_counter()
-            duration = end_time - start_time
-
+            # Poll device registers using the extracted function
+            duration = await poll_device_registers(
+                client=client,
+                client_task=client_task,
+                commands_to_poll=commands_to_poll,
+                device_name=device_name,
+                mqtt_client=mqtt_client,
+                device_address=device.address,
+                slave_switch_delay=args.slave_switch_delay,
+                disconnect_on_slave_change=args.disconnect_on_slave_change,
+                max_group_size=args.max_group_size,
+            )
 
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             print(f"[{timestamp}] Polling complete in {duration:.2f} seconds. Waiting for {args.scan_interval} seconds...")
