@@ -107,8 +107,22 @@ class ReadHoldingRegistersV2(ReadHoldingRegisters):
         
         # Use provided session key or fallback to hardcoded (for testing)
         self.key = session_key or b"sxd_aiot_key_001"
+        
+        # Generate IV for this command
+        self.iv = generate_iv()
+        
+        # Get the MODBUS PDU from parent class
+        pdu = bytes(self.cmd)  # The full PDU with CRC from parent
+        print(f"DEBUG V2 Read: Plaintext PDU: {pdu.hex()}")
+        
+        # Zero-pad to 16-byte boundary for AES
+        padded_pdu = zero_pad(pdu)
+        print(f"DEBUG V2 Read: Padded PDU (zero-padding): {padded_pdu.hex()}")
+        
+        # Create AES cipher for encryption
+        cipher = AES.new(self.key, AES.MODE_CBC, self.iv)
         encrypted_payload = cipher.encrypt(padded_pdu)
-        print(f"DEBUG V2: Encrypted payload: {encrypted_payload.hex()}")
+        print(f"DEBUG V2 Read: Encrypted payload: {encrypted_payload.hex()}")
 
         # 4. Build V2 Frame Header (10 bytes)
         # Structure: [0x00][0x17][SlaveID][CommandType (0x17)][PayloadLen_H][PayloadLen_L][Reserved (4 bytes)]
@@ -192,6 +206,9 @@ class WriteSingleRegisterV2(WriteSingleRegister):
         
         # Use provided session key or fallback to hardcoded (for testing)
         self.key = session_key or b"sxd_aiot_key_001"
+        
+        # Generate IV for this command
+        self.iv = generate_iv()
         
         # 1. Build Modbus PDU: [Slave][Func][Addr_H][Addr_L][Val_H][Val_L]
         pdu = struct.pack('!BBHH', slave_id, 6, address, value)
