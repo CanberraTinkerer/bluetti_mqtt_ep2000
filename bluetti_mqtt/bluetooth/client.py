@@ -167,12 +167,12 @@ class BluetoothClient:
             private_key = ec.generate_private_key(ec.SECP256R1(), default_backend())
             public_key = private_key.public_key()
 
-            # Serialize public key to compressed format (64 bytes, no DER prefix)
+            # Serialize public key to DER format with ASN.1 header (as expected by Bluetti device)
             public_key_bytes = public_key.public_bytes(
-                encoding=serialization.Encoding.X962,
-                format=serialization.PublicFormat.CompressedPoint
+                encoding=serialization.Encoding.DER,
+                format=serialization.PublicFormat.SubjectPublicKeyInfo
             )
-            logging.debug(f'Generated public key: {public_key_bytes.hex()}')
+            logging.debug(f'Generated DER-encoded public key: {public_key_bytes.hex()} (length: {len(public_key_bytes)})')
 
             # Generate random 16-byte challenge
             challenge = os.urandom(16)
@@ -190,18 +190,10 @@ class BluetoothClient:
                 logging.debug(f'Handshake notification: {data.hex()} (total: {len(handshake_response)})')
                 handshake_response.extend(data)
 
-                # Check if we have a complete response (device public key)
-                # The response might include headers or be exactly 64 bytes
-                if len(handshake_response) >= 64:  # 64-byte compressed public key
-                    # Try to extract the public key - it might be at the end or have headers
-                    if len(handshake_response) == 64:
-                        handshake_future.set_result(handshake_response)
-                    elif len(handshake_response) > 64:
-                        # Assume the public key is the last 64 bytes
-                        handshake_future.set_result(handshake_response[-64:])
-                    else:
-                        # Wait for more data
-                        pass
+                # Check if we have a complete response (device raw 64-byte public key)
+                # Raw uncompressed point is 64 bytes (x + y coordinates)
+                if len(handshake_response) >= 64:
+                    handshake_future.set_result(handshake_response[:64])
 
             # Start listening for handshake response
             await self.client.start_notify(self.NOTIFY_UUID, handshake_handler)
@@ -225,9 +217,11 @@ class BluetoothClient:
                 await self.client.start_notify(self.NOTIFY_UUID, self._notification_handler)
                 return
 
-            # Deserialize device public key
+            # Deserialize device public key from raw 64-byte uncompressed point (x + y)
+            # Add the 04 prefix to make it a valid uncompressed point
+            uncompressed_point = b'\x04' + device_public_key_bytes
             device_public_key = ec.EllipticCurvePublicKey.from_encoded_point(
-                ec.SECP256R1(), device_public_key_bytes
+                ec.SECP256R1(), uncompressed_point
             )
 
             # Send our public key to device
