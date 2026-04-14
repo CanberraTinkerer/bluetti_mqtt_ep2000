@@ -90,12 +90,17 @@ class ReadHoldingRegistersV2(ReadHoldingRegisters):
         self.slave_id = slave_id # Store slave_id as an instance attribute
         # 1. Build Modbus PDU: [Slave][Func][Addr_H][Addr_L][Count_H][Count_L]
         pdu = struct.pack('!BBHH', slave_id, 3, starting_address, quantity)
+        print(f"DEBUG V2: Plaintext PDU: {pdu.hex()}")
+        
         # 2. Append inner Modbus CRC (little-endian)
-        pdu += modbus_crc(pdu).to_bytes(2, byteorder='little')
+        inner_crc = modbus_crc(pdu)
+        pdu_with_crc = pdu + inner_crc.to_bytes(2, byteorder='little')
+        print(f"DEBUG V2: PDU with inner CRC: {pdu_with_crc.hex()}")
 
         # 3. Encrypt with AES-CBC + PKCS7
         cipher = AES.new(self.KEY, AES.MODE_CBC, self.IV)
-        encrypted_payload = cipher.encrypt(pad(pdu, 16))
+        encrypted_payload = cipher.encrypt(pad(pdu_with_crc, 16))
+        print(f"DEBUG V2: Encrypted payload: {encrypted_payload.hex()}")
 
         # 4. Build V2 Frame Header (10 bytes)
         # Structure: [0x00][0x17][SlaveID][CommandType (0x17)][PayloadLen_H][PayloadLen_L][Reserved (4 bytes)]
@@ -109,6 +114,7 @@ class ReadHoldingRegistersV2(ReadHoldingRegisters):
             payload_len & 0xFF,         # Length Low
             0x00, 0x00, 0x00, 0x00      # Reserved
         ])
+        print(f"DEBUG V2: Header: {header.hex()}")
         
         # 4. Concatenate header and encrypted payload for CRC calculation
         self.cmd = header + encrypted_payload
@@ -117,6 +123,7 @@ class ReadHoldingRegistersV2(ReadHoldingRegisters):
         crc = bluetti_custom_crc(self.cmd)
         print(f"DEBUG: Calculated Read V2 CRC: {hex(crc)}")
         self.cmd.extend(struct.pack('!H', crc))
+        print(f"DEBUG V2: Final packet: {self.cmd.hex()}")
 
     def response_size(self):
         # Response: [Header: 10] [EncryptedBody: N*16] [CRC: 2]
@@ -172,12 +179,17 @@ class WriteSingleRegisterV2(WriteSingleRegister):
         self.slave_id = slave_id # Store slave_id as an instance attribute
         # 1. Build Modbus PDU: [Slave][Func][Addr_H][Addr_L][Val_H][Val_L]
         pdu = struct.pack('!BBHH', slave_id, 6, address, value)
+        print(f"DEBUG V2 Write: Plaintext PDU: {pdu.hex()}")
+        
         # 2. Append inner Modbus CRC (little-endian)
-        pdu += modbus_crc(pdu).to_bytes(2, byteorder='little')
+        inner_crc = modbus_crc(pdu)
+        pdu_with_crc = pdu + inner_crc.to_bytes(2, byteorder='little')
+        print(f"DEBUG V2 Write: PDU with inner CRC: {pdu_with_crc.hex()}")
 
         # 3. Encrypt with AES-CBC + PKCS7
         cipher = AES.new(self.KEY, AES.MODE_CBC, self.IV)
-        encrypted_payload = cipher.encrypt(pad(pdu, 16))
+        encrypted_payload = cipher.encrypt(pad(pdu_with_crc, 16))
+        print(f"DEBUG V2 Write: Encrypted payload: {encrypted_payload.hex()}")
 
         # 4. Build V2 Frame Header (10 bytes)
         # Structure: [0x00][0x17][SlaveID][CommandType (0x18)][PayloadLen_H][PayloadLen_L][Reserved (4 bytes)]
@@ -191,6 +203,7 @@ class WriteSingleRegisterV2(WriteSingleRegister):
             payload_len & 0xFF,         # Length Low
             0x00, 0x00, 0x00, 0x00      # Reserved
         ])
+        print(f"DEBUG V2 Write: Header: {header.hex()}")
 
         # 4. Concatenate header and encrypted payload for CRC calculation
         self.cmd = header + encrypted_payload
@@ -199,6 +212,7 @@ class WriteSingleRegisterV2(WriteSingleRegister):
         crc = bluetti_custom_crc(self.cmd)
         print(f"DEBUG: Calculated Write V2 CRC: {hex(crc)}")
         self.cmd.extend(struct.pack('!H', crc))
+        print(f"DEBUG V2 Write: Final packet: {self.cmd.hex()}")
 
     def response_size(self):
         # Response: [Header: 10] [EncryptedBody: 16] [CRC: 2]
@@ -554,6 +568,15 @@ async def poll_device_registers(
         device_protocol = detect_device_protocol(device_name)
         logging.info(f"Detected protocol for {device_name}: {device_protocol}")
 
+    # Parse plaintext slaves list
+    plaintext_slaves = set()
+    if hasattr(args, 'plaintext_slaves') and args.plaintext_slaves:
+        try:
+            plaintext_slaves = set(int(s.strip()) for s in args.plaintext_slaves.split(','))
+            logging.info(f"Forcing plaintext for slaves: {sorted(plaintext_slaves)}")
+        except ValueError:
+            logging.warning(f"Invalid plaintext-slaves format: {args.plaintext_slaves}")
+
     # Group commands for polling
     grouped_commands = group_commands(commands_to_poll, max_group_size=max_group_size)
 
@@ -627,7 +650,7 @@ async def poll_device_registers(
             print(f"  --- TRIGGER START ---")
             print(f"  Action: Write {t_val} to {t_reg} (Slave {slave_id})")
 
-            if group['encrypted'] and HAS_CRYPTO:
+            if group['encrypted'] and HAS_CRYPTO and slave_id not in plaintext_slaves:
                 # Show the full Modbus PDU that will be encrypted
                 pdu = struct.pack('!BBHH', slave_id, 6, t_reg, t_val)
                 print(f"    Plaintext PDU: {pdu.hex()}")
@@ -638,7 +661,9 @@ async def poll_device_registers(
                 trigger_cmd = WriteSingleRegister(t_reg, t_val, slave_id=slave_id)
 
             tx_packet = bytes(trigger_cmd)
-            tx_type = "Encrypted" if group['encrypted'] and HAS_CRYPTO else "Plaintext"
+            tx_type = "Encrypted" if (group['encrypted'] and HAS_CRYPTO and slave_id not in plaintext_slaves) else "Plaintext"
+            if slave_id in plaintext_slaves:
+                tx_type += f" (forced for slave {slave_id})"
             print(f"    TX Packet ({tx_type}): {tx_packet.hex()}")
 
             try:
@@ -653,16 +678,20 @@ async def poll_device_registers(
                 print(f"    Result: Failed - {e}")
             print(f"  --- TRIGGER END ---")
 
-        if group['encrypted'] and HAS_CRYPTO:
+        if group['encrypted'] and HAS_CRYPTO and slave_id not in plaintext_slaves:
             command = ReadHoldingRegistersV2(group['start_reg'], group['num_regs'], slave_id=slave_id)
         else:
             command = ReadHoldingRegisters(group['start_reg'], group['num_regs'], slave_id=slave_id)
 
-        tx_type = "Encrypted" if group['encrypted'] and HAS_CRYPTO else "Plaintext"
+        tx_type = "Encrypted" if (group['encrypted'] and HAS_CRYPTO and slave_id not in plaintext_slaves) else "Plaintext"
+        if slave_id in plaintext_slaves:
+            tx_type += f" (forced for slave {slave_id})"
         print(f"  TX Packet ({tx_type}): {bytes(command).hex()}")
         try:
+            print(f"  Attempting {tx_type} command...")
             future = await client.perform_with_fallback(command, device_protocol)
             response = cast(bytes, await future)
+            print(f"  ✓ {tx_type} command succeeded")
 
             if len(response) > 0:
                  print(f"  RX Packet: SlaveID={response[0]} Func={response[1]} Len={len(response)}")
@@ -703,12 +732,14 @@ async def poll_device_registers(
                     num_registers = length // 16 if not is_ascii and length >= 16 else length
                     slave_id = get_target_slave_id(command_info)
 
-                    if cmd_encrypted and HAS_CRYPTO:
+                    if cmd_encrypted and HAS_CRYPTO and slave_id not in plaintext_slaves:
                         single_command = ReadHoldingRegistersV2(register, num_registers, slave_id=slave_id)
                     else:
                         single_command = ReadHoldingRegisters(register, num_registers, slave_id=slave_id)
 
-                    tx_type = "Encrypted" if cmd_encrypted and HAS_CRYPTO else "Plaintext"
+                    tx_type = "Encrypted" if (cmd_encrypted and HAS_CRYPTO and slave_id not in plaintext_slaves) else "Plaintext"
+                    if slave_id in plaintext_slaves:
+                        tx_type += f" (forced for slave {slave_id})"
                     print(f"  TX Packet ({tx_type}): {bytes(single_command).hex()}")
                     future = await client.perform(single_command)
                     response = cast(bytes, await future)
@@ -764,6 +795,7 @@ async def async_main():  # noqa: C901
     parser.add_argument("--disconnect-on-slave-change", action="store_true", help="Disconnect and reconnect Bluetooth when switching slaves (slow but reliable)")
     parser.add_argument("--max-group-size", type=int, default=32, help="Max registers per Modbus read command")
     parser.add_argument("--force-protocol", choices=["v1", "v2"], help="Force specific protocol version (v1=plaintext, v2=encrypted)")
+    parser.add_argument("--plaintext-slaves", type=str, help="Comma-separated list of slave IDs to force plaintext protocol (e.g., '41,42,43')")
     parser.add_argument("--debug", action="store_true", help="Enable verbose debug logging")
 
     args = parser.parse_args()

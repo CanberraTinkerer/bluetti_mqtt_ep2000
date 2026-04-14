@@ -81,12 +81,14 @@ class BluetoothClient:
             if "too many retries" not in str(e):
                 raise
 
-            logging.debug(f"V2 command failed for {self.address} (too many retries), trying V1 fallback")
+            logging.info(f"V2 command failed for {self.address} (too many retries), trying V1 fallback")
             v1_cmd = convert_to_v1(cmd)
 
             try:
+                logging.info(f"Attempting V1 fallback for {self.address}")
                 return await self.perform(v1_cmd)
             except Exception:
+                logging.error(f"V1 fallback also failed for {self.address}")
                 raise e
 
     async def run(self):
