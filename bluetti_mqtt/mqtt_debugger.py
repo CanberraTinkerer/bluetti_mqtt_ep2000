@@ -262,6 +262,20 @@ def get_slave_validation_register(group: Dict[str, Any]) -> int:
     return 1
 
 
+def build_slave_validation_command(group: Dict[str, Any], device_protocol: str):
+    """Build the best validation read command for a slave switch."""
+    slave_id = group.get('slave_id', 1)
+    validation_reg = get_slave_validation_register(group)
+    # BMU/Battery range on v2 devices often responds to plaintext reads
+    if 41 <= slave_id <= 56:
+        return ReadHoldingRegisters(validation_reg, 1, slave_id=slave_id)
+
+    if device_protocol == "v1" or not group.get('encrypted', False):
+        return ReadHoldingRegisters(validation_reg, 1, slave_id=slave_id)
+
+    return ReadHoldingRegistersV2(validation_reg, 1, slave_id=slave_id)
+
+
 def group_commands(commands_to_poll: List[Dict[str, Any]], max_gap: int = 5, max_group_size: int = 32) -> List[Dict[str, Any]]:
     """Groups individual register commands into larger reads to improve polling efficiency."""
     if not commands_to_poll:
@@ -560,13 +574,24 @@ async def poll_device_registers(
                 # Perform a lightweight slave validation read using a stable model or BMU register.
                 validation_reg = get_slave_validation_register(group)
                 print(f"  Performing slave validation read for Slave {slave_id} at register {validation_reg}...")
+                validation_cmd = build_slave_validation_command(group, device_protocol)
+                validation_success = False
                 try:
-                    if group['encrypted'] and HAS_CRYPTO:
-                        dummy_cmd = ReadHoldingRegistersV2(validation_reg, 1, slave_id=slave_id)
-                    else:
-                        dummy_cmd = ReadHoldingRegisters(validation_reg, 1, slave_id=slave_id)
-                    future = await client.perform_with_fallback(dummy_cmd, device_protocol)
+                    future = await client.perform(validation_cmd)
                     await future
+                    validation_success = True
+                except BadConnectionError as e:
+                    # For BMU/battery slaves, try the alternate V2 form if plaintext first fails.
+                    if isinstance(validation_cmd, ReadHoldingRegisters) and device_protocol == "v2":
+                        try:
+                            alt_cmd = ReadHoldingRegistersV2(validation_reg, 1, slave_id=slave_id)
+                            future = await client.perform_with_fallback(alt_cmd, device_protocol)
+                            await future
+                            validation_success = True
+                        except Exception:
+                            pass
+                    if not validation_success:
+                        print(f"  Slave validation read ignored: {e}")
                 except Exception as e:
                     print(f"  Slave validation read ignored: {e}")
                 await asyncio.sleep(0.05)

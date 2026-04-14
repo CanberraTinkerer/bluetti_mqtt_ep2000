@@ -23,9 +23,11 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from bluetti_mqtt.mqtt_debugger import (
     get_target_slave_id,
     get_slave_validation_register,
+    build_slave_validation_command,
     group_commands,
     WriteSingleRegister,
     ReadHoldingRegisters,
+    ReadHoldingRegistersV2,
 )
 
 
@@ -135,6 +137,16 @@ class TestGroupCommandsWithTriggers(unittest.TestCase):
     def test_get_slave_validation_register_bmu_from_command_range(self):
         group = {'slave_id': 45, 'start_reg': 100, 'commands': [{'reg': 7232}]}
         self.assertEqual(get_slave_validation_register(group), 7232)
+
+    def test_build_slave_validation_command_bmu_prefers_plaintext(self):
+        group = {'slave_id': 45, 'start_reg': 7200, 'commands': [{'reg': 7200}], 'encrypted': True}
+        cmd = build_slave_validation_command(group, device_protocol='v2')
+        self.assertIsInstance(cmd, ReadHoldingRegisters)
+
+    def test_build_slave_validation_command_inverter_uses_v2(self):
+        group = {'slave_id': 1, 'start_reg': 1100, 'commands': [{'reg': 1100}], 'encrypted': True}
+        cmd = build_slave_validation_command(group, device_protocol='v2')
+        self.assertIsInstance(cmd, ReadHoldingRegistersV2)
 
     def test_group_commands_includes_3500_range(self):
         """Test that 3500 register range is properly grouped."""
