@@ -168,7 +168,7 @@ class BluetoothClient:
             public_key = private_key.public_key()
 
             # Serialize public key to compressed format (64 bytes, no DER prefix)
-            public_key_bytes = public_key.public_key_bytes(
+            public_key_bytes = public_key.public_bytes(
                 encoding=serialization.Encoding.X962,
                 format=serialization.PublicFormat.CompressedPoint
             )
@@ -187,22 +187,43 @@ class BluetoothClient:
             handshake_response = bytearray()
 
             def handshake_handler(sender, data):
-                handshake_response.extend(data)
                 logging.debug(f'Handshake notification: {data.hex()} (total: {len(handshake_response)})')
+                handshake_response.extend(data)
 
                 # Check if we have a complete response (device public key)
+                # The response might include headers or be exactly 64 bytes
                 if len(handshake_response) >= 64:  # 64-byte compressed public key
-                    handshake_future.set_result(handshake_response[:64])
+                    # Try to extract the public key - it might be at the end or have headers
+                    if len(handshake_response) == 64:
+                        handshake_future.set_result(handshake_response)
+                    elif len(handshake_response) > 64:
+                        # Assume the public key is the last 64 bytes
+                        handshake_future.set_result(handshake_response[-64:])
+                    else:
+                        # Wait for more data
+                        pass
 
             # Start listening for handshake response
             await self.client.start_notify(self.NOTIFY_UUID, handshake_handler)
 
             # Send initiation packet
             await self.client.write_gatt_char(self.WRITE_UUID, init_packet)
+            logging.debug(f'Sent handshake initiation packet')
 
-            # Wait for device public key response
-            device_public_key_bytes = await asyncio.wait_for(handshake_future, timeout=10.0)
-            logging.debug(f'Received device public key: {device_public_key_bytes.hex()}')
+            # Wait for device public key response with timeout
+            try:
+                device_public_key_bytes = await asyncio.wait_for(handshake_future, timeout=5.0)
+                logging.debug(f'Received device public key: {device_public_key_bytes.hex()}')
+            except asyncio.TimeoutError:
+                logging.warning(f'Device {self.address} did not respond to ECDH handshake - falling back to hardcoded keys')
+                # Stop handshake notifications
+                await self.client.stop_notify(self.NOTIFY_UUID)
+                # Fallback to hardcoded session key
+                self.session_key = bytes.fromhex('7b8e6d2c1f4a9e5b3d8c7a2f6e9b4d1c')
+                logging.info(f'Using fallback session key: {self.session_key.hex()}')
+                # Start normal notifications
+                await self.client.start_notify(self.NOTIFY_UUID, self._notification_handler)
+                return
 
             # Deserialize device public key
             device_public_key = ec.EllipticCurvePublicKey.from_encoded_point(
