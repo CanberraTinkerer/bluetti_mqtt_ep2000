@@ -655,8 +655,11 @@ async def poll_device_registers(
                     else:
                         single_command = ReadHoldingRegisters(register, num_registers, slave_id=slave_id)
 
+                    print(f"  TX Packet: {bytes(single_command).hex()}")
                     future = await client.perform(single_command)
                     response = cast(bytes, await future)
+                    if len(response) > 0:
+                        print(f"  RX Packet: SlaveID={response[0]} Func={response[1]} Len={len(response)}")
                     data = single_command.parse_response(response)
                     process_and_publish(command_info, data, device_name, mqtt_client, cmd_encrypted)
                 except (BadConnectionError, BleakError, ModbusError, ParseError) as e:
@@ -668,8 +671,11 @@ async def poll_device_registers(
                         try:
                             print(f"Retrying register {command_info['reg']} with plaintext...")
                             single_command = ReadHoldingRegisters(register, num_registers, slave_id=slave_id)
+                            print(f"  TX Packet: {bytes(single_command).hex()}")
                             future = await client.perform(single_command)
                             response = cast(bytes, await future)
+                            if len(response) > 0:
+                                print(f"  RX Packet: SlaveID={response[0]} Func={response[1]} Len={len(response)}")
                             data = single_command.parse_response(response)
                             process_and_publish(command_info, data, device_name, mqtt_client, False)
                             success_plaintext = True
