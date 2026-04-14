@@ -385,6 +385,7 @@ def process_and_publish(command_info: Dict[str, Any], data: bytes, device_name: 
                     elif length == 16: value = to_signed(value)
                 if 'subtract' in output: value -= output['subtract']
                 if 'scale' in output: value = apply_scale(value, output['scale'])
+                if output.get('type') == 'decimal': value = str(value)
                 if 'values' in output and isinstance(value, int) and 0 <= value < len(output['values']):
                     value = output['values'][value]
 
