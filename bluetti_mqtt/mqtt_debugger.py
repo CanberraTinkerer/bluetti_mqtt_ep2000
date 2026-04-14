@@ -96,34 +96,17 @@ def bytes_to_ascii(response_bytes: bytes) -> str:
 
 
 class ReadHoldingRegistersV2(ReadHoldingRegisters):
-    KEY = b"sxd_aiot_key_001"
-    # IV is now generated dynamically per command instead of hardcoded
+    # KEY is now provided per instance from ECDH session
 
-    def __init__(self, starting_address: int, quantity: int, slave_id: int = 1):
+    def __init__(self, starting_address: int, quantity: int, slave_id: int = 1, session_key: bytes = None):
         if not HAS_CRYPTO:
             raise ImportError("Crypto library required for V2 protocol")
         
         super().__init__(starting_address, quantity, slave_id=slave_id)
         self.slave_id = slave_id # Store slave_id as an instance attribute
         
-        # Generate a dynamic IV for this command (4 random bytes → MD5 hash)
-        self.iv = generate_iv()
-        print(f"DEBUG V2: Generated IV: {self.iv.hex()}")
-        
-        # 1. Build Modbus PDU: [Slave][Func][Addr_H][Addr_L][Count_H][Count_L]
-        pdu = struct.pack('!BBHH', slave_id, 3, starting_address, quantity)
-        print(f"DEBUG V2: Plaintext PDU: {pdu.hex()}")
-        
-        # 2. Append inner Modbus CRC (little-endian)
-        inner_crc = modbus_crc(pdu)
-        pdu_with_crc = pdu + inner_crc.to_bytes(2, byteorder='little')
-        print(f"DEBUG V2: PDU with inner CRC: {pdu_with_crc.hex()}")
-
-        # 3. Encrypt with AES-CBC/NoPadding (zero-pad to 16-byte boundary)
-        padded_pdu = zero_pad(pdu_with_crc, 16)
-        print(f"DEBUG V2: Padded PDU (zero-padding): {padded_pdu.hex()}")
-        
-        cipher = AES.new(self.KEY, AES.MODE_CBC, self.iv)
+        # Use provided session key or fallback to hardcoded (for testing)
+        self.key = session_key or b"sxd_aiot_key_001"
         encrypted_payload = cipher.encrypt(padded_pdu)
         print(f"DEBUG V2: Encrypted payload: {encrypted_payload.hex()}")
 
@@ -174,7 +157,7 @@ class ReadHoldingRegistersV2(ReadHoldingRegisters):
             print(f"Warning: Encrypted response length {len(encrypted_body)} not a multiple of 16")
         
         # Decrypt with the same IV that was used for encryption
-        cipher = AES.new(self.KEY, AES.MODE_CBC, self.iv)
+        cipher = AES.new(self.key, AES.MODE_CBC, self.iv)
         decrypted_body = cipher.decrypt(encrypted_body)
         print(f"DEBUG V2: Decrypted body (before unpadding): {decrypted_body.hex()}")
         
@@ -198,19 +181,17 @@ class ReadHoldingRegistersV2(ReadHoldingRegisters):
         return data
 
 class WriteSingleRegisterV2(WriteSingleRegister):
-    KEY = b"sxd_aiot_key_001"
-    # IV is now generated dynamically per command instead of hardcoded
+    # KEY is now provided per instance from ECDH session
 
-    def __init__(self, address: int, value: int, slave_id: int = 1):
+    def __init__(self, address: int, value: int, slave_id: int = 1, session_key: bytes = None):
         if not HAS_CRYPTO:
             raise ImportError("Crypto library required for V2 protocol")
         
         super().__init__(address, value, slave_id=slave_id)
         self.slave_id = slave_id # Store slave_id as an instance attribute
         
-        # Generate a dynamic IV for this command (4 random bytes → MD5 hash)
-        self.iv = generate_iv()
-        print(f"DEBUG V2 Write: Generated IV: {self.iv.hex()}")
+        # Use provided session key or fallback to hardcoded (for testing)
+        self.key = session_key or b"sxd_aiot_key_001"
         
         # 1. Build Modbus PDU: [Slave][Func][Addr_H][Addr_L][Val_H][Val_L]
         pdu = struct.pack('!BBHH', slave_id, 6, address, value)
@@ -225,7 +206,7 @@ class WriteSingleRegisterV2(WriteSingleRegister):
         padded_pdu = zero_pad(pdu_with_crc, 16)
         print(f"DEBUG V2 Write: Padded PDU (zero-padding): {padded_pdu.hex()}")
         
-        cipher = AES.new(self.KEY, AES.MODE_CBC, self.iv)
+        cipher = AES.new(self.key, AES.MODE_CBC, self.iv)
         encrypted_payload = cipher.encrypt(padded_pdu)
         print(f"DEBUG V2 Write: Encrypted payload: {encrypted_payload.hex()}")
 
@@ -269,7 +250,7 @@ class WriteSingleRegisterV2(WriteSingleRegister):
     def parse_response(self, response: bytes):
         encrypted_body = response[10:-2]
         # Decrypt with the same IV that was used for encryption
-        cipher = AES.new(self.KEY, AES.MODE_CBC, self.iv)
+        cipher = AES.new(self.key, AES.MODE_CBC, self.iv)
         decrypted_body = cipher.decrypt(encrypted_body)
         print(f"DEBUG V2 Write: Decrypted body (before unpadding): {decrypted_body.hex()}")
         
@@ -341,7 +322,7 @@ def get_slave_validation_register(group: Dict[str, Any]) -> int:
     return 1
 
 
-def build_slave_validation_command(group: Dict[str, Any], device_protocol: str):
+def build_slave_validation_command(group: Dict[str, Any], device_protocol: str, client: BluetoothClient = None):
     """Build the best validation read command for a slave switch."""
     slave_id = group.get('slave_id', 1)
     validation_reg = get_slave_validation_register(group)
@@ -352,7 +333,8 @@ def build_slave_validation_command(group: Dict[str, Any], device_protocol: str):
     if device_protocol == "v1" or not group.get('encrypted', False):
         return ReadHoldingRegisters(validation_reg, 1, slave_id=slave_id)
 
-    return ReadHoldingRegistersV2(validation_reg, 1, slave_id=slave_id)
+    session_key = client.session_key if client and hasattr(client, 'session_key') and client.session_key else None
+    return ReadHoldingRegistersV2(validation_reg, 1, slave_id=slave_id, session_key=session_key)
 
 
 def group_commands(commands_to_poll: List[Dict[str, Any]], max_gap: int = 5, max_group_size: int = 32) -> List[Dict[str, Any]]:
@@ -658,7 +640,7 @@ async def poll_device_registers(
                 # Perform a lightweight slave validation read using a stable model or BMU register.
                 validation_reg = get_slave_validation_register(group)
                 print(f"  Performing slave validation read for Slave {slave_id} at register {validation_reg}...")
-                validation_cmd = build_slave_validation_command(group, device_protocol)
+                validation_cmd = build_slave_validation_command(group, device_protocol, client)
                 validation_success = False
                 try:
                     future = await client.perform(validation_cmd)
@@ -668,7 +650,7 @@ async def poll_device_registers(
                     # For BMU/battery slaves, try the alternate V2 form if plaintext first fails.
                     if isinstance(validation_cmd, ReadHoldingRegisters) and device_protocol == "v2":
                         try:
-                            alt_cmd = ReadHoldingRegistersV2(validation_reg, 1, slave_id=slave_id)
+                            alt_cmd = ReadHoldingRegistersV2(validation_reg, 1, slave_id=slave_id, session_key=client.session_key)
                             future = await client.perform_with_fallback(alt_cmd, device_protocol)
                             await future
                             validation_success = True
@@ -693,7 +675,7 @@ async def poll_device_registers(
                 # Show the full Modbus PDU that will be encrypted
                 pdu = struct.pack('!BBHH', slave_id, 6, t_reg, t_val)
                 print(f"    Plaintext PDU: {pdu.hex()}")
-                trigger_cmd = WriteSingleRegisterV2(t_reg, t_val, slave_id=slave_id)
+                trigger_cmd = WriteSingleRegisterV2(t_reg, t_val, slave_id=slave_id, session_key=client.session_key)
             else:
                 pdu = struct.pack('!HH', t_reg, t_val)
                 print(f"    Plaintext Payload: {pdu.hex()}")
@@ -718,7 +700,7 @@ async def poll_device_registers(
             print(f"  --- TRIGGER END ---")
 
         if group['encrypted'] and HAS_CRYPTO and slave_id not in plaintext_slaves:
-            command = ReadHoldingRegistersV2(group['start_reg'], group['num_regs'], slave_id=slave_id)
+            command = ReadHoldingRegistersV2(group['start_reg'], group['num_regs'], slave_id=slave_id, session_key=client.session_key)
         else:
             command = ReadHoldingRegisters(group['start_reg'], group['num_regs'], slave_id=slave_id)
 
@@ -772,7 +754,7 @@ async def poll_device_registers(
                     slave_id = get_target_slave_id(command_info)
 
                     if cmd_encrypted and HAS_CRYPTO and slave_id not in plaintext_slaves:
-                        single_command = ReadHoldingRegistersV2(register, num_registers, slave_id=slave_id)
+                        single_command = ReadHoldingRegistersV2(register, num_registers, slave_id=slave_id, session_key=client.session_key)
                     else:
                         single_command = ReadHoldingRegisters(register, num_registers, slave_id=slave_id)
 
