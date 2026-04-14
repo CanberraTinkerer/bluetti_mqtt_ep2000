@@ -486,6 +486,7 @@ async def poll_device_registers(
     disconnect_on_slave_change: bool = False,
     max_group_size: int = 32,
     force_protocol: Optional[str] = None,
+    debug_logging: bool = False,
 ) -> float:
     """
     Poll device registers and publish to MQTT.
@@ -544,7 +545,7 @@ async def poll_device_registers(
                 await asyncio.sleep(2.0)
 
                 # Recreate client
-                client = BluetoothClient(device_address)
+                client = BluetoothClient(device_address, debug_logging=debug_logging)
                 client_task = asyncio.create_task(client.run())
 
                 while not client.is_ready:
@@ -710,11 +711,13 @@ async def async_main():  # noqa: C901
     parser.add_argument("--disconnect-on-slave-change", action="store_true", help="Disconnect and reconnect Bluetooth when switching slaves (slow but reliable)")
     parser.add_argument("--max-group-size", type=int, default=32, help="Max registers per Modbus read command")
     parser.add_argument("--force-protocol", choices=["v1", "v2"], help="Force specific protocol version (v1=plaintext, v2=encrypted)")
+    parser.add_argument("--debug", action="store_true", help="Enable verbose debug logging")
 
     args = parser.parse_args()
 
     # Configure logging to catch the background client errors and suppress tracebacks
-    logging.basicConfig(level=logging.WARNING, format='%(asctime)s %(levelname)s: %(message)s', datefmt='%H:%M:%S')
+    log_level = logging.DEBUG if args.debug else logging.WARNING
+    logging.basicConfig(level=log_level, format='%(asctime)s %(levelname)s: %(message)s', datefmt='%H:%M:%S')
     logging.getLogger().addFilter(BriefConnectionErrors())
 
     mqtt_client = mqtt.Client()
@@ -741,7 +744,7 @@ async def async_main():  # noqa: C901
 
         display_name = f"{device.type} {device.sn} debug"
         print(f"Connecting to {display_name} at {device.address}...")
-        client = BluetoothClient(device.address, device_name=display_name)
+        client = BluetoothClient(device.address, device_name=display_name, debug_logging=args.debug)
         client_task = asyncio.create_task(client.run())
         device_name = display_name.replace(" ", "_").lower()
 
@@ -822,6 +825,7 @@ async def async_main():  # noqa: C901
                 disconnect_on_slave_change=args.disconnect_on_slave_change,
                 max_group_size=args.max_group_size,
                 force_protocol=args.force_protocol,
+                debug_logging=args.debug,
             )
 
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
