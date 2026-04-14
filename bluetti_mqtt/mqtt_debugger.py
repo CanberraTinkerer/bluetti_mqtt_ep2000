@@ -17,7 +17,7 @@ import time
 import logging
 from datetime import datetime
 from argparse import ArgumentParser, Namespace
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, Dict, List, Optional, Set, cast
 
 import paho.mqtt.client as mqtt
 from bleak.exc import BleakError
@@ -539,6 +539,7 @@ async def poll_device_registers(
     max_group_size: int = 32,
     force_protocol: Optional[str] = None,
     debug_logging: bool = False,
+    plaintext_slaves: Set[int] = set(),
 ) -> float:
     """
     Poll device registers and publish to MQTT.
@@ -569,13 +570,8 @@ async def poll_device_registers(
         logging.info(f"Detected protocol for {device_name}: {device_protocol}")
 
     # Parse plaintext slaves list
-    plaintext_slaves = set()
-    if hasattr(args, 'plaintext_slaves') and args.plaintext_slaves:
-        try:
-            plaintext_slaves = set(int(s.strip()) for s in args.plaintext_slaves.split(','))
-            logging.info(f"Forcing plaintext for slaves: {sorted(plaintext_slaves)}")
-        except ValueError:
-            logging.warning(f"Invalid plaintext-slaves format: {args.plaintext_slaves}")
+    if plaintext_slaves:
+        logging.info(f"Forcing plaintext for slaves: {sorted(plaintext_slaves)}")
 
     # Group commands for polling
     grouped_commands = group_commands(commands_to_poll, max_group_size=max_group_size)
@@ -898,6 +894,14 @@ async def async_main():  # noqa: C901
                 await asyncio.sleep(args.scan_interval)
                 continue
 
+            # Parse plaintext slaves
+            plaintext_slaves = set()
+            if hasattr(args, 'plaintext_slaves') and args.plaintext_slaves:
+                try:
+                    plaintext_slaves = set(int(s.strip()) for s in args.plaintext_slaves.split(','))
+                except ValueError:
+                    logging.warning(f"Invalid plaintext-slaves format: {args.plaintext_slaves}")
+
             # Poll device registers using the extracted function
             duration = await poll_device_registers(
                 client=client,
@@ -911,6 +915,7 @@ async def async_main():  # noqa: C901
                 max_group_size=args.max_group_size,
                 force_protocol=args.force_protocol,
                 debug_logging=args.debug,
+                plaintext_slaves=plaintext_slaves,
             )
 
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
