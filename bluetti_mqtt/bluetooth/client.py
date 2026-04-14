@@ -18,7 +18,7 @@ class ClientState(Enum):
 
 
 class BluetoothClient:
-    RESPONSE_TIMEOUT = 5
+    RESPONSE_TIMEOUT = 3
     WRITE_UUID = '0000ff02-0000-1000-8000-00805f9b34fb'
     NOTIFY_UUID = '0000ff01-0000-1000-8000-00805f9b34fb'
     DEVICE_NAME_UUID = '00002a00-0000-1000-8000-00805f9b34fb'
@@ -156,7 +156,9 @@ class BluetoothClient:
 
                 # Log command being sent
                 cmd_bytes = bytes(self.current_command)
-                logging.debug(f'Sending command to {self.address}: {cmd_bytes.hex()} (attempt {retries + 1}/5)')
+                is_v2 = len(cmd_bytes) > 2 and cmd_bytes[0] == 0x00 and cmd_bytes[1] == 0x17
+                proto = "V2 Encrypted" if is_v2 else "Plaintext"
+                logging.debug(f'Sending {proto} command to {self.address}: {cmd_bytes.hex()} (attempt {retries + 1}/5)')
 
                 # Make request
                 await self.client.write_gatt_char(

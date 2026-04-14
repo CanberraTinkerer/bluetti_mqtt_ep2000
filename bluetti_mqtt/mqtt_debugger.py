@@ -41,6 +41,10 @@ try:
 except ImportError:
     HAS_CRYPTO = False
 
+INVERTER_MODEL_ID_REGISTER = 1100
+BATTERY_PACK_MODEL_ID_REGISTER = 6100
+BMU_LOGIC_MODEL_ID_REGISTER = 7232
+
 
 def bytes_to_words(response_bytes: bytes):
     return [int.from_bytes(response_bytes[i:i + 2], 'big') for i in range(0, len(response_bytes), 2)]
@@ -241,22 +245,20 @@ def detect_device_protocol(device_name: str) -> str:
 
     # Default to V1 for unknown devices
     return "v1"
-    """
-    Determines the Modbus Slave ID based on the register address,
-    allowing for overrides in the command definition.
-    """
-    # 1. Check for explicit slave_id in the command definition
-    if 'slave_id' in cmd:
-        return int(cmd['slave_id'])
 
-    # 2. Fallback to range-based logic
-    reg = cmd['reg']
-    # Expansion Pack (BMS) ranges
-    if 16100 <= reg < 16200: return 41
-    if 21000 <= reg < 23000: return 41
-    # Balcony PV range
-    if reg >= 17400: return 31
-    # Default Inverter
+
+def get_slave_validation_register(group: Dict[str, Any]) -> int:
+    """Choose a stable register to read when switching Modbus slave IDs."""
+    slave_id = group.get('slave_id', 1)
+    if slave_id in (1, 2):
+        return INVERTER_MODEL_ID_REGISTER
+
+    if 41 <= slave_id <= 56:
+        start_reg = group.get('start_reg', 0)
+        if 7200 <= start_reg < 7300 or any(7200 <= cmd.get('reg', 0) < 7300 for cmd in group.get('commands', [])):
+            return BMU_LOGIC_MODEL_ID_REGISTER
+        return BATTERY_PACK_MODEL_ID_REGISTER
+
     return 1
 
 
@@ -555,17 +557,18 @@ async def poll_device_registers(
                 print(f"Switching from Slave {previous_slave_id} to {slave_id}, sleeping for {slave_switch_delay}s...")
                 await asyncio.sleep(slave_switch_delay)
 
-                # Perform dummy read to prevent cross-slave contamination
-                print(f"  Performing dummy read for Slave {slave_id}...")
+                # Perform a lightweight slave validation read using a stable model or BMU register.
+                validation_reg = get_slave_validation_register(group)
+                print(f"  Performing slave validation read for Slave {slave_id} at register {validation_reg}...")
                 try:
                     if group['encrypted'] and HAS_CRYPTO:
-                        dummy_cmd = ReadHoldingRegistersV2(1, 1, slave_id=slave_id)
+                        dummy_cmd = ReadHoldingRegistersV2(validation_reg, 1, slave_id=slave_id)
                     else:
-                        dummy_cmd = ReadHoldingRegisters(1, 1, slave_id=slave_id)
+                        dummy_cmd = ReadHoldingRegisters(validation_reg, 1, slave_id=slave_id)
                     future = await client.perform_with_fallback(dummy_cmd, device_protocol)
                     await future
                 except Exception as e:
-                    print(f"  Dummy read ignored: {e}")
+                    print(f"  Slave validation read ignored: {e}")
                 await asyncio.sleep(0.05)
 
         previous_slave_id = slave_id
@@ -588,7 +591,8 @@ async def poll_device_registers(
                 trigger_cmd = WriteSingleRegister(t_reg, t_val, slave_id=slave_id)
 
             tx_packet = bytes(trigger_cmd)
-            print(f"    TX Packet: {tx_packet.hex()}")
+            tx_type = "Encrypted" if group['encrypted'] and HAS_CRYPTO else "Plaintext"
+            print(f"    TX Packet ({tx_type}): {tx_packet.hex()}")
 
             try:
                 t_future = await client.perform_with_fallback(trigger_cmd, device_protocol)
@@ -607,7 +611,8 @@ async def poll_device_registers(
         else:
             command = ReadHoldingRegisters(group['start_reg'], group['num_regs'], slave_id=slave_id)
 
-        print(f"  TX Packet: {bytes(command).hex()}")
+        tx_type = "Encrypted" if group['encrypted'] and HAS_CRYPTO else "Plaintext"
+        print(f"  TX Packet ({tx_type}): {bytes(command).hex()}")
         try:
             future = await client.perform_with_fallback(command, device_protocol)
             response = cast(bytes, await future)
@@ -656,7 +661,8 @@ async def poll_device_registers(
                     else:
                         single_command = ReadHoldingRegisters(register, num_registers, slave_id=slave_id)
 
-                    print(f"  TX Packet: {bytes(single_command).hex()}")
+                    tx_type = "Encrypted" if cmd_encrypted and HAS_CRYPTO else "Plaintext"
+                    print(f"  TX Packet ({tx_type}): {bytes(single_command).hex()}")
                     future = await client.perform(single_command)
                     response = cast(bytes, await future)
                     if len(response) > 0:
@@ -672,7 +678,7 @@ async def poll_device_registers(
                         try:
                             print(f"Retrying register {command_info['reg']} with plaintext...")
                             single_command = ReadHoldingRegisters(register, num_registers, slave_id=slave_id)
-                            print(f"  TX Packet: {bytes(single_command).hex()}")
+                            print(f"  TX Packet (Plaintext): {bytes(single_command).hex()}")
                             future = await client.perform(single_command)
                             response = cast(bytes, await future)
                             if len(response) > 0:
