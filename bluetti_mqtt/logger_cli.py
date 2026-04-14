@@ -176,10 +176,10 @@ async def deep_scan_registers(address: str, start_reg: int, end_reg: int, output
     if not devices:
         print('Warning: Device not found or unsupported, falling back to basic register scan.')
         device = None
-        client = BluetoothClient(address)
+        client = BluetoothClient(address, device_name="logger_device")
     else:
         device = devices[0]
-        client = BluetoothClient(device.address)
+        client = BluetoothClient(device.address, device_name=device.type)
 
     asyncio.get_running_loop().create_task(client.run())
     while not client.is_ready: await asyncio.sleep(1)
@@ -253,7 +253,7 @@ async def deep_scan_registers(address: str, start_reg: int, end_reg: int, output
 async def scan_registers(address: str, start: int, count: int):
     devices = await check_addresses({address})
     if not devices: sys.exit('Device not found')
-    client = BluetoothClient(devices[0].address)
+    client = BluetoothClient(devices[0].address, device_name=devices[0].type)
     asyncio.get_running_loop().create_task(client.run())
     while not client.is_ready: await asyncio.sleep(1)
     
@@ -292,7 +292,7 @@ async def log(address: str, path: str):
     devices = await check_addresses({address})
     if not devices: sys.exit('Device not found')
     device = devices[0]
-    client = BluetoothClient(device.address)
+    client = BluetoothClient(device.address, device_name=device.type)
     asyncio.get_running_loop().create_task(client.run())
     with open(path, 'a') as f:
         while not client.is_ready: await asyncio.sleep(1)

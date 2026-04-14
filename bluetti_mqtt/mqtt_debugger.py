@@ -17,7 +17,7 @@ import time
 import logging
 from datetime import datetime
 from argparse import ArgumentParser, Namespace
-from typing import Any, Dict, List, cast
+from typing import Any, Dict, List, Optional, cast
 
 import paho.mqtt.client as mqtt
 from bleak.exc import BleakError
@@ -79,6 +79,9 @@ class ReadHoldingRegistersV2(ReadHoldingRegisters):
     IV = b"sxd_aiot_2022_01"
 
     def __init__(self, starting_address: int, quantity: int, slave_id: int = 1):
+        if not HAS_CRYPTO:
+            raise ImportError("Crypto library required for V2 protocol")
+        
         super().__init__(starting_address, quantity, slave_id=slave_id)
         self.slave_id = slave_id # Store slave_id as an instance attribute
         # 1. Build Modbus PDU: [Slave][Func][Addr_H][Addr_L][Count_H][Count_L]
@@ -147,6 +150,9 @@ class WriteSingleRegisterV2(WriteSingleRegister):
     IV = b"sxd_aiot_2022_01"
 
     def __init__(self, address: int, value: int, slave_id: int = 1):
+        if not HAS_CRYPTO:
+            raise ImportError("Crypto library required for V2 protocol")
+        
         super().__init__(address, value, slave_id=slave_id)
         self.slave_id = slave_id # Store slave_id as an instance attribute
         # 1. Build Modbus PDU: [Slave][Func][Addr_H][Addr_L][Val_H][Val_L]
@@ -207,6 +213,34 @@ def get_command_fields(args: Namespace) -> List[Dict[str, Any]]:
 
 
 def get_target_slave_id(cmd: Dict[str, Any]) -> int:
+    """Get the target slave ID for a command, defaulting to 1."""
+    return cmd.get('slave_id', 1)
+
+
+def detect_device_protocol(device_name: str) -> str:
+    """Detect which Modbus protocol a device supports based on its name."""
+    if not device_name:
+        return "v1"  # Default to V1 if no name
+
+    name_lower = device_name.lower()
+
+    # Known V2 devices (EP2000, EP600, etc.)
+    v2_devices = [
+        "ep2000", "ep600", "ep760", "ac300", "ac500",
+        "bluetti_ep2000", "bluetti_ep600", "bluetti_ep760",
+        "bluetti_ac300", "bluetti_ac500"
+    ]
+
+    # Check for V2 device patterns
+    if any(pattern in name_lower for pattern in v2_devices):
+        return "v2"
+
+    # Check for manufacturer indicators that suggest V2
+    if "bluetti" in name_lower and any(model in name_lower for model in ["ep", "ac"]):
+        return "v2"
+
+    # Default to V1 for unknown devices
+    return "v1"
     """
     Determines the Modbus Slave ID based on the register address,
     allowing for overrides in the command definition.
@@ -451,6 +485,7 @@ async def poll_device_registers(
     slave_switch_delay: float = 2.0,
     disconnect_on_slave_change: bool = False,
     max_group_size: int = 32,
+    force_protocol: Optional[str] = None,
 ) -> float:
     """
     Poll device registers and publish to MQTT.
@@ -472,6 +507,14 @@ async def poll_device_registers(
     Returns:
         Duration of the polling operation in seconds
     """
+    # Detect device protocol
+    if force_protocol:
+        device_protocol = force_protocol
+        logging.info(f"Forced protocol: {device_protocol}")
+    else:
+        device_protocol = detect_device_protocol(device_name)
+        logging.info(f"Detected protocol for {device_name}: {device_protocol}")
+
     # Group commands for polling
     grouped_commands = group_commands(commands_to_poll, max_group_size=max_group_size)
 
@@ -518,7 +561,7 @@ async def poll_device_registers(
                         dummy_cmd = ReadHoldingRegistersV2(1, 1, slave_id=slave_id)
                     else:
                         dummy_cmd = ReadHoldingRegisters(1, 1, slave_id=slave_id)
-                    future = await client.perform(dummy_cmd)
+                    future = await client.perform_with_fallback(dummy_cmd, device_protocol)
                     await future
                 except Exception as e:
                     print(f"  Dummy read ignored: {e}")
@@ -547,7 +590,7 @@ async def poll_device_registers(
             print(f"    TX Packet: {tx_packet.hex()}")
 
             try:
-                t_future = await client.perform(trigger_cmd)
+                t_future = await client.perform_with_fallback(trigger_cmd, device_protocol)
                 t_res = cast(bytes, await t_future)
 
                 if t_res:
@@ -565,7 +608,7 @@ async def poll_device_registers(
 
         print(f"  TX Packet: {bytes(command).hex()}")
         try:
-            future = await client.perform(command)
+            future = await client.perform_with_fallback(command, device_protocol)
             response = cast(bytes, await future)
 
             if len(response) > 0:
@@ -660,6 +703,7 @@ async def async_main():  # noqa: C901
     parser.add_argument("--slave-switch-delay", type=float, default=2.0, help="Delay in seconds when switching slave IDs")
     parser.add_argument("--disconnect-on-slave-change", action="store_true", help="Disconnect and reconnect Bluetooth when switching slaves (slow but reliable)")
     parser.add_argument("--max-group-size", type=int, default=32, help="Max registers per Modbus read command")
+    parser.add_argument("--force-protocol", choices=["v1", "v2"], help="Force specific protocol version (v1=plaintext, v2=encrypted)")
 
     args = parser.parse_args()
 
@@ -691,7 +735,7 @@ async def async_main():  # noqa: C901
 
         display_name = f"{device.type} {device.sn} debug"
         print(f"Connecting to {display_name} at {device.address}...")
-        client = BluetoothClient(device.address)
+        client = BluetoothClient(device.address, device_name=display_name)
         client_task = asyncio.create_task(client.run())
         device_name = display_name.replace(" ", "_").lower()
 
@@ -771,6 +815,7 @@ async def async_main():  # noqa: C901
                 slave_switch_delay=args.slave_switch_delay,
                 disconnect_on_slave_change=args.disconnect_on_slave_change,
                 max_group_size=args.max_group_size,
+                force_protocol=args.force_protocol,
             )
 
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")

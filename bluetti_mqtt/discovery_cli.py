@@ -58,7 +58,7 @@ async def scan_devices():
 
 async def discover(address: str, path: str):
     print(f'Connecting to {address}')
-    client = BluetoothClient(address)
+    client = BluetoothClient(address, device_name="discovery_device")
     asyncio.get_running_loop().create_task(client.run())
 
     with open(path, 'a') as log_file:
