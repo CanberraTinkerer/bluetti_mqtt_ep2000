@@ -90,12 +90,14 @@ class ReadHoldingRegistersV2(ReadHoldingRegisters):
         self.slave_id = slave_id # Store slave_id as an instance attribute
         # 1. Build Modbus PDU: [Slave][Func][Addr_H][Addr_L][Count_H][Count_L]
         pdu = struct.pack('!BBHH', slave_id, 3, starting_address, quantity)
-        
-        # 2. Encrypt with AES-CBC + PKCS7
+        # 2. Append inner Modbus CRC (little-endian)
+        pdu += modbus_crc(pdu).to_bytes(2, byteorder='little')
+
+        # 3. Encrypt with AES-CBC + PKCS7
         cipher = AES.new(self.KEY, AES.MODE_CBC, self.IV)
         encrypted_payload = cipher.encrypt(pad(pdu, 16))
 
-        # 3. Build V2 Frame Header (10 bytes)
+        # 4. Build V2 Frame Header (10 bytes)
         # Structure: [0x00][0x17][SlaveID][CommandType (0x17)][PayloadLen_H][PayloadLen_L][Reserved (4 bytes)]
         payload_len = len(encrypted_payload)
         header = bytearray([
@@ -118,8 +120,8 @@ class ReadHoldingRegistersV2(ReadHoldingRegisters):
 
     def response_size(self):
         # Response: [Header: 10] [EncryptedBody: N*16] [CRC: 2]
-        # The encrypted PDU is: [Slave][Func][ByteCount][Data...]
-        pdu_len = 3 + 2 * self.quantity
+        # The encrypted PDU is: [Slave][Func][ByteCount][Data...][CRC_LO][CRC_HI]
+        pdu_len = 3 + 2 * self.quantity + 2
         # PKCS7 padding always adds between 1 and 16 bytes
         num_blocks = (pdu_len // 16) + 1
         return 10 + (num_blocks * 16) + 2
@@ -144,10 +146,19 @@ class ReadHoldingRegistersV2(ReadHoldingRegisters):
         if len(decrypted_body) >= 3 and (decrypted_body[1] & 0xFF) > 0x80:
             raise ModbusError(f'V2 Exception: {decrypted_body[2]}')
 
-        # Return only the requested number of registers (2 bytes each)
-        # The decrypted body for P0x17 usually contains [Slave][Func][ByteCount][Data...]
-        # so we skip the 3-byte Modbus response header
-        return decrypted_body[3:3 + self.quantity * 2]
+        if len(decrypted_body) < 5:
+            raise ModbusError('V2 response too short')
+
+        byte_count = decrypted_body[2]
+        data_end = 3 + byte_count
+        data = decrypted_body[3:data_end]
+
+        if len(decrypted_body) >= data_end + 2:
+            expected_crc = int.from_bytes(decrypted_body[data_end:data_end + 2], byteorder='little')
+            if modbus_crc(decrypted_body[:data_end]) != expected_crc:
+                raise ModbusError('V2 response inner CRC mismatch')
+
+        return data
 
 class WriteSingleRegisterV2(WriteSingleRegister):
     KEY = b"sxd_aiot_key_001"
@@ -161,12 +172,14 @@ class WriteSingleRegisterV2(WriteSingleRegister):
         self.slave_id = slave_id # Store slave_id as an instance attribute
         # 1. Build Modbus PDU: [Slave][Func][Addr_H][Addr_L][Val_H][Val_L]
         pdu = struct.pack('!BBHH', slave_id, 6, address, value)
-        
-        # 2. Encrypt with AES-CBC + PKCS7
+        # 2. Append inner Modbus CRC (little-endian)
+        pdu += modbus_crc(pdu).to_bytes(2, byteorder='little')
+
+        # 3. Encrypt with AES-CBC + PKCS7
         cipher = AES.new(self.KEY, AES.MODE_CBC, self.IV)
         encrypted_payload = cipher.encrypt(pad(pdu, 16))
 
-        # 3. Build V2 Frame Header (10 bytes)
+        # 4. Build V2 Frame Header (10 bytes)
         # Structure: [0x00][0x17][SlaveID][CommandType (0x18)][PayloadLen_H][PayloadLen_L][Reserved (4 bytes)]
         payload_len = len(encrypted_payload)
         header = bytearray([
@@ -205,8 +218,17 @@ class WriteSingleRegisterV2(WriteSingleRegister):
         encrypted_body = response[10:-2]
         cipher = AES.new(self.KEY, AES.MODE_CBC, self.IV)
         decrypted_body = unpad(cipher.decrypt(encrypted_body), 16)
-        if len(decrypted_body) >= 3 and (decrypted_body[1] & 0xFF) > 0x80:
+        if len(decrypted_body) < 6:
+            raise ModbusError('V2 response too short')
+        if (decrypted_body[1] & 0xFF) > 0x80:
             raise ModbusError(f'V2 Exception: {decrypted_body[2]}')
+
+        if len(decrypted_body) >= 8:
+            payload = decrypted_body[:6]
+            expected_crc = int.from_bytes(decrypted_body[6:8], byteorder='little')
+            if modbus_crc(payload) != expected_crc:
+                raise ModbusError('V2 response inner CRC mismatch')
+
         return struct.unpack('!H', decrypted_body[4:6])[0]
 
 
