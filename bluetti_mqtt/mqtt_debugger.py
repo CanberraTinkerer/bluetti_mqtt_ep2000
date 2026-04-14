@@ -15,6 +15,7 @@ import struct
 import os
 import time
 import logging
+import hashlib
 from datetime import datetime
 from argparse import ArgumentParser, Namespace
 from typing import Any, Dict, List, Optional, Set, cast
@@ -36,7 +37,6 @@ from bluetti_mqtt.core.utils import modbus_crc
 
 try:
     from Crypto.Cipher import AES
-    from Crypto.Util.Padding import pad, unpad
     HAS_CRYPTO = True
 except ImportError:
     HAS_CRYPTO = False
@@ -44,6 +44,23 @@ except ImportError:
 INVERTER_MODEL_ID_REGISTER = 1100
 BATTERY_PACK_MODEL_ID_REGISTER = 6100
 BMU_LOGIC_MODEL_ID_REGISTER = 7232
+
+
+def zero_pad(data: bytes, block_size: int = 16) -> bytes:
+    """Pad data to block_size with zero bytes (AES/CBC/NoPadding)."""
+    padding_len = (block_size - (len(data) % block_size)) % block_size
+    return data + (b'\x00' * padding_len)
+
+
+def generate_iv() -> bytes:
+    """
+    Generate IV for V2 encryption.
+    Official implementation: 4 random bytes → MD5 hash (32 hex chars = 16 bytes)
+    """
+    random_bytes = os.urandom(4)
+    iv_hex = random_bytes.hex()
+    iv_hash = hashlib.md5(iv_hex.encode()).digest()
+    return iv_hash
 
 
 def bytes_to_words(response_bytes: bytes):
@@ -80,7 +97,7 @@ def bytes_to_ascii(response_bytes: bytes) -> str:
 
 class ReadHoldingRegistersV2(ReadHoldingRegisters):
     KEY = b"sxd_aiot_key_001"
-    IV = b"sxd_aiot_2022_01"
+    # IV is now generated dynamically per command instead of hardcoded
 
     def __init__(self, starting_address: int, quantity: int, slave_id: int = 1):
         if not HAS_CRYPTO:
@@ -88,6 +105,11 @@ class ReadHoldingRegistersV2(ReadHoldingRegisters):
         
         super().__init__(starting_address, quantity, slave_id=slave_id)
         self.slave_id = slave_id # Store slave_id as an instance attribute
+        
+        # Generate a dynamic IV for this command (4 random bytes → MD5 hash)
+        self.iv = generate_iv()
+        print(f"DEBUG V2: Generated IV: {self.iv.hex()}")
+        
         # 1. Build Modbus PDU: [Slave][Func][Addr_H][Addr_L][Count_H][Count_L]
         pdu = struct.pack('!BBHH', slave_id, 3, starting_address, quantity)
         print(f"DEBUG V2: Plaintext PDU: {pdu.hex()}")
@@ -97,9 +119,12 @@ class ReadHoldingRegistersV2(ReadHoldingRegisters):
         pdu_with_crc = pdu + inner_crc.to_bytes(2, byteorder='little')
         print(f"DEBUG V2: PDU with inner CRC: {pdu_with_crc.hex()}")
 
-        # 3. Encrypt with AES-CBC + PKCS7
-        cipher = AES.new(self.KEY, AES.MODE_CBC, self.IV)
-        encrypted_payload = cipher.encrypt(pad(pdu_with_crc, 16))
+        # 3. Encrypt with AES-CBC/NoPadding (zero-pad to 16-byte boundary)
+        padded_pdu = zero_pad(pdu_with_crc, 16)
+        print(f"DEBUG V2: Padded PDU (zero-padding): {padded_pdu.hex()}")
+        
+        cipher = AES.new(self.KEY, AES.MODE_CBC, self.iv)
+        encrypted_payload = cipher.encrypt(padded_pdu)
         print(f"DEBUG V2: Encrypted payload: {encrypted_payload.hex()}")
 
         # 4. Build V2 Frame Header (10 bytes)
@@ -109,19 +134,19 @@ class ReadHoldingRegistersV2(ReadHoldingRegisters):
             0x00,           # Protocol ID Byte 1
             0x17,           # Protocol ID Byte 2 (V2 Protocol)
             self.slave_id,  # Slave ID
-            0x17,           # Command Type for Read Multiple (P0x17)
+            0x17,           # Command Type for Read Multiple (0x17)
             (payload_len >> 8) & 0xFF,  # Length High
             payload_len & 0xFF,         # Length Low
-            0x00, 0x00, 0x00, 0x00      # Reserved
+            0x00, 0x00, 0x00, 0x00      # Reserved (could contain IV info if needed)
         ])
         print(f"DEBUG V2: Header: {header.hex()}")
         
-        # 4. Concatenate header and encrypted payload for CRC calculation
+        # 5. Concatenate header and encrypted payload for CRC calculation
         self.cmd = header + encrypted_payload
 
-        # 5. CRC calculated over the entire packet (Header + Payload)
+        # 6. CRC calculated over the entire packet (Header + Payload)
         crc = bluetti_custom_crc(self.cmd)
-        print(f"DEBUG: Calculated Read V2 CRC: {hex(crc)}")
+        print(f"DEBUG V2: Calculated Read V2 CRC: {hex(crc)}")
         self.cmd.extend(struct.pack('!H', crc))
         print(f"DEBUG V2: Final packet: {self.cmd.hex()}")
 
@@ -129,8 +154,8 @@ class ReadHoldingRegistersV2(ReadHoldingRegisters):
         # Response: [Header: 10] [EncryptedBody: N*16] [CRC: 2]
         # The encrypted PDU is: [Slave][Func][ByteCount][Data...][CRC_LO][CRC_HI]
         pdu_len = 3 + 2 * self.quantity + 2
-        # PKCS7 padding always adds between 1 and 16 bytes
-        num_blocks = (pdu_len // 16) + 1
+        # Zero-padding aligns to 16-byte boundary
+        num_blocks = (pdu_len + 15) // 16  # Ceiling division
         return 10 + (num_blocks * 16) + 2
 
     def is_valid_response(self, response: bytes):
@@ -147,9 +172,14 @@ class ReadHoldingRegistersV2(ReadHoldingRegisters):
         encrypted_body = response[10:-2]
         if len(encrypted_body) % 16 != 0:
             print(f"Warning: Encrypted response length {len(encrypted_body)} not a multiple of 16")
-            
-        cipher = AES.new(self.KEY, AES.MODE_CBC, self.IV)
-        decrypted_body = unpad(cipher.decrypt(encrypted_body), 16)
+        
+        # Decrypt with the same IV that was used for encryption
+        cipher = AES.new(self.KEY, AES.MODE_CBC, self.iv)
+        decrypted_body = cipher.decrypt(encrypted_body)
+        print(f"DEBUG V2: Decrypted body (before unpadding): {decrypted_body.hex()}")
+        
+        # Remove zero-padding: find actual data length from Modbus structure
+        # Response format: [Slave][Func][ByteCount][Data...][CRC_LO][CRC_HI][Padding...]
         if len(decrypted_body) >= 3 and (decrypted_body[1] & 0xFF) > 0x80:
             raise ModbusError(f'V2 Exception: {decrypted_body[2]}')
 
@@ -169,7 +199,7 @@ class ReadHoldingRegistersV2(ReadHoldingRegisters):
 
 class WriteSingleRegisterV2(WriteSingleRegister):
     KEY = b"sxd_aiot_key_001"
-    IV = b"sxd_aiot_2022_01"
+    # IV is now generated dynamically per command instead of hardcoded
 
     def __init__(self, address: int, value: int, slave_id: int = 1):
         if not HAS_CRYPTO:
@@ -177,6 +207,11 @@ class WriteSingleRegisterV2(WriteSingleRegister):
         
         super().__init__(address, value, slave_id=slave_id)
         self.slave_id = slave_id # Store slave_id as an instance attribute
+        
+        # Generate a dynamic IV for this command (4 random bytes → MD5 hash)
+        self.iv = generate_iv()
+        print(f"DEBUG V2 Write: Generated IV: {self.iv.hex()}")
+        
         # 1. Build Modbus PDU: [Slave][Func][Addr_H][Addr_L][Val_H][Val_L]
         pdu = struct.pack('!BBHH', slave_id, 6, address, value)
         print(f"DEBUG V2 Write: Plaintext PDU: {pdu.hex()}")
@@ -186,9 +221,12 @@ class WriteSingleRegisterV2(WriteSingleRegister):
         pdu_with_crc = pdu + inner_crc.to_bytes(2, byteorder='little')
         print(f"DEBUG V2 Write: PDU with inner CRC: {pdu_with_crc.hex()}")
 
-        # 3. Encrypt with AES-CBC + PKCS7
-        cipher = AES.new(self.KEY, AES.MODE_CBC, self.IV)
-        encrypted_payload = cipher.encrypt(pad(pdu_with_crc, 16))
+        # 3. Encrypt with AES-CBC/NoPadding (zero-pad to 16-byte boundary)
+        padded_pdu = zero_pad(pdu_with_crc, 16)
+        print(f"DEBUG V2 Write: Padded PDU (zero-padding): {padded_pdu.hex()}")
+        
+        cipher = AES.new(self.KEY, AES.MODE_CBC, self.iv)
+        encrypted_payload = cipher.encrypt(padded_pdu)
         print(f"DEBUG V2 Write: Encrypted payload: {encrypted_payload.hex()}")
 
         # 4. Build V2 Frame Header (10 bytes)
@@ -198,25 +236,25 @@ class WriteSingleRegisterV2(WriteSingleRegister):
             0x00,           # Protocol ID Byte 1
             0x17,           # Protocol ID Byte 2 (V2 Protocol)
             self.slave_id,  # Slave ID
-            0x18,           # Command Type for Write Single (P0x18)
+            0x18,           # Command Type for Write Single (0x18)
             (payload_len >> 8) & 0xFF,  # Length High
             payload_len & 0xFF,         # Length Low
-            0x00, 0x00, 0x00, 0x00      # Reserved
+            0x00, 0x00, 0x00, 0x00      # Reserved (could contain IV info if needed)
         ])
         print(f"DEBUG V2 Write: Header: {header.hex()}")
 
-        # 4. Concatenate header and encrypted payload for CRC calculation
+        # 5. Concatenate header and encrypted payload for CRC calculation
         self.cmd = header + encrypted_payload
 
-        # 5. CRC calculated over the entire packet (Header + Payload)
+        # 6. CRC calculated over the entire packet (Header + Payload)
         crc = bluetti_custom_crc(self.cmd)
-        print(f"DEBUG: Calculated Write V2 CRC: {hex(crc)}")
+        print(f"DEBUG V2 Write: Calculated Write V2 CRC: {hex(crc)}")
         self.cmd.extend(struct.pack('!H', crc))
         print(f"DEBUG V2 Write: Final packet: {self.cmd.hex()}")
 
     def response_size(self):
         # Response: [Header: 10] [EncryptedBody: 16] [CRC: 2]
-        # FC 6 PDU is 6 bytes -> 1 block (16 bytes)
+        # FC 6 PDU is 6 bytes -> 1 block (16 bytes with zero-padding)
         return 28
 
     def is_valid_response(self, response: bytes):
@@ -230,8 +268,13 @@ class WriteSingleRegisterV2(WriteSingleRegister):
 
     def parse_response(self, response: bytes):
         encrypted_body = response[10:-2]
-        cipher = AES.new(self.KEY, AES.MODE_CBC, self.IV)
-        decrypted_body = unpad(cipher.decrypt(encrypted_body), 16)
+        # Decrypt with the same IV that was used for encryption
+        cipher = AES.new(self.KEY, AES.MODE_CBC, self.iv)
+        decrypted_body = cipher.decrypt(encrypted_body)
+        print(f"DEBUG V2 Write: Decrypted body (before unpadding): {decrypted_body.hex()}")
+        
+        # Remove zero-padding: find actual data length from Modbus structure
+        # Response format: [Slave][Func][Address_H][Address_L][Value_H][Value_L][CRC_LO][CRC_HI][Padding...]
         if len(decrypted_body) < 6:
             raise ModbusError('V2 response too short')
         if (decrypted_body[1] & 0xFF) > 0x80:
