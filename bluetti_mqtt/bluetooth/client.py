@@ -2,13 +2,6 @@ import asyncio
 from enum import Enum, auto, unique
 import logging
 from typing import Union
-import os
-import hashlib
-from cryptography.hazmat.primitives.asymmetric import ec
-from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives.kdf.hkdf import HKDF
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.backends import default_backend
 from bleak import BleakClient, BleakError
 from bluetti_mqtt.core import DeviceCommand
 from .exc import BadConnectionError, ModbusError, ParseError
@@ -36,7 +29,6 @@ class BluetoothClient:
     current_command: DeviceCommand
     notify_future: asyncio.Future
     notify_response: bytearray
-    session_key: Union[bytes, None]  # ECDH-derived session key for V2 encryption
 
     def __init__(self, address: str, response_timeout: float = None, debug_logging: bool = False, device_name: str = None):
         self.address = address
@@ -49,7 +41,6 @@ class BluetoothClient:
         self.command_queue = asyncio.Queue()
         self.notify_future = None
         self.loop = asyncio.get_running_loop()
-        self.session_key = None  # Will be set after ECDH handshake
 
         # Set logging level based on debug flag
         if self.debug_logging:
@@ -110,8 +101,6 @@ class BluetoothClient:
                 elif self.state == ClientState.CONNECTED:
                     if not self.name:
                         await self._get_name()
-                    elif not self.session_key:
-                        await self._perform_ecdh_handshake()
                     else:
                         await self._start_listening()
                 elif self.state == ClientState.READY:
@@ -158,99 +147,6 @@ class BluetoothClient:
         except BleakError:
             self.state = ClientState.DISCONNECTING
 
-    async def _perform_ecdh_handshake(self):
-        """Perform ECDH key exchange handshake with the device"""
-        try:
-            logging.info(f'Starting ECDH handshake with {self.address}')
-
-            # Generate our ECDH key pair (secp256r1)
-            private_key = ec.generate_private_key(ec.SECP256R1(), default_backend())
-            public_key = private_key.public_key()
-
-            # Serialize public key to DER format with ASN.1 header (as expected by Bluetti device)
-            public_key_bytes = public_key.public_bytes(
-                encoding=serialization.Encoding.DER,
-                format=serialization.PublicFormat.SubjectPublicKeyInfo
-            )
-            logging.debug(f'Generated DER-encoded public key: {public_key_bytes.hex()} (length: {len(public_key_bytes)})')
-
-            # Generate random 16-byte challenge
-            challenge = os.urandom(16)
-            logging.debug(f'Generated challenge: {challenge.hex()}')
-
-            # Send handshake initiation: 2A 2A + challenge
-            init_packet = b'\x2A\x2A' + challenge
-            logging.debug(f'Sending handshake init: {init_packet.hex()}')
-
-            # Set up notification for handshake response
-            handshake_future = self.loop.create_future()
-            handshake_response = bytearray()
-
-            def handshake_handler(sender, data):
-                logging.debug(f'Handshake notification: {data.hex()} (total: {len(handshake_response)})')
-                handshake_response.extend(data)
-
-                # Check if we have a complete response (device raw 64-byte public key)
-                # Raw uncompressed point is 64 bytes (x + y coordinates)
-                if len(handshake_response) >= 64:
-                    handshake_future.set_result(handshake_response[:64])
-
-            # Start listening for handshake response
-            await self.client.start_notify(self.NOTIFY_UUID, handshake_handler)
-
-            # Send initiation packet
-            await self.client.write_gatt_char(self.WRITE_UUID, init_packet)
-            logging.debug(f'Sent handshake initiation packet')
-
-            # Wait for device public key response with timeout
-            try:
-                device_public_key_bytes = await asyncio.wait_for(handshake_future, timeout=5.0)
-                logging.debug(f'Received device public key: {device_public_key_bytes.hex()}')
-            except asyncio.TimeoutError:
-                logging.warning(f'Device {self.address} did not respond to ECDH handshake - falling back to hardcoded keys')
-                # Stop handshake notifications
-                await self.client.stop_notify(self.NOTIFY_UUID)
-                # Fallback to hardcoded session key
-                self.session_key = bytes.fromhex('7b8e6d2c1f4a9e5b3d8c7a2f6e9b4d1c')
-                logging.info(f'Using fallback session key: {self.session_key.hex()}')
-                # Start normal notifications
-                await self.client.start_notify(self.NOTIFY_UUID, self._notification_handler)
-                return
-
-            # Deserialize device public key from raw 64-byte uncompressed point (x + y)
-            # Add the 04 prefix to make it a valid uncompressed point
-            uncompressed_point = b'\x04' + device_public_key_bytes
-            device_public_key = ec.EllipticCurvePublicKey.from_encoded_point(
-                ec.SECP256R1(), uncompressed_point
-            )
-
-            # Send our public key to device
-            await self.client.write_gatt_char(self.WRITE_UUID, public_key_bytes)
-            logging.debug(f'Sent our public key to device')
-
-            # Perform ECDH key agreement
-            shared_secret = private_key.exchange(ec.ECDH(), device_public_key)
-            logging.debug(f'ECDH shared secret: {shared_secret.hex()}')
-
-            # Derive session key using HKDF (similar to Bluetti's KDF)
-            hkdf = HKDF(
-                algorithm=hashes.SHA256(),
-                length=16,  # 16-byte AES key
-                salt=challenge,  # Use challenge as salt
-                info=b'bluetti_session_key',
-                backend=default_backend()
-            )
-            self.session_key = hkdf.derive(shared_secret)
-            logging.info(f'ECDH handshake complete, session key established: {self.session_key.hex()}')
-
-            # Stop handshake notifications and restart normal notifications
-            await self.client.stop_notify(self.NOTIFY_UUID)
-            await self.client.start_notify(self.NOTIFY_UUID, self._notification_handler)
-
-        except Exception as e:
-            logging.error(f'ECDH handshake failed for {self.address}: {e}')
-            self.state = ClientState.DISCONNECTING
-            raise
 
     async def _perform_command(self):
         cmd, cmd_future = await self.command_queue.get()

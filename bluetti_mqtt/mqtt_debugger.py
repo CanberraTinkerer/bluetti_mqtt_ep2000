@@ -347,11 +347,7 @@ def build_slave_validation_command(group: Dict[str, Any], device_protocol: str, 
     if 41 <= slave_id <= 56:
         return ReadHoldingRegisters(validation_reg, 1, slave_id=slave_id)
 
-    if device_protocol == "v1" or not group.get('encrypted', False):
-        return ReadHoldingRegisters(validation_reg, 1, slave_id=slave_id)
-
-    session_key = client.session_key if client and hasattr(client, 'session_key') and client.session_key else None
-    return ReadHoldingRegistersV2(validation_reg, 1, slave_id=slave_id, session_key=session_key)
+    return ReadHoldingRegisters(validation_reg, 1, slave_id=slave_id)
 
 
 def group_commands(commands_to_poll: List[Dict[str, Any]], max_gap: int = 5, max_group_size: int = 32) -> List[Dict[str, Any]]:
@@ -381,11 +377,9 @@ def group_commands(commands_to_poll: List[Dict[str, Any]], max_gap: int = 5, max
         return length // 16 if not is_ascii and length >= 16 else length
     
     def is_encrypted(cmd):
-        # Check explicit flag or infer from notes
-        if cmd.get('encrypted', False):
-            return True
-        notes = cmd.get('notes', '').lower()
-        return "v2 protocol" in notes or "may be encrypted" in notes
+        # Ignore any encryption metadata in the JSON config.
+        # All Modbus traffic should be sent as plaintext.
+        return False
 
     for cmd in sorted_commands:
         cmd_encrypted = is_encrypted(cmd)
@@ -664,15 +658,6 @@ async def poll_device_registers(
                     await future
                     validation_success = True
                 except BadConnectionError as e:
-                    # For BMU/battery slaves, try the alternate V2 form if plaintext first fails.
-                    if isinstance(validation_cmd, ReadHoldingRegisters) and device_protocol == "v2":
-                        try:
-                            alt_cmd = ReadHoldingRegistersV2(validation_reg, 1, slave_id=slave_id, session_key=client.session_key)
-                            future = await client.perform_with_fallback(alt_cmd, device_protocol)
-                            await future
-                            validation_success = True
-                        except Exception:
-                            pass
                     if not validation_success:
                         print(f"  Slave validation read ignored: {e}")
                 except Exception as e:
@@ -688,20 +673,12 @@ async def poll_device_registers(
             print(f"  --- TRIGGER START ---")
             print(f"  Action: Write {t_val} to {t_reg} (Slave {slave_id})")
 
-            if group['encrypted'] and HAS_CRYPTO and slave_id not in plaintext_slaves:
-                # Show the full Modbus PDU that will be encrypted
-                pdu = struct.pack('!BBHH', slave_id, 6, t_reg, t_val)
-                print(f"    Plaintext PDU: {pdu.hex()}")
-                trigger_cmd = WriteSingleRegisterV2(t_reg, t_val, slave_id=slave_id, session_key=client.session_key)
-            else:
-                pdu = struct.pack('!HH', t_reg, t_val)
-                print(f"    Plaintext Payload: {pdu.hex()}")
-                trigger_cmd = WriteSingleRegister(t_reg, t_val, slave_id=slave_id)
+            pdu = struct.pack('!HH', t_reg, t_val)
+            print(f"    Plaintext Payload: {pdu.hex()}")
+            trigger_cmd = WriteSingleRegister(t_reg, t_val, slave_id=slave_id)
 
             tx_packet = bytes(trigger_cmd)
-            tx_type = "Encrypted" if (group['encrypted'] and HAS_CRYPTO and slave_id not in plaintext_slaves) else "Plaintext"
-            if slave_id in plaintext_slaves:
-                tx_type += f" (forced for slave {slave_id})"
+            tx_type = "Plaintext"
             print(f"    TX Packet ({tx_type}): {tx_packet.hex()}")
 
             try:
@@ -716,14 +693,8 @@ async def poll_device_registers(
                 print(f"    Result: Failed - {e}")
             print(f"  --- TRIGGER END ---")
 
-        if group['encrypted'] and HAS_CRYPTO and slave_id not in plaintext_slaves:
-            command = ReadHoldingRegistersV2(group['start_reg'], group['num_regs'], slave_id=slave_id, session_key=client.session_key)
-        else:
-            command = ReadHoldingRegisters(group['start_reg'], group['num_regs'], slave_id=slave_id)
-
-        tx_type = "Encrypted" if (group['encrypted'] and HAS_CRYPTO and slave_id not in plaintext_slaves) else "Plaintext"
-        if slave_id in plaintext_slaves:
-            tx_type += f" (forced for slave {slave_id})"
+        command = ReadHoldingRegisters(group['start_reg'], group['num_regs'], slave_id=slave_id)
+        tx_type = "Plaintext"
         print(f"  TX Packet ({tx_type}): {bytes(command).hex()}")
         try:
             print(f"  Attempting {tx_type} command...")
@@ -753,7 +724,7 @@ async def poll_device_registers(
                     start_byte = (register - group['start_reg']) * 2
                     end_byte = start_byte + (num_registers * 2)
                     data = group_data[start_byte:end_byte]
-                    process_and_publish(command_info, data, device_name, mqtt_client, group['encrypted'])
+                    process_and_publish(command_info, data, device_name, mqtt_client, False)
                 except Exception as e:
                     print(f"An error occurred while processing register {command_info.get('reg')}: {e}")
 
@@ -763,21 +734,15 @@ async def poll_device_registers(
             for command_info in group['commands']:
                 try:
                     # Recalculate if this specific command is encrypted
-                    cmd_encrypted = group['encrypted'] # Assume same as group
+                    cmd_encrypted = False
                     register = command_info['reg']
                     length = command_info.get('len', 1)
                     is_ascii = command_info.get('ascii', False)
                     num_registers = length // 16 if not is_ascii and length >= 16 else length
                     slave_id = get_target_slave_id(command_info)
 
-                    if cmd_encrypted and HAS_CRYPTO and slave_id not in plaintext_slaves:
-                        single_command = ReadHoldingRegistersV2(register, num_registers, slave_id=slave_id, session_key=client.session_key)
-                    else:
-                        single_command = ReadHoldingRegisters(register, num_registers, slave_id=slave_id)
-
-                    tx_type = "Encrypted" if (cmd_encrypted and HAS_CRYPTO and slave_id not in plaintext_slaves) else "Plaintext"
-                    if slave_id in plaintext_slaves:
-                        tx_type += f" (forced for slave {slave_id})"
+                    single_command = ReadHoldingRegisters(register, num_registers, slave_id=slave_id)
+                    tx_type = "Plaintext"
                     print(f"  TX Packet ({tx_type}): {bytes(single_command).hex()}")
                     future = await client.perform(single_command)
                     response = cast(bytes, await future)
@@ -832,7 +797,7 @@ async def async_main():  # noqa: C901
     parser.add_argument("--slave-switch-delay", type=float, default=2.0, help="Delay in seconds when switching slave IDs")
     parser.add_argument("--disconnect-on-slave-change", action="store_true", help="Disconnect and reconnect Bluetooth when switching slaves (slow but reliable)")
     parser.add_argument("--max-group-size", type=int, default=32, help="Max registers per Modbus read command")
-    parser.add_argument("--force-protocol", choices=["v1", "v2"], help="Force specific protocol version (v1=plaintext, v2=encrypted)")
+    parser.add_argument("--force-protocol", choices=["v1", "v2"], help="Force specific protocol version (v1=plaintext, v2=legacy mode; encryption is ignored)")
     parser.add_argument("--plaintext-slaves", type=str, help="Comma-separated list of slave IDs to force plaintext protocol (e.g., '41,42,43')")
     parser.add_argument("--debug", action="store_true", help="Enable verbose debug logging")
 
