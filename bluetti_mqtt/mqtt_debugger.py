@@ -296,21 +296,30 @@ def get_command_fields(args: Namespace) -> List[Dict[str, Any]]:
         flat_config = []
         for item in config:
             if isinstance(item, dict) and "trigger_write" in item:
-                # Handle hierarchical triggered blocks proposed by user
                 trigger_data = item.get("trigger_write", [])
-                t_reg, t_val, regs = None, None, []
+                triggers, delay, regs = [], 0.2, []
                 for component in trigger_data:
                     if "trigger_metadata" in component:
                         m = component["trigger_metadata"]
-                        t_reg = m.get("trigger_reg")
-                        # Support both trigger_value from pseudo-JSON and trigger_val
-                        t_val = m.get("trigger_value", m.get("trigger_val"))
+                        reg = m.get("trigger_reg")
+                        val = m.get("trigger_value", m.get("trigger_val"))
+                        if reg is not None:
+                            triggers.append({"reg": reg, "val": val})
                     if "post_trigger_read" in component:
                         r_info = component["post_trigger_read"]
-                        # Extract registers from within or alongside the read info
+                        delay = r_info.get("delay", 0.8) # Default to 800ms "Rule"
                         regs = r_info.get("registers", component.get("registers", []))
+                
+                # Determine primary trigger value for MQTT topic uniqueness (usually Category 2026)
+                primary_val = triggers[0]["val"] if triggers else None
+                for t in triggers:
+                    if t["reg"] == 2026:
+                        primary_val = t["val"]
+                        break
+
                 for r in regs:
-                    r.update({"trigger_reg": t_reg, "trigger_val": t_val})
+                    r.update({"triggers": triggers, "trigger_val": primary_val, "trigger_delay": delay})
+                    if triggers: r["trigger_reg"] = triggers[0]["reg"] # Compatibility
                     if "slave_id" in item: r["slave_id"] = item["slave_id"]
                     flat_config.append(r)
             else:
@@ -380,11 +389,13 @@ def group_commands(commands_to_poll: List[Dict[str, Any]], max_gap: int = 5, max
     if not commands_to_poll:
         return []
 
+    def get_trigger_key(cmd):
+        return tuple((t['reg'], t['val']) for t in cmd.get('triggers', []))
+
     # Sort commands by register to enable grouping
     sorted_commands = sorted(commands_to_poll, key=lambda x: (
         get_target_slave_id(x), 
-        x.get('trigger_reg', 0) or 0, 
-        x.get('trigger_val', 0) or 0, 
+        get_trigger_key(x),
         x['reg']
     ))
     
@@ -392,8 +403,7 @@ def group_commands(commands_to_poll: List[Dict[str, Any]], max_gap: int = 5, max
     current_group = []
     current_group_encrypted = False
     current_group_slave_id = 1
-    current_group_trigger_reg = None
-    current_group_trigger_val = None
+    current_group_triggers = None
 
     def get_num_regs(cmd):
         length = cmd.get('len', 1)
@@ -409,15 +419,13 @@ def group_commands(commands_to_poll: List[Dict[str, Any]], max_gap: int = 5, max
     for cmd in sorted_commands:
         cmd_encrypted = is_encrypted(cmd)
         cmd_slave_id = get_target_slave_id(cmd)
-        cmd_trigger_reg = cmd.get('trigger_reg')
-        cmd_trigger_val = cmd.get('trigger_val')
+        cmd_triggers = get_trigger_key(cmd)
 
         if not current_group:
             current_group.append(cmd)
             current_group_encrypted = cmd_encrypted
             current_group_slave_id = cmd_slave_id
-            current_group_trigger_reg = cmd_trigger_reg
-            current_group_trigger_val = cmd_trigger_val
+            current_group_triggers = cmd_triggers
             continue
 
         group_start_reg = current_group[0]['reg']
@@ -432,16 +440,14 @@ def group_commands(commands_to_poll: List[Dict[str, Any]], max_gap: int = 5, max
             new_group_size <= max_group_size and 
             cmd_encrypted == current_group_encrypted and
             cmd_slave_id == current_group_slave_id and
-            cmd_trigger_reg == current_group_trigger_reg and
-            cmd_trigger_val == current_group_trigger_val):
+            cmd_triggers == current_group_triggers):
             current_group.append(cmd)
         else:
             groups.append(current_group)
             current_group = [cmd]
             current_group_encrypted = cmd_encrypted
             current_group_slave_id = cmd_slave_id
-            current_group_trigger_reg = cmd_trigger_reg
-            current_group_trigger_val = cmd_trigger_val
+            current_group_triggers = cmd_triggers
 
     if current_group:
         groups.append(current_group)
@@ -452,8 +458,8 @@ def group_commands(commands_to_poll: List[Dict[str, Any]], max_gap: int = 5, max
         start_reg = group[0]['reg']
         encrypted = is_encrypted(group[0])
         slave_id = get_target_slave_id(group[0])
-        trigger_reg = group[0].get('trigger_reg')
-        trigger_val = group[0].get('trigger_val')
+        triggers = group[0].get('triggers', [])
+        trigger_delay = group[0].get('trigger_delay', 0.2)
         
         # Find the end register of the group
         end_reg = 0
@@ -468,8 +474,8 @@ def group_commands(commands_to_poll: List[Dict[str, Any]], max_gap: int = 5, max
             'commands': group,
             'encrypted': encrypted,
             'slave_id': slave_id,
-            'trigger_reg': trigger_reg,
-            'trigger_val': trigger_val
+            'triggers': triggers,
+            'trigger_delay': trigger_delay
         })
 
     return final_groups
@@ -698,30 +704,27 @@ async def poll_device_registers(
         previous_slave_id = slave_id
 
         # Handle Trigger Register Write if defined for this group
-        if group.get('trigger_reg') is not None:
-            t_reg = group['trigger_reg']
-            t_val = group['trigger_val']
+        if group.get('triggers'):
             print(f"  --- TRIGGER START ---")
-            print(f"  Action: Write {t_val} to {t_reg} (Slave {slave_id})")
+            for t in group['triggers']:
+                t_reg, t_val = t['reg'], t['val']
+                print(f"  Action: Write {t_val} to {t_reg} (Slave {slave_id})")
+                trigger_cmd = WriteSingleRegister(t_reg, t_val, slave_id=slave_id)
+                tx_type = "Plaintext"
+                print(f"    TX Packet ({tx_type}): {bytes(trigger_cmd).hex()}")
 
-            pdu = struct.pack('!HH', t_reg, t_val)
-            print(f"    Plaintext Payload: {pdu.hex()}")
-            trigger_cmd = WriteSingleRegister(t_reg, t_val, slave_id=slave_id)
-
-            tx_packet = bytes(trigger_cmd)
-            tx_type = "Plaintext"
-            print(f"    TX Packet ({tx_type}): {tx_packet.hex()}")
-
-            try:
-                t_future = await client.perform_with_fallback(trigger_cmd, device_protocol)
-                t_res = cast(bytes, await t_future)
-
-                if t_res:
-                    print(f"    RX Packet: {t_res.hex()}")
-                print("    Result: Success (Write accepted)")
-                await asyncio.sleep(0.2) # Brief pause as requested (200ms)
-            except Exception as e:
-                print(f"    Result: Failed - {e}")
+                try:
+                    t_future = await client.perform_with_fallback(trigger_cmd, device_protocol)
+                    t_res = cast(bytes, await t_future)
+                    if t_res:
+                        print(f"    RX Packet: {t_res.hex()}")
+                    print("    Result: Success (Write accepted)")
+                except Exception as e:
+                    print(f"    Result: Failed - {e}")
+            
+            delay = group.get('trigger_delay', 0.8)
+            print(f"  Waiting {delay}s for Commit/Paging...")
+            await asyncio.sleep(delay)
             print(f"  --- TRIGGER END ---")
 
         command = ReadHoldingRegisters(group['start_reg'], group['num_regs'], slave_id=slave_id)

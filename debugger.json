@@ -207,9 +207,10 @@
     { "reg": 146, "name": "APP_HOME_DATA: Grid Power All", "len": 32, "signed": true, "device_class": "power", "unit": "W", "notes": "probably is AC coupled inverter production (old PV)" },
     { "reg": 148, "name": "APP_HOME_DATA: Total Inverter Power", "len": 32, "signed": true, "device_class": "power", "unit": "W", "notes": "negative when sunny, battery is charging and solar is covering consumption" },
 
-    { "trigger_write": [
+    {"trigger_write": [
       { "trigger_metadata": { "trigger_reg": 2026, "trigger_value": 1 } },
-      { "post_trigger_read": { "read_start_reg": 150, "read_count": 8 },
+      { "trigger_metadata": { "trigger_reg": 2028, "trigger_value": 1 } },
+      { "post_trigger_read": { "read_start_reg": 150, "read_count": 8, "delay": 0.8 },
         "registers": [
           { "reg": 150, "name": "PV Total Energy Low", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" },
           { "reg": 152, "name": "PV Total Energy High", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" },
@@ -218,9 +219,10 @@
         ]
       }
     ]},
-    { "trigger_write": [
+    {"trigger_write": [
       { "trigger_metadata": { "trigger_reg": 2026, "trigger_value": 2 } },
-      { "post_trigger_read": { "read_start_reg": 150, "read_count": 8 },
+      { "trigger_metadata": { "trigger_reg": 2028, "trigger_value": 1 } },
+      { "post_trigger_read": { "read_start_reg": 150, "read_count": 8, "delay": 0.8 },
         "registers": [
           { "reg": 150, "name": "Grid Input Total Energy Low", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" },
           { "reg": 152, "name": "Grid Input Total Energy High", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" },
@@ -229,7 +231,7 @@
         ]
       }
     ]},
-    { "trigger_write": [
+    {"trigger_write": [
       { "trigger_metadata": { "trigger_reg": 2026, "trigger_value": 3 } },
       { "post_trigger_read": { "read_start_reg": 150, "read_count": 8 },
         "registers": [
@@ -240,7 +242,7 @@
         ]
       }
     ]},
-    { "trigger_write": [
+    {"trigger_write": [
       { "trigger_metadata": { "trigger_reg": 2026, "trigger_value": 4 } },
       { "post_trigger_read": { "read_start_reg": 150, "read_count": 8 },
         "registers": [
@@ -251,7 +253,7 @@
         ]
       }
     ]},
-    { "trigger_write": [
+    {"trigger_write": [
       { "trigger_metadata": { "trigger_reg": 2026, "trigger_value": 5 } },
       { "post_trigger_read": { "read_start_reg": 150, "read_count": 8 },
         "registers": [
@@ -262,7 +264,7 @@
         ]
       }
     ]},
-    { "trigger_write": [
+    {"trigger_write": [
       { "trigger_metadata": { "trigger_reg": 2026, "trigger_value": 9 } },
       { "post_trigger_read": { "read_start_reg": 150, "read_count": 8 },
         "registers": [
@@ -273,7 +275,7 @@
         ]
       }
     ]},
-    { "trigger_write": [
+    {"trigger_write": [
       { "trigger_metadata": { "trigger_reg": 2026, "trigger_value": 17 } },
       { "post_trigger_read": { "read_start_reg": 150, "read_count": 8 },
         "registers": [
@@ -284,7 +286,7 @@
         ]
       }
     ]},
-    { "trigger_write": [
+    {"trigger_write": [
       { "trigger_metadata": { "trigger_reg": 2026, "trigger_value": 18 } },
       { "post_trigger_read": { "read_start_reg": 150, "read_count": 8 },
         "registers": [
@@ -1794,15 +1796,89 @@
     {"reg": 21022, "name": "Unknown Reg 21022", "notes": "non-zero", "encrypted": true, "slave_id": 41},
     {"reg": 21023, "name": "Unknown Reg 21023", "notes": "non-zero", "encrypted": true, "slave_id": 41},
 
-    {"reg": 3500, "name": "PV Cumulative Energy", "len": 32, "scale": 1, "unit": "kWh", "device_class": "energy", "trigger_reg": 2027, "trigger_val": 0, "encrypted": true},
-    {"reg": 3506, "name": "PV 2024 Energy", "len": 32, "scale": 1, "unit": "kWh", "device_class": "energy", "trigger_reg": 2027, "trigger_val": 0, "encrypted": true},
-    {"reg": 3508, "name": "PV 2025 Energy", "len": 32, "scale": 1, "unit": "kWh", "device_class": "energy", "trigger_reg": 2027, "trigger_val": 0, "encrypted": true},
-
-    {"reg": 3500, "name": "Grid Import Cumulative", "len": 32, "scale": 1, "unit": "kWh", "device_class": "energy", "trigger_reg": 2027, "trigger_val": 2, "encrypted": true},
-    {"reg": 3506, "name": "Grid Import 2024", "len": 32, "scale": 1, "unit": "kWh", "device_class": "energy", "trigger_reg": 2027, "trigger_val": 2, "encrypted": true},
-
-    {"reg": 3602, "name": "PV 2024 Total", "len": 32, "scale": 1, "unit": "kWh", "device_class": "energy", "trigger_reg": 2027, "trigger_val": 0, "encrypted": true},
-    {"reg": 3604, "name": "PV Jan Energy", "len": 32, "scale": 1, "unit": "kWh", "device_class": "energy", "trigger_reg": 2027, "trigger_val": 0, "encrypted": true},
-    {"reg": 3606, "name": "PV Feb Energy", "len": 32, "scale": 1, "unit": "kWh", "device_class": "energy", "trigger_reg": 2027, "trigger_val": 0, "encrypted": true},
-    {"reg": 3608, "name": "PV Mar Energy", "len": 32, "scale": 1, "unit": "kWh", "device_class": "energy", "trigger_reg": 2027, "trigger_val": 0, "encrypted": true}
+    {"trigger_write": [
+      { "trigger_metadata": { "trigger_reg": 2026, "trigger_value": 1 } },
+      { "trigger_metadata": { "trigger_reg": 2028, "trigger_value": 1 } },
+      { "post_trigger_read": { "read_start_reg": 3500, "read_count": 12, "delay": 0.8 },
+        "registers": [
+          { "reg": 3500, "name": "PV Statistics Type Conf", "encrypted": true, "notes": "Should return 1" },
+          { "reg": 3501, "name": "PV Lifetime Total Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy", "encrypted": true },
+          { "reg": 3503, "name": "PV Year 1 Label", "encrypted": true },
+          { "reg": 3504, "name": "PV Year 1 Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy", "encrypted": true },
+          { "reg": 3506, "name": "PV Year 2 Label", "encrypted": true },
+          { "reg": 3507, "name": "PV Year 2 Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy", "encrypted": true },
+          { "reg": 3509, "name": "PV Year 3 Label", "encrypted": true },
+          { "reg": 3510, "name": "PV Year 3 Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy", "encrypted": true }
+        ]
+      }
+    ]},
+    {"trigger_write": [
+      { "trigger_metadata": { "trigger_reg": 2026, "trigger_value": 2 } },
+      { "trigger_metadata": { "trigger_reg": 2028, "trigger_value": 1 } },
+      { "post_trigger_read": { "read_start_reg": 3500, "read_count": 12, "delay": 0.8 },
+        "registers": [
+          { "reg": 3500, "name": "Grid Input Type Conf", "encrypted": true, "notes": "Should return 2" },
+          { "reg": 3501, "name": "Grid Input Lifetime Total", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy", "encrypted": true },
+          { "reg": 3503, "name": "Grid Input Year 1 Label", "encrypted": true },
+          { "reg": 3504, "name": "Grid Input Year 1 Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy", "encrypted": true },
+          { "reg": 3506, "name": "Grid Input Year 2 Label", "encrypted": true },
+          { "reg": 3507, "name": "Grid Input Year 2 Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy", "encrypted": true }
+        ]
+      }
+    ]},
+    {"trigger_write": [
+      { "trigger_metadata": { "trigger_reg": 2026, "trigger_value": 3 } },
+      { "post_trigger_read": { "read_start_reg": 3500, "read_count": 12 },
+        "registers": [
+          { "reg": 3500, "name": "Grid Feed Type Conf", "encrypted": true, "notes": "Should return 3" },
+          { "reg": 3501, "name": "Grid Feed Lifetime Total", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy", "encrypted": true },
+          { "reg": 3503, "name": "Grid Feed Year 1 Label", "encrypted": true },
+          { "reg": 3504, "name": "Grid Feed Year 1 Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy", "encrypted": true }
+        ]
+      }
+    ]},
+    {"trigger_write": [
+      { "trigger_metadata": { "trigger_reg": 2026, "trigger_value": 4 } },
+      { "post_trigger_read": { "read_start_reg": 3500, "read_count": 12 },
+        "registers": [
+          { "reg": 3500, "name": "Load AC Type Conf", "encrypted": true, "notes": "Should return 4" },
+          { "reg": 3501, "name": "Load AC Lifetime Total", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy", "encrypted": true },
+          { "reg": 3503, "name": "Load AC Year 1 Label", "encrypted": true },
+          { "reg": 3504, "name": "Load AC Year 1 Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy", "encrypted": true }
+        ]
+      }
+    ]},
+    {"trigger_write": [
+      { "trigger_metadata": { "trigger_reg": 2026, "trigger_value": 9 } },
+      { "post_trigger_read": { "read_start_reg": 3500, "read_count": 12 },
+        "registers": [
+          { "reg": 3500, "name": "Pack Charge Type Conf", "encrypted": true, "notes": "Should return 9" },
+          { "reg": 3501, "name": "Pack Charge Lifetime Total", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy", "encrypted": true },
+          { "reg": 3503, "name": "Pack Charge Year 1 Label", "encrypted": true },
+          { "reg": 3504, "name": "Pack Charge Year 1 Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy", "encrypted": true }
+        ]
+      }
+    ]},
+    {"trigger_write": [
+      { "trigger_metadata": { "trigger_reg": 2026, "trigger_value": 17 } },
+      { "post_trigger_read": { "read_start_reg": 3500, "read_count": 12 },
+        "registers": [
+          { "reg": 3500, "name": "Pack Discharge Type Conf", "encrypted": true, "notes": "Should return 17" },
+          { "reg": 3501, "name": "Pack Discharge Lifetime Total", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy", "encrypted": true },
+          { "reg": 3503, "name": "Pack Discharge Year 1 Label", "encrypted": true },
+          { "reg": 3504, "name": "Pack Discharge Year 1 Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy", "encrypted": true }
+        ]
+      }
+    ]},
+    {"trigger_write": [
+      { "trigger_metadata": { "trigger_reg": 2026, "trigger_value": 18 } },
+      { "post_trigger_read": { "read_start_reg": 3500, "read_count": 12 },
+        "registers": [
+          { "reg": 3500, "name": "Total Load Type Conf", "encrypted": true, "notes": "Should return 18" },
+          { "reg": 3501, "name": "Total Load Lifetime Total", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy", "encrypted": true },
+          { "reg": 3503, "name": "Total Load Year 1 Label", "encrypted": true },
+          { "reg": 3504, "name": "Total Load Year 1 Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy", "encrypted": true }
+        ]
+      }
+    ]}
 ]
