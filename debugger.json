@@ -27,8 +27,10 @@
     { "reg": 71, "name": "Legacy DC Output Status", "len": 16, "type": "enum", "values": ["Off", "On"], "notes": "V1/Legacy Protocol" },
     { "reg": 73, "name": "Legacy ECO Mode Status", "len": 16, "type": "enum", "values": ["Off", "On"], "notes": "V1/Legacy Protocol" },
     { "reg": 74, "name": "Legacy Working Mode", "len": 16, "type": "enum", "values": ["Standard", "PV Priority", "Time Control", "Custom"], "notes": "V1/Legacy Protocol" },
-    { "reg": 100, "name": "APP_HOME_DATA: Pack Total Voltage", "len": 16, "device_class": "voltage", "unit": "V", "scale": 1, "notes": "CORRECT" },
-    { "reg": 101, "name": "APP_HOME_DATA: Pack Total Current", "len": 16, "device_class": "current", "unit": "A", "scale": 1, "notes": "CORRECT" },
+	
+	
+    { "reg": 100, "name": "APP_HOME_DATA: Pack Total Voltage", "len": 16, "device_class": "voltage", "unit": "V", "scale": 1, "notes": "CORRECT", "signed": true },
+    { "reg": 101, "name": "APP_HOME_DATA: Pack Total Current", "len": 16, "device_class": "current", "unit": "A", "scale": 1, "notes": "CORRECT", "signed": true },
     { "reg": 102, "name": "APP_HOME_DATA: Total Battery Percent", "len": 16, "device_class": "battery", "unit": "%", "notes": "CORRECT" },
 
     {"reg": 103, "name": "Pack Charging Status", "type": "enum", "values": ["Standby/Idle", "Charging", "Discharging"], "notes": "CORRECT - 0-Standby/Idle, 1-Charging, 2-Discharging"},
@@ -39,25 +41,24 @@
       "name": "Pack Aging Info",
       "outputs": [
         {
-          "name": "Aging Status",
-          "mask": 15,
-          "offset": 0,
+          "name": "Aging Status", 
+          "mask": 15, 
+          "offset": 12,
           "type": "enum",
           "values": ["Init", "Ready", "Maint", "Done", "Stop", "Fail"],
           "notes": "CORRECT - 0=Init, 1=Ready, 2=Maint, 3=Done, 4=Stop, 5=Fail"
         },
         {
           "name": "Aging Progress",
-          "mask": 15,
-          "offset": 4,
-          "unit": "%",
-          "scale": -1,
+          "mask": 15, 
+          "offset": 8,
+          "unit": "%", 
           "notes": "CORRECT - "
         },
         {
           "name": "Aging Fault",
-          "mask": 15,
-          "offset": 8,
+          "mask": 15, 
+          "offset": 4,
           "notes": "CORRECT - 1=LowTemp, 2=HighTemp, 3=Timeout, 4=VoltUnbal, 5=IntFault, 6=UserStop"
         }
       ]
@@ -65,6 +66,7 @@
 
     {"reg": 107, "name": "Pack Counts", "mask": 255, "notes": "CORRECT"},
     {
+      "len": 32,
       "reg": 108,
       "name": "Pack Online Status",
       "outputs": [
@@ -85,6 +87,7 @@
         { "name": "Pack 15 Online", "mask": 1, "offset": 14, "type": "enum", "values": ["Offline", "Online"], "notes": "CORRECT" },
         { "name": "Pack 16 Online", "mask": 1, "offset": 15, "type": "enum", "values": ["Offline", "Online"], "notes": "CORRECT" }
       ]
+      , "no_word_swap": true
     },
     {"reg": 109, "name": "CAN Bus Fault", "notes": "CORRECT - 0=No Fault, nonZero=Fault"},
     { "reg": 110, "name": "APP_HOME_DATA: Device Type", "len": 6, "ascii": true, "notes": "CORRECT" },
@@ -135,7 +138,7 @@
         { "name": "BatteryToACLoad", "mask": 1, "offset": 13, "type": "enum", "values": ["Inactive", "Active"], "notes": "Battery energy flowing directly to AC Load" }
       ]
     },
-    { "reg": 123, "name": "Unknown Reg 123 (Slave 44)", "slave_id": 42 },
+
     {
       "reg": 124,
       "name": "System Control Status",
@@ -177,10 +180,7 @@
         { "name": "B018 Ambient temperature low", "mask": 1, "offset": 17, "type": "enum", "values": ["Inactive", "Active"], "notes": "CORRECT - Warning" }
       ]
     },
-    {
-      "reg": 133,
-      "name": "Fault Info",
-      "len": 96,
+    {"reg": 133, "name": "Fault Info", "len": 96,
       "outputs": [
         { "name": "E001 Bus Over Voltage", "mask": 1, "offset": 0, "type": "enum", "values": ["Inactive", "Active"], "notes": "CORRECT - Fault" },
         { "name": "E002 BUS2 Over Voltage", "mask": 1, "offset": 1, "type": "enum", "values": ["Inactive", "Active"], "notes": "CORRECT - Fault" },
@@ -202,18 +202,99 @@
    
     { "reg": 140, "name": "APP_HOME_DATA: Total DC Power", "len": 32, "unit": "W", "device_class": "power", "notes": "DC power implies PV MPPTs.  it is 0 at night - it is also 0 during the day, when charging"},
     { "reg": 142, "name": "APP_HOME_DATA: Consumption Power All", "len": 32, "signed": true, "device_class": "power", "unit": "W", "notes": "CORRECT - diff between this and 148 may be inverter self-consumption" },
-    { "reg": 142, "name": "Unknown Reg 142 (Slave 41)", "len": 32, "slave_id": 41 },
+
     { "reg": 144, "name": "APP_HOME_DATA: PV Input Power All", "len": 32, "signed": true, "device_class": "power", "unit": "W", "notes": "CORRECT - This is the new DC coupled solar PV production" },
-    { "reg": 144, "name": "Unknown Reg 144 (Slave 41)", "len": 32, "slave_id": 41 },
     { "reg": 146, "name": "APP_HOME_DATA: Grid Power All", "len": 32, "signed": true, "device_class": "power", "unit": "W", "notes": "probably is AC coupled inverter production (old PV)" },
     { "reg": 148, "name": "APP_HOME_DATA: Total Inverter Power", "len": 32, "signed": true, "device_class": "power", "unit": "W", "notes": "negative when sunny, battery is charging and solar is covering consumption" },
-    { "reg": 148, "name": "Unknown Reg 148 (Slave 41)", "len": 32, "signed": true, "slave_id": 41 },
 
-    {"reg": 150, "name": "Total DC Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy", "notes": "CORRECT - 0 for EP2000 - only used for smaller batteries?" },
-    {"reg": 152, "name": "Total AC Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy", "notes": "CORRECT - 0 for EP2000 - only used for smaller batteries?", "slave_id": 42 },
-    {"reg": 154, "name": "Total PV Charging Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy", "notes": "CORRECT - 0 for EP2000 - only used for smaller batteries?", "slave_id": 44},
-    {"reg": 156, "name": "Total Grid Charging Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy", "notes": "CORRECT - 0 for EP2000 - only used for smaller batteries?", "slave_id": 42},
-    {"reg": 158, "name": "Total Feedback Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy", "notes": "CORRECT - 0 for EP2000 - only used for smaller batteries?", "slave_id": 44},
+    { "trigger_write": [
+      { "trigger_metadata": { "trigger_reg": 2026, "trigger_value": 1 } },
+      { "post_trigger_read": { "read_start_reg": 150, "read_count": 8 },
+        "registers": [
+          { "reg": 150, "name": "PV Total Energy Low", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" },
+          { "reg": 152, "name": "PV Total Energy High", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" },
+          { "reg": 154, "name": "PV Today Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" },
+          { "reg": 156, "name": "PV Month Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" }
+        ]
+      }
+    ]},
+    { "trigger_write": [
+      { "trigger_metadata": { "trigger_reg": 2026, "trigger_value": 2 } },
+      { "post_trigger_read": { "read_start_reg": 150, "read_count": 8 },
+        "registers": [
+          { "reg": 150, "name": "Grid Input Total Energy Low", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" },
+          { "reg": 152, "name": "Grid Input Total Energy High", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" },
+          { "reg": 154, "name": "Grid Input Today Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" },
+          { "reg": 156, "name": "Grid Input Month Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" }
+        ]
+      }
+    ]},
+    { "trigger_write": [
+      { "trigger_metadata": { "trigger_reg": 2026, "trigger_value": 3 } },
+      { "post_trigger_read": { "read_start_reg": 150, "read_count": 8 },
+        "registers": [
+          { "reg": 150, "name": "Grid Feed Total Energy Low", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" },
+          { "reg": 152, "name": "Grid Feed Total Energy High", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" },
+          { "reg": 154, "name": "Grid Feed Today Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" },
+          { "reg": 156, "name": "Grid Feed Month Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" }
+        ]
+      }
+    ]},
+    { "trigger_write": [
+      { "trigger_metadata": { "trigger_reg": 2026, "trigger_value": 4 } },
+      { "post_trigger_read": { "read_start_reg": 150, "read_count": 8 },
+        "registers": [
+          { "reg": 150, "name": "Load AC Total Energy Low", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" },
+          { "reg": 152, "name": "Load AC Total Energy High", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" },
+          { "reg": 154, "name": "Load AC Today Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" },
+          { "reg": 156, "name": "Load AC Month Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" }
+        ]
+      }
+    ]},
+    { "trigger_write": [
+      { "trigger_metadata": { "trigger_reg": 2026, "trigger_value": 5 } },
+      { "post_trigger_read": { "read_start_reg": 150, "read_count": 8 },
+        "registers": [
+          { "reg": 150, "name": "Load DC Total Energy Low", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" },
+          { "reg": 152, "name": "Load DC Total Energy High", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" },
+          { "reg": 154, "name": "Load DC Today Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" },
+          { "reg": 156, "name": "Load DC Month Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" }
+        ]
+      }
+    ]},
+    { "trigger_write": [
+      { "trigger_metadata": { "trigger_reg": 2026, "trigger_value": 9 } },
+      { "post_trigger_read": { "read_start_reg": 150, "read_count": 8 },
+        "registers": [
+          { "reg": 150, "name": "Pack Charge Total Energy Low", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" },
+          { "reg": 152, "name": "Pack Charge Total Energy High", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" },
+          { "reg": 154, "name": "Pack Charge Today Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" },
+          { "reg": 156, "name": "Pack Charge Month Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" }
+        ]
+      }
+    ]},
+    { "trigger_write": [
+      { "trigger_metadata": { "trigger_reg": 2026, "trigger_value": 17 } },
+      { "post_trigger_read": { "read_start_reg": 150, "read_count": 8 },
+        "registers": [
+          { "reg": 150, "name": "Pack Discharge Total Energy Low", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" },
+          { "reg": 152, "name": "Pack Discharge Total Energy High", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" },
+          { "reg": 154, "name": "Pack Discharge Today Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" },
+          { "reg": 156, "name": "Pack Discharge Month Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" }
+        ]
+      }
+    ]},
+    { "trigger_write": [
+      { "trigger_metadata": { "trigger_reg": 2026, "trigger_value": 18 } },
+      { "post_trigger_read": { "read_start_reg": 150, "read_count": 8 },
+        "registers": [
+          { "reg": 150, "name": "Total Load Total Energy Low", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" },
+          { "reg": 152, "name": "Total Load Total Energy High", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" },
+          { "reg": 154, "name": "Total Load Today Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" },
+          { "reg": 156, "name": "Total Load Month Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" }
+        ]
+      }
+    ]},
     {"reg": 160, "name": "Charging Mode", "mask": 255, "type": "enum", "values": ["Standard", "Silent", "Turbo"], "notes": "CORRECT - 0=Standard, 1=Silent, 2=Fast/Turbo" },
     {"reg": 161, "name": "Inverter Working Status", "mask": 255, "type": "enum", "values": ["Standby", "Self-Test", "Grid-Tied", "Off-Grid", "Bypass", "Charging", "Unknown", "Fault/Alarm"], "notes": "CORRECT - 0=Standby, 1=Self-Test, 2=Grid-Tied (Normal), 3=Off-Grid (Normal), 4=Bypass, 5=Charging, 7=Fault/Alarm"},
     {"reg": 162, "name": "PV to AC Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy", "notes": "CORRECT - 0 for EP2000 - only used for smaller batteries?"},
@@ -280,7 +361,7 @@
 
     {
         "reg": 174,
-        "len": 1,
+        "len": 16,
         "outputs": [
           {
             "name": "Sub-1GHz Mode",
@@ -355,13 +436,13 @@
       },
     
     {"reg": 175, "name": "Scene Flag", "mask": 255, "notes": "CORRECT - 0 for me.  0=Home, 1=Balcony, 2=Balcony2.  used for background images in app"},
-    {"reg": 178, "name": "Sleep Standby Time", "len": 32, "unit": "s", "notes": "CORRECT - 0 for me.  tracks how much time the system has spent in Standby/Sleep Mode or estimates the Remaining Standby Time before the battery is depleted by internal tare loads"},
-    {"reg": 180, "name": "Pack Total Charge Energy", "len": 32, "unit": "kWh", "device_class": "energy", "notes": "CORRECT - 0 for me. tracks the cumulative lifetime energy that has been charged into the battery packs" },
+    {"reg": 178, "name": "Sleep Standby Time", "len": 32, "unit": "s", "notes": "CORRECT - 0 for me.  tracks how much time the system has spent in Standby/Sleep Mode or estimates the Remaining Standby Time before the battery is depleted by internal tare loads", "no_word_swap": true},
+    {"reg": 180, "name": "Pack Total Charge Energy", "len": 32, "unit": "kWh", "device_class": "energy", "notes": "CORRECT - 0 for me. tracks the cumulative lifetime energy that has been charged into the battery packs", "no_word_swap": true },
     {"reg": 182, "name": "Total Car Output Power", "unit": "W", "device_class": "power", "notes": "CORRECT - 0 for me." },
-    {"reg": 183, "name": "Total EV Power", "len": 32, "unit": "W", "device_class": "power", "notes": "CORRECT - 0 for me." },
+    {"reg": 183, "name": "Total EV Power", "len": 32, "unit": "W", "device_class": "power", "notes": "CORRECT - 0 for me.", "signed": true, "no_word_swap": true },
       {
         "reg": 188,
-        "len": 1,
+        "len": 16,
         "outputs": [
           {
             "name": "Bluetooth Upgrade Supported",
@@ -404,7 +485,7 @@
     {"reg": 191, "name": "Switch Recovery Status", "notes": "Bitfield"},
       {
         "reg": 191,
-        "len": 1,
+        "len": 16,
         "outputs": [
           {
             "name": "AC Recovery",
@@ -461,10 +542,8 @@
       {"reg": 1165, "name": "Output Rated L2", "scale": 1, "unit": "A", "device_class": "current" },
       {"reg": 1166, "name": "Output Rated L3", "scale": 1, "unit": "A", "device_class": "current" },
 
-      {"reg": 1200, "len": 32, "name": "INV_PV_INFO: Total PV Power", "unit": "W", "device_class": "power", "notes": "CORRECT - new solar PV production, not including Solaredge"  },
-      {"reg": 1200, "len": 32, "name": "Unknown Reg 1200 (Slave 41)", "slave_id": 41 },
-      { "reg": 1201, "len": 8, "ascii": true, "name": "Legacy Bluetooth Name", "notes": "V1/Legacy Protocol" },
-      {"reg": 1202, "len": 32, "name": "INV_PV_INFO: Total PV Energy", "scale": 1, "unit": "kWh", "device_class": "energy", "notes": "CORRECT - check in daytime - should be a sum" },
+      {"reg": 1200, "len": 32, "name": "INV_PV_INFO: Total PV Power", "unit": "W", "device_class": "power", "notes": "CORRECT - new solar PV production, not including Solaredge", "no_word_swap": true },
+      {"reg": 1202, "len": 32, "name": "INV_PV_INFO: Total PV Energy", "scale": 1, "unit": "kWh", "device_class": "energy", "notes": "CORRECT - check in daytime - should be a sum", "no_word_swap": true },
       { "reg": 1209,
         "outputs": [
           {
@@ -480,40 +559,29 @@
           }
         ]
       },
-      { "reg": 1209, "name": "Unknown Reg 1209 (Slave 41)", "slave_id": 41 },
       {"reg": 1210, "name": "String 1 Status", "len": 16, "mask": 255, "type": "enum", "values": ["Standby", "Normal", "Fault"], "notes": "CORRECT - 0=Standby, 1=Normal, 2=Fault" },
       {"reg": 1211, "name": "String 1 Type", "len": 16, "notes": "CORRECT: 100=DC Input, 101=AC-Coupled" },
       {"reg": 1212, "name": "String 1 Power", "len": 16, "unit": "W", "device_class": "power", "notes": "CORRECT"  },
-      {"reg": 1212, "name": "Unknown Reg 1212 (Slave 41)", "slave_id": 41 },
       {"reg": 1213, "name": "String 1 Voltage", "len": 16, "scale": 1, "unit": "V", "device_class": "voltage", "notes": "CORRECT" },
       {"reg": 1214, "name": "String 1 Current", "len": 16, "scale": 1, "unit": "A", "device_class": "current", "notes": "CORRECT" },
 
       {"reg": 1218, "name": "String 2 Status", "len": 16, "mask": 255, "type": "enum", "values": ["Standby", "Normal", "Fault"], "notes": "CORRECT - 0=Standby, 1=Normal, 2=Fault" },
       {"reg": 1219, "name": "String 2 Type", "len": 16, "notes": "CORRECT: 100=DC Input, 101=AC-Coupled" },
       {"reg": 1220, "name": "String 2 Power", "len": 16, "unit": "W", "device_class": "power", "notes": "CORRECT"  },
-      {"reg": 1220, "name": "Unknown Reg 1220 (Slave 41)", "slave_id": 41 },
       {"reg": 1221, "name": "String 2 Voltage", "len": 16, "scale": 1, "unit": "V", "device_class": "voltage", "notes": "CORRECT" },
       {"reg": 1222, "name": "String 2 Current", "len": 16, "scale": 1, "unit": "A", "device_class": "current", "notes": "CORRECT" },
       
       {"reg": 1226, "name": "String 3 Status", "len": 16, "mask": 255, "type": "enum", "values": ["Standby", "Normal", "Fault"], "notes": "CORRECT - 0=Standby, 1=Normal, 2=Fault", "slave_id": 41 },
       {"reg": 1227, "name": "String 3 Type", "len": 16, "notes": "CORRECT: 100=DC Input, 101=AC-Coupled", "slave_id": 41 },
       {"reg": 1228, "name": "String 3 Power", "len": 16, "unit": "W", "device_class": "power", "notes": "CORRECT"  },
-      {"reg": 1228, "name": "Unknown Reg 1228 (Slave 41)", "slave_id": 41, "notes": "probably AC Coupled PV Phase 1 Power" },
       {"reg": 1229, "name": "String 3 Voltage", "len": 16, "scale": 1, "unit": "V", "device_class": "voltage", "notes": "CORRECT" },
-      {"reg": 1229, "name": "Unknown Reg 1229 (Slave 41)", "slave_id": 41, "notes": "probably AC Coupled PV Phase 1 voltage" },
       {"reg": 1230, "name": "String 3 Current", "len": 16, "scale": 1, "unit": "A", "device_class": "current", "notes": "CORRECT" },
-      {"reg": 1230, "name": "Unknown Reg 1230 (Slave 41)", "slave_id": 41, "notes": "probably AC Coupled PV Phase 1 current"} ,
 
       {"reg": 1234, "name": "String 4 Status", "len": 16, "mask": 255, "type": "enum", "values": ["Standby", "Normal", "Fault"], "notes": "CORRECT - 0=Standby, 1=Normal, 2=Fault" },
-      {"reg": 1234, "name": "Unknown Reg 1234 (Slave 41)", "slave_id": 41 },
       {"reg": 1235, "name": "String 4 Type", "len": 16, "notes": "CORRECT: 100=DC Input, 101=AC-Coupled" },
-      {"reg": 1235, "name": "Unknown Reg 1235 (Slave 41)", "slave_id": 41 },
       {"reg": 1236, "name": "String 4 Power", "len": 16, "unit": "W", "device_class": "power", "notes": "CORRECT"  },
-      {"reg": 1236, "name": "Unknown Reg 1236 (Slave 41)", "slave_id": 41, "notes": "probably AC Coupled PV Phase 2 Power" },
       {"reg": 1237, "name": "String 4 Voltage", "len": 16, "scale": 1, "unit": "V", "device_class": "voltage", "notes": "CORRECT" },
-      {"reg": 1237, "name": "Unknown Reg 1237 (Slave 41)", "slave_id": 41, "notes": "probably AC Coupled PV Phase 2 voltage" },
       {"reg": 1238, "name": "String 4 Current", "len": 16, "scale": 1, "unit": "A", "device_class": "current", "notes": "CORRECT" },
-      {"reg": 1238, "name": "Unknown Reg 1238 (Slave 41)", "slave_id": 41, "notes": "probably AC Coupled PV Phase 2 current" },
 
       {"reg": 1242, "name": "String 5 Status", "len": 16, "mask": 255, "type": "enum", "values": ["Standby", "Normal", "Fault"], "notes": "CORRECT - 0=Standby, 1=Normal, 2=Fault", "slave_id": 41 },
       {"reg": 1243, "name": "String 5 Type", "len": 16, "notes": "CORRECT: 100=DC Input, 101=AC-Coupled", "slave_id": 41 },
@@ -554,7 +622,6 @@
 
     { "reg": 1300, "name": "INV_GRID_INFO: Grid Frequency Hz", "len": 16, "device_class": "frequency", "unit": "Hz", "scale": 1, "notes": "CORRECT" },
     { "reg": 1301, "name": "Total Grid Power", "len": 32, "signed": true, "unit": "W", "device_class": "power" },
-    { "reg": 1301, "name": "Unknown Reg 1301 (Slave 41)", "len": 32, "slave_id": 41 },
     { "reg": 1303, "name": "Total Grid Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" },
 
     { "reg": 1305, "name": "Total Feedback Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" },
@@ -627,6 +694,30 @@
     { "reg": 1545, "name": "INV_INV_INFO: Phase 3 Inverter Voltage", "unit": "V", "scale": 1, "device_class": "voltage", "encrypted": true },
     { "reg": 1546, "name": "INV_INV_INFO: Phase 3 Inverter Current", "unit": "A", "scale": 1, "device_class": "current", "encrypted": true },
 
+    { "reg": 1700, "name": "Meter Model Name", "len": 6, "ascii": true, "notes": "Registers 1700-1705 (12 bytes)" },
+    { "reg": 1706, "name": "Meter Serial Number", "len": 6, "ascii": true, "notes": "Registers 1706-1711 (12 bytes)" },
+    {
+      "reg": 1710,
+      "name": "Meter Status & Online",
+      "outputs": [
+        {
+          "name": "Meter Status",
+          "offset": 0,
+          "mask": 3,
+          "type": "enum",
+          "values": ["Unknown 0", "Unknown 1", "Unknown 2", "Unknown 3"],
+          "notes": "Bits 0-1 of Register 1710"
+        },
+        {
+          "name": "Meter Online",
+          "offset": 2,
+          "mask": 1,
+          "type": "enum",
+          "values": ["Offline", "Online"],
+          "notes": "Bit 2 of Register 1710"
+        }
+      ]
+    },
 	
 	
 	
@@ -664,10 +755,11 @@
     {"reg": 2214, "name": "Max Grid Current", "scale": 1, "unit": "A", "device_class": "current"},
     {"reg": 2216, "name": "Max Feed-in Current", "scale": 1, "unit": "A", "device_class": "current"},
     {"reg": 2218, "name": "Grid Region", "notes": "Enum: Australia, Germany, etc."},
-    {"reg": 2218, "name": "Unknown Reg 2218 (Slave 41)", "slave_id": 41},
+    {"reg": 2218, "name": "Unknown Reg 2218 (Slave 41)"},
     {"reg": 2225, "name": "Grid Self-Adaption", "type": "enum", "values": ["Disabled", "Enabled"], "notes": "0:Disable / 1:Enable"},
     {"reg": 2226, "name": "Switch Recovery", "type": "enum", "values": ["Disabled", "Enabled"], "notes": "0:Disable / 1:Enable Auto-restore"},
-    {"reg": 2228, "name": "Meter Type", "notes": "Enum: Acrel, Chint, etc."},
+    {"reg": 2227, "name": "INV_INFO: ADVANCED_SETTINGS_CTRL_METER", "notes": "non-zero", "type": "enum", "values": ["control/polling OFF", "control/polling ON"], "notes": "CORRECT"},
+    {"reg": 2228, "name": "Inverter Meter Type", "type": "enum", "values":["ADL400", "AGF_AE_D", "ADL200N_CT", "ADL400N_CT", "ADL400M", "NONE"], "notes": "CORRECT"},
     {"reg": 2232, "outputs": [{"name": "ATS Enable", "offset": 0, "mask": 1, "type": "enum", "values": ["Inactive", "Active"], "notes": "1: ATS Active"}]},
     {"reg": 2241, "name": "Control Mode", "type": "enum", "values": ["Local", "Cloud"], "notes": "0:Local / 1:Cloud"},
     {"reg": 2244, "outputs": [{"name": "Grid CT Ratio", "mask": 255}, {"name": "PV CT Ratio", "offset": 8, "mask": 255}]},
@@ -966,46 +1058,180 @@
     {"reg":6412,"outputs":[{"name":"Cell 111 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 111 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
     {"reg":6413,"outputs":[{"name":"Cell 112 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 112 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
 
-{"reg":6500,"name":"Sub-Pack 3 Cell Count","notes":"Number of cells in this third bank"},
-    {"reg":6501,"name":"Sub-Pack 3 NTC Count","notes":"Number of temp sensors in this bank"},
-    {"reg":6502,"outputs":[{"name":"Cell 33 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 33 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
-    {"reg":6503,"outputs":[{"name":"Cell 34 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 34 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
-    {"reg":6504,"outputs":[{"name":"Cell 35 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 35 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
-    {"reg":6505,"outputs":[{"name":"Cell 36 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 36 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
-    {"reg":6506,"outputs":[{"name":"Cell 37 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 37 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
-    {"reg":6507,"outputs":[{"name":"Cell 38 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 38 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
-    {"reg":6508,"outputs":[{"name":"Cell 39 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 39 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
-    {"reg":6509,"outputs":[{"name":"Cell 40 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 40 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
-    {"reg":6510,"outputs":[{"name":"Cell 41 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 41 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
-    {"reg":6511,"outputs":[{"name":"Cell 42 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 42 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
-    {"reg":6512,"outputs":[{"name":"Cell 43 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 43 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
-    {"reg":6513,"outputs":[{"name":"Cell 44 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 44 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
-    {"reg":6514,"outputs":[{"name":"Cell 45 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 45 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
-    {"reg":6515,"outputs":[{"name":"Cell 46 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 46 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
-    {"reg":6516,"outputs":[{"name":"Cell 47 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 47 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
-    {"reg":6517,"outputs":[{"name":"Cell 48 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 48 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
-    {"reg":6518,"outputs":[{"name":"NTC 5 Temp","mask":255,"subtract":40,"unit":"°C","device_class":"temperature"},{"name":"NTC 6 Temp","offset":8,"mask":255,"subtract":40,"unit":"°C","device_class":"temperature"}]},	
-	
-    {"reg":6600,"name":"Sub-Pack 4 Cell Count","notes":"Number of cells in this fourth bank"},
-    {"reg":6601,"name":"Sub-Pack 4 NTC Count","notes":"Number of temp sensors in this bank"},
-    {"reg":6602,"outputs":[{"name":"Cell 49 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 49 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
-    {"reg":6603,"outputs":[{"name":"Cell 50 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 50 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
-    {"reg":6604,"outputs":[{"name":"Cell 51 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 51 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
-    {"reg":6605,"outputs":[{"name":"Cell 52 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 52 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
-    {"reg":6606,"outputs":[{"name":"Cell 53 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 53 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
-    {"reg":6607,"outputs":[{"name":"Cell 54 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 54 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
-    {"reg":6608,"outputs":[{"name":"Cell 55 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 55 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
-    {"reg":6609,"outputs":[{"name":"Cell 56 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 56 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
-    {"reg":6610,"outputs":[{"name":"Cell 57 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 57 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
-    {"reg":6611,"outputs":[{"name":"Cell 58 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 58 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
-    {"reg":6612,"outputs":[{"name":"Cell 59 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 59 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
-    {"reg":6613,"outputs":[{"name":"Cell 60 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 60 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
-    {"reg":6614,"outputs":[{"name":"Cell 61 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 61 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
-    {"reg":6615,"outputs":[{"name":"Cell 62 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 62 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
-    {"reg":6616,"outputs":[{"name":"Cell 63 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 63 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
-    {"reg":6617,"outputs":[{"name":"Cell 64 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 64 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},	
-    {"reg":6618,"outputs":[{"name":"NTC 7 Temp","mask":255,"subtract":40,"unit":"°C","device_class":"temperature"},{"name":"NTC 8 Temp","offset":8,"mask":255,"subtract":40,"unit":"°C","device_class":"temperature"}]},
-	
+
+    {"reg":6414,"outputs":[{"name":"Cell 113 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 113 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6415,"outputs":[{"name":"Cell 114 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 114 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6416,"outputs":[{"name":"Cell 115 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 115 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6417,"outputs":[{"name":"Cell 116 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 116 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6418,"outputs":[{"name":"Cell 117 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 117 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6419,"outputs":[{"name":"Cell 118 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 118 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6420,"outputs":[{"name":"Cell 119 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 119 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6421,"outputs":[{"name":"Cell 120 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 120 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6422,"outputs":[{"name":"Cell 121 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 121 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6423,"outputs":[{"name":"Cell 122 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 122 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6424,"outputs":[{"name":"Cell 123 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 123 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6425,"outputs":[{"name":"Cell 124 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 124 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+{"reg":6426,"outputs":[{"name":"Cell 125 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 125 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6427,"outputs":[{"name":"Cell 126 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 126 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6428,"outputs":[{"name":"Cell 127 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 127 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6429,"outputs":[{"name":"Cell 128 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 128 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6430,"outputs":[{"name":"Cell 129 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 129 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6431,"outputs":[{"name":"Cell 130 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 130 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6432,"outputs":[{"name":"Cell 131 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 131 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6433,"outputs":[{"name":"Cell 132 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 132 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6434,"outputs":[{"name":"Cell 133 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 133 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6435,"outputs":[{"name":"Cell 134 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 134 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6436,"outputs":[{"name":"Cell 135 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 135 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6437,"outputs":[{"name":"Cell 136 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 136 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6438,"outputs":[{"name":"Cell 137 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 137 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6439,"outputs":[{"name":"Cell 138 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 138 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6440,"outputs":[{"name":"Cell 139 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 139 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6441,"outputs":[{"name":"Cell 140 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 140 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6442,"outputs":[{"name":"Cell 141 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 141 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6443,"outputs":[{"name":"Cell 142 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 142 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6444,"outputs":[{"name":"Cell 143 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 143 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6445,"outputs":[{"name":"Cell 144 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 144 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6446,"outputs":[{"name":"Cell 145 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 145 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6447,"outputs":[{"name":"Cell 146 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 146 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6448,"outputs":[{"name":"Cell 147 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 147 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6449,"outputs":[{"name":"Cell 148 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 148 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6450,"outputs":[{"name":"Cell 149 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 149 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6451,"outputs":[{"name":"Cell 150 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 150 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6452,"outputs":[{"name":"Cell 151 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 151 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6453,"outputs":[{"name":"Cell 152 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 152 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6454,"outputs":[{"name":"Cell 153 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 153 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6455,"outputs":[{"name":"Cell 154 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 154 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6456,"outputs":[{"name":"Cell 155 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 155 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6457,"outputs":[{"name":"Cell 156 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 156 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6458,"outputs":[{"name":"Cell 157 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 157 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6459,"outputs":[{"name":"Cell 158 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 158 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6460,"outputs":[{"name":"Cell 159 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 159 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6461,"outputs":[{"name":"Cell 160 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 160 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6462,"outputs":[{"name":"Cell 161 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 161 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6463,"outputs":[{"name":"Cell 162 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 162 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6464,"outputs":[{"name":"Cell 163 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 163 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6465,"outputs":[{"name":"Cell 164 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 164 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6466,"outputs":[{"name":"Cell 165 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 165 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6467,"outputs":[{"name":"Cell 166 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 166 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6468,"outputs":[{"name":"Cell 167 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 167 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6469,"outputs":[{"name":"Cell 168 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 168 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6470,"outputs":[{"name":"Cell 169 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 169 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6471,"outputs":[{"name":"Cell 170 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 170 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6472,"outputs":[{"name":"Cell 171 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 171 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6473,"outputs":[{"name":"Cell 172 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 172 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6474,"outputs":[{"name":"Cell 173 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 173 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6475,"outputs":[{"name":"Cell 174 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 174 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6476,"outputs":[{"name":"Cell 175 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 175 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6477,"outputs":[{"name":"Cell 176 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 176 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6478,"outputs":[{"name":"Cell 177 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 177 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6479,"outputs":[{"name":"Cell 178 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 178 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6480,"outputs":[{"name":"Cell 179 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 179 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6481,"outputs":[{"name":"Cell 180 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 180 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6482,"outputs":[{"name":"Cell 181 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 181 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6483,"outputs":[{"name":"Cell 182 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 182 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6484,"outputs":[{"name":"Cell 183 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 183 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6485,"outputs":[{"name":"Cell 184 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 184 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6486,"outputs":[{"name":"Cell 185 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 185 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6487,"outputs":[{"name":"Cell 186 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 186 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6488,"outputs":[{"name":"Cell 187 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 187 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6489,"outputs":[{"name":"Cell 188 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 188 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6490,"outputs":[{"name":"Cell 189 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 189 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6491,"outputs":[{"name":"Cell 190 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 190 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6492,"outputs":[{"name":"Cell 191 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 191 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6493,"outputs":[{"name":"Cell 192 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 192 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6494,"outputs":[{"name":"Cell 193 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 193 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6495,"outputs":[{"name":"Cell 194 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 194 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6496,"outputs":[{"name":"Cell 195 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 195 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6497,"outputs":[{"name":"Cell 196 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 196 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6498,"outputs":[{"name":"Cell 197 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 197 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6499,"outputs":[{"name":"Cell 198 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 198 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6500,"outputs":[{"name":"Cell 199 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 199 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6501,"outputs":[{"name":"Cell 200 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 200 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6502,"outputs":[{"name":"Cell 201 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 201 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6503,"outputs":[{"name":"Cell 202 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 202 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6504,"outputs":[{"name":"Cell 203 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 203 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6505,"outputs":[{"name":"Cell 204 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 204 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6506,"outputs":[{"name":"Cell 205 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 205 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6507,"outputs":[{"name":"Cell 206 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 206 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6508,"outputs":[{"name":"Cell 207 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 207 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6509,"outputs":[{"name":"Cell 208 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 208 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6510,"outputs":[{"name":"Cell 209 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 209 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6511,"outputs":[{"name":"Cell 210 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 210 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6512,"outputs":[{"name":"Cell 211 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 211 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6513,"outputs":[{"name":"Cell 212 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 212 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6514,"outputs":[{"name":"Cell 213 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 213 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6515,"outputs":[{"name":"Cell 214 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 214 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6516,"outputs":[{"name":"Cell 215 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 215 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6517,"outputs":[{"name":"Cell 216 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 216 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6518,"outputs":[{"name":"Cell 217 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 217 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6519,"outputs":[{"name":"Cell 218 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 218 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6520,"outputs":[{"name":"Cell 219 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 219 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6521,"outputs":[{"name":"Cell 220 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 220 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6522,"outputs":[{"name":"Cell 221 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 221 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6523,"outputs":[{"name":"Cell 222 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 222 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6524,"outputs":[{"name":"Cell 223 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 223 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+    {"reg":6525,"outputs":[{"name":"Cell 224 Voltage","mask":16383,"scale":3,"unit":"V","device_class":"voltage"},{"name":"Cell 224 Balance","offset":14,"type":"enum","values":["Inactive","Active"],"notes":"1: Balancing active"}]},
+
+
+    {"reg":6526,"outputs":[{"name":"NTC 1 Temp","mask":255,"subtract":40,"unit":"°C","device_class":"temperature"},{"name":"NTC 2 Temp","offset":8,"mask":255,"subtract":40,"unit":"°C","device_class":"temperature"}]},
+    {"reg":6527,"outputs":[{"name":"NTC 3 Temp","mask":255,"subtract":40,"unit":"°C","device_class":"temperature"},{"name":"NTC 4 Temp","offset":8,"mask":255,"subtract":40,"unit":"°C","device_class":"temperature"}]},
+    {"reg":6528,"outputs":[{"name":"NTC 5 Temp","mask":255,"subtract":40,"unit":"°C","device_class":"temperature"},{"name":"NTC 6 Temp","offset":8,"mask":255,"subtract":40,"unit":"°C","device_class":"temperature"}]},
+    {"reg":6529,"outputs":[{"name":"NTC 7 Temp","mask":255,"subtract":40,"unit":"°C","device_class":"temperature"},{"name":"NTC 8 Temp","offset":8,"mask":255,"subtract":40,"unit":"°C","device_class":"temperature"}]},
+    {"reg":6530,"outputs":[{"name":"NTC 9 Temp","mask":255,"subtract":40,"unit":"°C","device_class":"temperature"},{"name":"NTC 10 Temp","offset":8,"mask":255,"subtract":40,"unit":"°C","device_class":"temperature"}]},
+    {"reg":6531,"outputs":[{"name":"NTC 11 Temp","mask":255,"subtract":40,"unit":"°C","device_class":"temperature"},{"name":"NTC 12 Temp","offset":8,"mask":255,"subtract":40,"unit":"°C","device_class":"temperature"}]},
+    {"reg":6532,"outputs":[{"name":"NTC 13 Temp","mask":255,"subtract":40,"unit":"°C","device_class":"temperature"},{"name":"NTC 14 Temp","offset":8,"mask":255,"subtract":40,"unit":"°C","device_class":"temperature"}]},
+    {"reg":6533,"outputs":[{"name":"NTC 15 Temp","mask":255,"subtract":40,"unit":"°C","device_class":"temperature"},{"name":"NTC 16 Temp","offset":8,"mask":255,"subtract":40,"unit":"°C","device_class":"temperature"}]},
+    {"reg":6534,"outputs":[{"name":"NTC 17 Temp","mask":255,"subtract":40,"unit":"°C","device_class":"temperature"},{"name":"NTC 18 Temp","offset":8,"mask":255,"subtract":40,"unit":"°C","device_class":"temperature"}]},
+    {"reg":6535,"outputs":[{"name":"NTC 19 Temp","mask":255,"subtract":40,"unit":"°C","device_class":"temperature"},{"name":"NTC 20 Temp","offset":8,"mask":255,"subtract":40,"unit":"°C","device_class":"temperature"}]},
+    {"reg":6536,"outputs":[{"name":"NTC 21 Temp","mask":255,"subtract":40,"unit":"°C","device_class":"temperature"},{"name":"NTC 22 Temp","offset":8,"mask":255,"subtract":40,"unit":"°C","device_class":"temperature"}]},
+    {"reg":6537,"outputs":[{"name":"NTC 23 Temp","mask":255,"subtract":40,"unit":"°C","device_class":"temperature"},{"name":"NTC 24 Temp","offset":8,"mask":255,"subtract":40,"unit":"°C","device_class":"temperature"}]},
+    {"reg":6538,"outputs":[{"name":"NTC 25 Temp","mask":255,"subtract":40,"unit":"°C","device_class":"temperature"},{"name":"NTC 26 Temp","offset":8,"mask":255,"subtract":40,"unit":"°C","device_class":"temperature"}]},
+    {"reg":6539,"outputs":[{"name":"NTC 27 Temp","mask":255,"subtract":40,"unit":"°C","device_class":"temperature"},{"name":"NTC 28 Temp","offset":8,"mask":255,"subtract":40,"unit":"°C","device_class":"temperature"}]},
+    {"reg":6540,"outputs":[{"name":"NTC 29 Temp","mask":255,"subtract":40,"unit":"°C","device_class":"temperature"},{"name":"NTC 30 Temp","offset":8,"mask":255,"subtract":40,"unit":"°C","device_class":"temperature"}]},
+    {"reg":6541,"outputs":[{"name":"NTC 31 Temp","mask":255,"subtract":40,"unit":"°C","device_class":"temperature"},{"name":"NTC 32 Temp","offset":8,"mask":255,"subtract":40,"unit":"°C","device_class":"temperature"}]},
+    {"reg":6542,"outputs":[{"name":"NTC 33 Temp","mask":255,"subtract":40,"unit":"°C","device_class":"temperature"},{"name":"NTC 34 Temp","offset":8,"mask":255,"subtract":40,"unit":"°C","device_class":"temperature"}]},
+    {"reg":6543,"outputs":[{"name":"NTC 35 Temp","mask":255,"subtract":40,"unit":"°C","device_class":"temperature"},{"name":"NTC 36 Temp","offset":8,"mask":255,"subtract":40,"unit":"°C","device_class":"temperature"}]},
+    {"reg":6544,"outputs":[{"name":"NTC 37 Temp","mask":255,"subtract":40,"unit":"°C","device_class":"temperature"},{"name":"NTC 38 Temp","offset":8,"mask":255,"subtract":40,"unit":"°C","device_class":"temperature"}]},
+    {"reg":6545,"outputs":[{"name":"NTC 39 Temp","mask":255,"subtract":40,"unit":"°C","device_class":"temperature"},{"name":"NTC 40 Temp","offset":8,"mask":255,"subtract":40,"unit":"°C","device_class":"temperature"}]},
+    {"reg":6546,"outputs":[{"name":"NTC 41 Temp","mask":255,"subtract":40,"unit":"°C","device_class":"temperature"},{"name":"NTC 42 Temp","offset":8,"mask":255,"subtract":40,"unit":"°C","device_class":"temperature"}]},
+    {"reg":6547,"outputs":[{"name":"NTC 43 Temp","mask":255,"subtract":40,"unit":"°C","device_class":"temperature"},{"name":"NTC 44 Temp","offset":8,"mask":255,"subtract":40,"unit":"°C","device_class":"temperature"}]},
+    {"reg":6548,"outputs":[{"name":"NTC 45 Temp","mask":255,"subtract":40,"unit":"°C","device_class":"temperature"},{"name":"NTC 46 Temp","offset":8,"mask":255,"subtract":40,"unit":"°C","device_class":"temperature"}]},
+    {"reg":6549,"outputs":[{"name":"NTC 47 Temp","mask":255,"subtract":40,"unit":"°C","device_class":"temperature"},{"name":"NTC 48 Temp","offset":8,"mask":255,"subtract":40,"unit":"°C","device_class":"temperature"}]},
+    {"reg":6550,"outputs":[{"name":"NTC 49 Temp","mask":255,"subtract":40,"unit":"°C","device_class":"temperature"},{"name":"NTC 50 Temp","offset":8,"mask":255,"subtract":40,"unit":"°C","device_class":"temperature"}]},
+    {"reg":6551,"outputs":[{"name":"NTC 51 Temp","mask":255,"subtract":40,"unit":"°C","device_class":"temperature"},{"name":"NTC 52 Temp","offset":8,"mask":255,"subtract":40,"unit":"°C","device_class":"temperature"}]},
+    {"reg":6552,"outputs":[{"name":"NTC 53 Temp","mask":255,"subtract":40,"unit":"°C","device_class":"temperature"},{"name":"NTC 54 Temp","offset":8,"mask":255,"subtract":40,"unit":"°C","device_class":"temperature"}]},
+    {"reg":6553,"outputs":[{"name":"NTC 55 Temp","mask":255,"subtract":40,"unit":"°C","device_class":"temperature"},{"name":"NTC 56 Temp","offset":8,"mask":255,"subtract":40,"unit":"°C","device_class":"temperature"}]},
+    {"reg":6554,"outputs":[{"name":"NTC 57 Temp","mask":255,"subtract":40,"unit":"°C","device_class":"temperature"},{"name":"NTC 58 Temp","offset":8,"mask":255,"subtract":40,"unit":"°C","device_class":"temperature"}]},
+    {"reg":6555,"outputs":[{"name":"NTC 59 Temp","mask":255,"subtract":40,"unit":"°C","device_class":"temperature"},{"name":"NTC 60 Temp","offset":8,"mask":255,"subtract":40,"unit":"°C","device_class":"temperature"}]},
+    {"reg":6556,"outputs":[{"name":"NTC 61 Temp","mask":255,"subtract":40,"unit":"°C","device_class":"temperature"},{"name":"NTC 62 Temp","offset":8,"mask":255,"subtract":40,"unit":"°C","device_class":"temperature"}]},
+    {"reg":6557,"outputs":[{"name":"NTC 63 Temp","mask":255,"subtract":40,"unit":"°C","device_class":"temperature"},{"name":"NTC 64 Temp","offset":8,"mask":255,"subtract":40,"unit":"°C","device_class":"temperature"}]},
+    {"reg":6558,"outputs":[{"name":"NTC 65 Temp","mask":255,"subtract":40,"unit":"°C","device_class":"temperature"},{"name":"NTC 66 Temp","offset":8,"mask":255,"subtract":40,"unit":"°C","device_class":"temperature"}]},
+    {"reg":6559,"outputs":[{"name":"NTC 67 Temp","mask":255,"subtract":40,"unit":"°C","device_class":"temperature"},{"name":"NTC 68 Temp","offset":8,"mask":255,"subtract":40,"unit":"°C","device_class":"temperature"}]},
+    {"reg":6560,"outputs":[{"name":"NTC 69 Temp","mask":255,"subtract":40,"unit":"°C","device_class":"temperature"},{"name":"NTC 70 Temp","offset":8,"mask":255,"subtract":40,"unit":"°C","device_class":"temperature"}]},
+    {"reg":6561,"outputs":[{"name":"NTC 71 Temp","mask":255,"subtract":40,"unit":"°C","device_class":"temperature"},{"name":"NTC 72 Temp","offset":8,"mask":255,"subtract":40,"unit":"°C","device_class":"temperature"}]},
+    {"reg":6562,"outputs":[{"name":"NTC 73 Temp","mask":255,"subtract":40,"unit":"°C","device_class":"temperature"},{"name":"NTC 74 Temp","offset":8,"mask":255,"subtract":40,"unit":"°C","device_class":"temperature"}]},
+    {"reg":6563,"outputs":[{"name":"NTC 75 Temp","mask":255,"subtract":40,"unit":"°C","device_class":"temperature"},{"name":"NTC 76 Temp","offset":8,"mask":255,"subtract":40,"unit":"°C","device_class":"temperature"}]},
+    {"reg":6564,"outputs":[{"name":"NTC 77 Temp","mask":255,"subtract":40,"unit":"°C","device_class":"temperature"},{"name":"NTC 78 Temp","offset":8,"mask":255,"subtract":40,"unit":"°C","device_class":"temperature"}]},
+    {"reg":6565,"outputs":[{"name":"NTC 79 Temp","mask":255,"subtract":40,"unit":"°C","device_class":"temperature"},{"name":"NTC 80 Temp","offset":8,"mask":255,"subtract":40,"unit":"°C","device_class":"temperature"}]},
+    {"reg":6566,"outputs":[{"name":"NTC 81 Temp","mask":255,"subtract":40,"unit":"°C","device_class":"temperature"},{"name":"NTC 82 Temp","offset":8,"mask":255,"subtract":40,"unit":"°C","device_class":"temperature"}]},
+    {"reg":6567,"outputs":[{"name":"NTC 83 Temp","mask":255,"subtract":40,"unit":"°C","device_class":"temperature"},{"name":"NTC 84 Temp","offset":8,"mask":255,"subtract":40,"unit":"°C","device_class":"temperature"}]},
+    {"reg":6568,"outputs":[{"name":"NTC 85 Temp","mask":255,"subtract":40,"unit":"°C","device_class":"temperature"},{"name":"NTC 86 Temp","offset":8,"mask":255,"subtract":40,"unit":"°C","device_class":"temperature"}]},
+    {"reg":6569,"outputs":[{"name":"NTC 87 Temp","mask":255,"subtract":40,"unit":"°C","device_class":"temperature"},{"name":"NTC 88 Temp","offset":8,"mask":255,"subtract":40,"unit":"°C","device_class":"temperature"}]},
+    {"reg":6570,"outputs":[{"name":"NTC 89 Temp","mask":255,"subtract":40,"unit":"°C","device_class":"temperature"},{"name":"NTC 90 Temp","offset":8,"mask":255,"subtract":40,"unit":"°C","device_class":"temperature"}]},
+    {"reg":6571,"outputs":[{"name":"NTC 91 Temp","mask":255,"subtract":40,"unit":"°C","device_class":"temperature"},{"name":"NTC 92 Temp","offset":8,"mask":255,"subtract":40,"unit":"°C","device_class":"temperature"}]},
+    {"reg":6572,"outputs":[{"name":"NTC 93 Temp","mask":255,"subtract":40,"unit":"°C","device_class":"temperature"},{"name":"NTC 94 Temp","offset":8,"mask":255,"subtract":40,"unit":"°C","device_class":"temperature"}]},
+    {"reg":6573,"outputs":[{"name":"NTC 95 Temp","mask":255,"subtract":40,"unit":"°C","device_class":"temperature"},{"name":"NTC 96 Temp","offset":8,"mask":255,"subtract":40,"unit":"°C","device_class":"temperature"}]},
+    {"reg":6574,"outputs":[{"name":"NTC 97 Temp","mask":255,"subtract":40,"unit":"°C","device_class":"temperature"},{"name":"NTC 98 Temp","offset":8,"mask":255,"subtract":40,"unit":"°C","device_class":"temperature"}]},
+    {"reg":6575,"outputs":[{"name":"NTC 99 Temp","mask":255,"subtract":40,"unit":"°C","device_class":"temperature"},{"name":"NTC 100 Temp","offset":8,"mask":255,"subtract":40,"unit":"°C","device_class":"temperature"}]},
+    {"reg":6576,"outputs":[{"name":"NTC 101 Temp","mask":255,"subtract":40,"unit":"°C","device_class":"temperature"},{"name":"NTC 102 Temp","offset":8,"mask":255,"subtract":40,"unit":"°C","device_class":"temperature"}]},
+    {"reg":6577,"outputs":[{"name":"NTC 103 Temp","mask":255,"subtract":40,"unit":"°C","device_class":"temperature"},{"name":"NTC 104 Temp","offset":8,"mask":255,"subtract":40,"unit":"°C","device_class":"temperature"}]},
+    {"reg":6578,"outputs":[{"name":"NTC 105 Temp","mask":255,"subtract":40,"unit":"°C","device_class":"temperature"},{"name":"NTC 106 Temp","offset":8,"mask":255,"subtract":40,"unit":"°C","device_class":"temperature"}]},
+    {"reg":6579,"outputs":[{"name":"NTC 107 Temp","mask":255,"subtract":40,"unit":"°C","device_class":"temperature"},{"name":"NTC 108 Temp","offset":8,"mask":255,"subtract":40,"unit":"°C","device_class":"temperature"}]},
+    {"reg":6580,"outputs":[{"name":"NTC 109 Temp","mask":255,"subtract":40,"unit":"°C","device_class":"temperature"},{"name":"NTC 110 Temp","offset":8,"mask":255,"subtract":40,"unit":"°C","device_class":"temperature"}]},
+    {"reg":6581,"outputs":[{"name":"NTC 111 Temp","mask":255,"subtract":40,"unit":"°C","device_class":"temperature"},{"name":"NTC 112 Temp","offset":8,"mask":255,"subtract":40,"unit":"°C","device_class":"temperature"}]},
+
+
+
     {"reg":7000,"name":"Active Pack ID","notes":"0=Pack 1, 1=Pack 2, etc."},
     {"reg":7001,"name":"Off-Grid Heating Adaptation","type":"enum","values":["Off","On"],"notes":"0: OFF / 1: ON"},
     {"reg":7002,"name":"Manual Battery Heating","type":"enum","values":["Off","On"],"notes":"0: OFF / 1: ON"},
@@ -1458,7 +1684,6 @@
     {"reg": 2208, "name": "Unknown Reg 2208", "notes": "non-zero"},
     {"reg": 2209, "name": "Unknown Reg 2209", "notes": "non-zero"},
     {"reg": 2215, "name": "Unknown Reg 2215", "notes": "non-zero"},
-    {"reg": 2227, "name": "Unknown Reg 2227", "notes": "non-zero"},
     {"reg": 2242, "name": "Unknown Reg 2242", "notes": "non-zero"},
     {"reg": 2267, "name": "Unknown Reg 2267", "notes": "non-zero"},
     {"reg": 2285, "name": "Unknown Reg 2285", "notes": "non-zero"},

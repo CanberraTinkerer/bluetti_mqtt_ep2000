@@ -290,7 +290,32 @@ class WriteSingleRegisterV2(WriteSingleRegister):
 def get_command_fields(args: Namespace) -> List[Dict[str, Any]]:
     with open(args.config, "r") as config_file:
         config = json.load(config_file)
-        return config
+        if not isinstance(config, list):
+            return []
+
+        flat_config = []
+        for item in config:
+            if isinstance(item, dict) and "trigger_write" in item:
+                # Handle hierarchical triggered blocks proposed by user
+                trigger_data = item.get("trigger_write", [])
+                t_reg, t_val, regs = None, None, []
+                for component in trigger_data:
+                    if "trigger_metadata" in component:
+                        m = component["trigger_metadata"]
+                        t_reg = m.get("trigger_reg")
+                        # Support both trigger_value from pseudo-JSON and trigger_val
+                        t_val = m.get("trigger_value", m.get("trigger_val"))
+                    if "post_trigger_read" in component:
+                        r_info = component["post_trigger_read"]
+                        # Extract registers from within or alongside the read info
+                        regs = r_info.get("registers", component.get("registers", []))
+                for r in regs:
+                    r.update({"trigger_reg": t_reg, "trigger_val": t_val})
+                    if "slave_id" in item: r["slave_id"] = item["slave_id"]
+                    flat_config.append(r)
+            else:
+                flat_config.append(item)
+        return flat_config
 
 
 def get_target_slave_id(cmd: Dict[str, Any]) -> int:
@@ -454,6 +479,8 @@ def process_and_publish(command_info: Dict[str, Any], data: bytes, device_name: 
     try:
         register = command_info['reg']
         slave_id = get_target_slave_id(command_info)
+        trigger_reg = command_info.get('trigger_reg')
+        trigger_val = command_info.get('trigger_val')
         length = command_info.get('len', 1)
         if not isinstance(length, int): # Handle cases where len might be malformed
             length = 1
@@ -512,8 +539,9 @@ def process_and_publish(command_info: Dict[str, Any], data: bytes, device_name: 
                     value = output['values'][value]
 
             slave_suffix = f"_s{slave_id}" if slave_id != 1 else ""
+            trigger_suffix = f"_t{trigger_val}" if trigger_reg is not None else ""
             topic_suffix = f".{output.get('offset', 0)}" if is_split else ""
-            state_topic = f"bluetti_debugger/{device_name}/{register}{topic_suffix}{slave_suffix}/state"
+            state_topic = f"bluetti_debugger/{device_name}/{register}{topic_suffix}{slave_suffix}{trigger_suffix}/state"
             state_payload = {
                 "value": value, 
                 "PossibleName": output['name'], 
@@ -534,12 +562,15 @@ def process_and_publish(command_info: Dict[str, Any], data: bytes, device_name: 
 def publish_invalid(command_info: Dict[str, Any], device_name: str, mqtt_client: mqtt.Client, encrypted: bool):
     register = command_info['reg']
     slave_id = get_target_slave_id(command_info)
+    trigger_reg = command_info.get('trigger_reg')
+    trigger_val = command_info.get('trigger_val')
     is_split = 'outputs' in command_info
     outputs = command_info.get('outputs', [command_info])
     for output in outputs:
         slave_suffix = f"_s{slave_id}" if slave_id != 1 else ""
+        trigger_suffix = f"_t{trigger_val}" if trigger_reg is not None else ""
         topic_suffix = f".{output.get('offset', 0)}" if is_split else ""
-        state_topic = f"bluetti_debugger/{device_name}/{register}{topic_suffix}{slave_suffix}/state"
+        state_topic = f"bluetti_debugger/{device_name}/{register}{topic_suffix}{slave_suffix}{trigger_suffix}/state"
         state_payload = {
             "value": None,
             "PossibleName": output['name'],
@@ -688,7 +719,7 @@ async def poll_device_registers(
                 if t_res:
                     print(f"    RX Packet: {t_res.hex()}")
                 print("    Result: Success (Write accepted)")
-                await asyncio.sleep(0.1) # Brief pause before reading stats
+                await asyncio.sleep(0.2) # Brief pause as requested (200ms)
             except Exception as e:
                 print(f"    Result: Failed - {e}")
             print(f"  --- TRIGGER END ---")
@@ -869,12 +900,15 @@ async def async_main():  # noqa: C901
                         for output in outputs:
                             output_name = output['name']
                             slave_id = get_target_slave_id(command_info)
+                            trigger_reg = command_info.get('trigger_reg')
+                            trigger_val = command_info.get('trigger_val')
                             slave_suffix = f"_s{slave_id}" if slave_id != 1 else ""
+                            trigger_suffix = f"_t{trigger_val}" if trigger_reg is not None else ""
                             topic_suffix = f".{output.get('offset', 0)}" if is_split else ""
                             id_suffix = f"_{output.get('offset', 0)}" if is_split else ""
-                            unique_id = f"{device_name}_{register}{id_suffix}{slave_suffix}"
+                            unique_id = f"{device_name}_{register}{id_suffix}{slave_suffix}{trigger_suffix}"
                             discovery_topic = f"homeassistant/sensor/{unique_id}/config"
-                            state_topic = f"bluetti_debugger/{device_name}/{register}{topic_suffix}{slave_suffix}/state"
+                            state_topic = f"bluetti_debugger/{device_name}/{register}{topic_suffix}{slave_suffix}{trigger_suffix}/state"
 
                             payload = {
                                 "name": f"{register} {output_name}",
