@@ -298,17 +298,23 @@ def get_command_fields(args: Namespace) -> List[Dict[str, Any]]:
             if isinstance(item, dict) and "trigger_write" in item:
                 trigger_data = item.get("trigger_write", [])
                 triggers, delay, regs = [], 0.2, []
+                item_slave = item.get("slave_id", item.get("slave", 1))
                 for component in trigger_data:
                     if "trigger_metadata" in component:
                         m = component["trigger_metadata"]
                         reg = m.get("trigger_reg")
                         val = m.get("trigger_value", m.get("trigger_val"))
+                        t_slave = m.get("slave_id", m.get("slave", item_slave))
                         if reg is not None:
-                            triggers.append({"reg": reg, "val": val})
+                            triggers.append({"reg": reg, "val": val, "slave_id": t_slave})
                     if "post_trigger_read" in component:
                         r_info = component["post_trigger_read"]
                         delay = r_info.get("delay", 0.8) # Default to 800ms "Rule"
                         regs = r_info.get("registers", component.get("registers", []))
+                        r_slave = r_info.get("slave_id", r_info.get("slave", item_slave))
+                        for r in regs:
+                            if "slave_id" not in r and "slave" not in r:
+                                r["slave_id"] = r_slave
                 
                 # Determine primary trigger value for MQTT topic uniqueness (usually Category 2026)
                 primary_val = triggers[0]["val"] if triggers else None
@@ -320,7 +326,7 @@ def get_command_fields(args: Namespace) -> List[Dict[str, Any]]:
                 for r in regs:
                     r.update({"triggers": triggers, "trigger_val": primary_val, "trigger_delay": delay})
                     if triggers: r["trigger_reg"] = triggers[0]["reg"] # Compatibility
-                    if "slave_id" in item: r["slave_id"] = item["slave_id"]
+                    if "slave_id" not in r and "slave" not in r: r["slave_id"] = item_slave
                     flat_config.append(r)
             else:
                 flat_config.append(item)
@@ -329,7 +335,7 @@ def get_command_fields(args: Namespace) -> List[Dict[str, Any]]:
 
 def get_target_slave_id(cmd: Dict[str, Any]) -> int:
     """Get the target slave ID for a command, defaulting to 1."""
-    return cmd.get('slave_id', 1)
+    return cmd.get('slave_id', cmd.get('slave', 1))
 
 
 def detect_device_protocol(device_name: str) -> str:
@@ -708,8 +714,9 @@ async def poll_device_registers(
             print(f"  --- TRIGGER START ---")
             for t in group['triggers']:
                 t_reg, t_val = t['reg'], t['val']
-                print(f"  Action: Write {t_val} to {t_reg} (Slave {slave_id})")
-                trigger_cmd = WriteSingleRegister(t_reg, t_val, slave_id=slave_id)
+                t_slave = t.get('slave_id', slave_id)
+                print(f"  Action: Write {t_val} to {t_reg} (Slave {t_slave})")
+                trigger_cmd = WriteSingleRegister(t_reg, t_val, slave_id=t_slave)
                 tx_type = "Plaintext"
                 print(f"    TX Packet ({tx_type}): {bytes(trigger_cmd).hex()}")
 

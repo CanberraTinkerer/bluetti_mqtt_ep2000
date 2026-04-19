@@ -1,33 +1,9 @@
 [
-    { "reg": 10, "name": "Legacy Battery SOC", "len": 16, "unit": "%", "device_class": "battery", "notes": "V1/Legacy Protocol" },
-    { "reg": 11, "name": "Legacy Battery Voltage", "len": 16, "scale": 1, "unit": "V", "device_class": "voltage", "notes": "V1/Legacy Protocol" },
-    { "reg": 12, "name": "Legacy Battery Current", "len": 16, "scale": 1, "unit": "A", "device_class": "current", "signed": true, "notes": "V1/Legacy Protocol" },
-    { "reg": 13, "name": "Legacy Total DC Input Power", "len": 16, "unit": "W", "device_class": "power", "notes": "V1/Legacy Protocol" },
-    { "reg": 14, "name": "Legacy Total AC Output Power", "len": 16, "unit": "W", "device_class": "power", "notes": "V1/Legacy Protocol" },
-    { "reg": 15, "name": "Legacy Total AC Input Power", "len": 16, "unit": "W", "device_class": "power", "notes": "V1/Legacy Protocol" },
-    { "reg": 16, "name": "Legacy Total DC Output Power", "len": 16, "unit": "W", "device_class": "power", "notes": "V1/Legacy Protocol" },
-    { "reg": 20, "name": "Legacy AC Output Voltage", "len": 16, "unit": "V", "scale": 1, "device_class": "voltage", "notes": "V1/Legacy Protocol" },
-    { "reg": 21, "name": "Legacy AC Output Current", "len": 16, "unit": "A", "scale": 1, "device_class": "current", "notes": "V1/Legacy Protocol" },
-    { "reg": 22, "name": "Legacy AC Output Frequency", "len": 16, "unit": "Hz", "scale": 2, "device_class": "frequency", "notes": "V1/Legacy Protocol" },
-    { "reg": 30, "name": "Legacy AC Input Voltage", "len": 16, "unit": "V", "scale": 1, "device_class": "voltage", "notes": "V1/Legacy Protocol" },
-    { "reg": 31, "name": "Legacy AC Input Current", "len": 16, "unit": "A", "scale": 1, "device_class": "current", "notes": "V1/Legacy Protocol" },
-    { "reg": 32, "name": "Legacy AC Input Frequency", "len": 16, "unit": "Hz", "scale": 2, "device_class": "frequency", "notes": "V1/Legacy Protocol" },
-    { "reg": 33, "name": "Legacy AC Input Power", "len": 16, "unit": "W", "device_class": "power", "notes": "V1/Legacy Protocol" },
-    { "reg": 36, "name": "Legacy PV1 Voltage", "len": 16, "unit": "V", "scale": 1, "device_class": "voltage", "notes": "V1/Legacy Protocol" },
-    { "reg": 37, "name": "Legacy PV1 Current", "len": 16, "unit": "A", "scale": 1, "device_class": "current", "notes": "V1/Legacy Protocol" },
-    { "reg": 38, "name": "Legacy PV1 Power", "len": 16, "unit": "W", "device_class": "power", "notes": "V1/Legacy Protocol" },
-    { "reg": 41, "name": "Legacy PV2 Voltage", "len": 16, "unit": "V", "scale": 1, "device_class": "voltage", "notes": "V1/Legacy Protocol" },
-    { "reg": 42, "name": "Legacy PV2 Current", "len": 16, "unit": "A", "scale": 1, "device_class": "current", "notes": "V1/Legacy Protocol" },
-    { "reg": 43, "name": "Legacy PV2 Power", "len": 16, "unit": "W", "device_class": "power", "notes": "V1/Legacy Protocol" },
-    { "reg": 46, "name": "Legacy DC Output Voltage", "len": 16, "unit": "V", "scale": 1, "device_class": "voltage", "notes": "V1/Legacy Protocol" },
-    { "reg": 47, "name": "Legacy DC Output Current", "len": 16, "unit": "A", "scale": 1, "device_class": "current", "notes": "V1/Legacy Protocol" },
-    { "reg": 62, "name": "Legacy Inverter Temp", "len": 16, "unit": "°C", "device_class": "temperature", "signed": true, "notes": "V1/Legacy Protocol" },
-    { "reg": 63, "name": "Legacy Battery Temp", "len": 16, "unit": "°C", "device_class": "temperature", "signed": true, "notes": "V1/Legacy Protocol" },
-    { "reg": 70, "name": "Legacy AC Output Status", "len": 16, "type": "enum", "values": ["Off", "On"], "notes": "V1/Legacy Protocol" },
-    { "reg": 71, "name": "Legacy DC Output Status", "len": 16, "type": "enum", "values": ["Off", "On"], "notes": "V1/Legacy Protocol" },
-    { "reg": 73, "name": "Legacy ECO Mode Status", "len": 16, "type": "enum", "values": ["Off", "On"], "notes": "V1/Legacy Protocol" },
-    { "reg": 74, "name": "Legacy Working Mode", "len": 16, "type": "enum", "values": ["Standard", "PV Priority", "Time Control", "Custom"], "notes": "V1/Legacy Protocol" },
-	
+    { "reg": 1, "name": "Base Config Hardware Family ID", "len": 16, "notes": "V1/Legacy Protocol" },
+    { "reg": 6, "name": "Product Model", "len": 16, "scale": 1, "notes": "V1/Legacy Protocol" },
+    { "reg": 15, "name": "Protocol Major Version", "len": 16, "notes": "V1/Legacy Protocol" },
+    { "reg": 16, "name": "Protocol Firmware Version", "len": 16, "notes": "V1/Legacy Protocol" },
+
 	
     { "reg": 100, "name": "APP_HOME_DATA: Pack Total Voltage", "len": 16, "device_class": "voltage", "unit": "V", "scale": 1, "notes": "CORRECT", "signed": true },
     { "reg": 101, "name": "APP_HOME_DATA: Pack Total Current", "len": 16, "device_class": "current", "unit": "A", "scale": 1, "notes": "CORRECT", "signed": true },
@@ -36,9 +12,7 @@
     {"reg": 103, "name": "Pack Charging Status", "type": "enum", "values": ["Standby/Idle", "Charging", "Discharging"], "notes": "CORRECT - 0-Standby/Idle, 1-Charging, 2-Discharging"},
     {"reg": 104, "name": "Pack Charge Time to Full", "unit": "min", "notes": "CORRECT" },
     {"reg": 105, "name": "Pack Discharge Remaining Time", "unit": "min", "notes": "CORRECT" },
-    {
-      "reg": 106,
-      "name": "Pack Aging Info",
+    {"reg": 106, "name": "Pack Aging Info",
       "outputs": [
         {
           "name": "Aging Status", 
@@ -122,20 +96,20 @@
       "name": "Energy Flow Indicators",
       "byte_swap": true,
       "outputs": [
-        { "name": "PvToBattery", "mask": 1, "offset": 0, "type": "enum", "values": ["Inactive", "Active"], "notes": "Energy flowing from Solar to Battery" },
-        { "name": "GridToBattery", "mask": 1, "offset": 1, "type": "enum", "values": ["Inactive", "Active"], "notes": "Energy flowing from Grid to Battery" },
-        { "name": "BatteryToGrid", "mask": 1, "offset": 2, "type": "enum", "values": ["Inactive", "Active"], "notes": "Energy flowing from Battery to Grid (Exporting)" },
-        { "name": "AcLoad", "mask": 1, "offset": 3, "type": "enum", "values": ["Inactive", "Active"], "notes": "Energy flowing to AC Load" },
-        { "name": "DcLoad", "mask": 1, "offset": 4, "type": "enum", "values": ["Inactive", "Active"], "notes": "Energy flowing to DC Load" },
-        { "name": "BatteryToInvert", "mask": 1, "offset": 5, "type": "enum", "values": ["Inactive", "Active"], "notes": "Battery discharging to Inverter" },
-        { "name": "InvertToBattery", "mask": 1, "offset": 6, "type": "enum", "values": ["Inactive", "Active"], "notes": "Inverter charging Battery" },
-        { "name": "GridToLoad", "mask": 1, "offset": 7, "type": "enum", "values": ["Inactive", "Active"], "notes": "Energy flowing from Grid directly to AC Load" },
-        { "name": "PvIcon", "mask": 1, "offset": 8, "type": "enum", "values": ["Inactive", "Active"], "notes": "Solar Panel icon visibility" },
-        { "name": "GridIcon", "mask": 1, "offset": 9, "type": "enum", "values": ["Inactive", "Active"], "notes": "Grid icon visibility" },
-        { "name": "AcLoadIcon", "mask": 1, "offset": 10, "type": "enum", "values": ["Inactive", "Active"], "notes": "AC Load icon visibility" },
-        { "name": "PvToGrid", "mask": 1, "offset": 11, "type": "enum", "values": ["Inactive", "Active"], "notes": "Solar energy flowing directly to Grid" },
-        { "name": "PvToACLoad", "mask": 1, "offset": 12, "type": "enum", "values": ["Inactive", "Active"], "notes": "Solar energy flowing directly to AC Load" },
-        { "name": "BatteryToACLoad", "mask": 1, "offset": 13, "type": "enum", "values": ["Inactive", "Active"], "notes": "Battery energy flowing directly to AC Load" }
+        { "name": "PvToBattery", "mask": 1, "offset": 0, "type": "enum", "values": ["Inactive", "Active"], "notes": "Energy flowing from Solar to Battery - 0 for EP2000" },
+        { "name": "GridToBattery", "mask": 1, "offset": 1, "type": "enum", "values": ["Inactive", "Active"], "notes": "Energy flowing from Grid to Battery - 0 for EP2000" },
+        { "name": "BatteryToGrid", "mask": 1, "offset": 2, "type": "enum", "values": ["Inactive", "Active"], "notes": "Energy flowing from Battery to Grid (Exporting) - 0 for EP2000" },
+        { "name": "AcLoad", "mask": 1, "offset": 3, "type": "enum", "values": ["Inactive", "Active"], "notes": "Energy flowing to AC Load - 0 for EP2000" },
+        { "name": "DcLoad", "mask": 1, "offset": 4, "type": "enum", "values": ["Inactive", "Active"], "notes": "Energy flowing to DC Load - 0 for EP2000" },
+        { "name": "BatteryToInvert", "mask": 1, "offset": 5, "type": "enum", "values": ["Inactive", "Active"], "notes": "Battery discharging to Inverter - 0 for EP2000" },
+        { "name": "InvertToBattery", "mask": 1, "offset": 6, "type": "enum", "values": ["Inactive", "Active"], "notes": "Inverter charging Battery - 0 for EP2000" },
+        { "name": "GridToLoad", "mask": 1, "offset": 7, "type": "enum", "values": ["Inactive", "Active"], "notes": "Energy flowing from Grid directly to AC Load - 0 for EP2000" },
+        { "name": "PvIcon", "mask": 1, "offset": 8, "type": "enum", "values": ["Inactive", "Active"], "notes": "Solar Panel icon visibility - 0 for EP2000" },
+        { "name": "GridIcon", "mask": 1, "offset": 9, "type": "enum", "values": ["Inactive", "Active"], "notes": "Grid icon visibility - 0 for EP2000" },
+        { "name": "AcLoadIcon", "mask": 1, "offset": 10, "type": "enum", "values": ["Inactive", "Active"], "notes": "AC Load icon visibility - 0 for EP2000" },
+        { "name": "PvToGrid", "mask": 1, "offset": 11, "type": "enum", "values": ["Inactive", "Active"], "notes": "Solar energy flowing directly to Grid - 0 for EP2000" },
+        { "name": "PvToACLoad", "mask": 1, "offset": 12, "type": "enum", "values": ["Inactive", "Active"], "notes": "Solar energy flowing directly to AC Load - 0 for EP2000" },
+        { "name": "BatteryToACLoad", "mask": 1, "offset": 13, "type": "enum", "values": ["Inactive", "Active"], "notes": "Battery energy flowing directly to AC Load - 0 for EP2000" }
       ]
     },
 
@@ -200,7 +174,7 @@
       ]
     },
    
-    { "reg": 140, "name": "APP_HOME_DATA: Total DC Power", "len": 32, "unit": "W", "device_class": "power", "notes": "DC power implies PV MPPTs.  it is 0 at night - it is also 0 during the day, when charging"},
+    { "reg": 140, "name": "APP_HOME_DATA: Total DC Power", "len": 32, "unit": "W", "device_class": "power", "notes": "CORRECT - used for portable batteries that have DC output ports (cigarette lighter socket etc.  Not useful for EP2000"},
     { "reg": 142, "name": "APP_HOME_DATA: Consumption Power All", "len": 32, "signed": true, "device_class": "power", "unit": "W", "notes": "CORRECT - diff between this and 148 may be inverter self-consumption" },
 
     { "reg": 144, "name": "APP_HOME_DATA: PV Input Power All", "len": 32, "signed": true, "device_class": "power", "unit": "W", "notes": "CORRECT - This is the new DC coupled solar PV production" },
@@ -307,10 +281,10 @@
     {"reg": 161, "name": "Inverter Working Status", "mask": 255, "type": "enum", "values": ["Standby", "Self-Test", "Grid-Tied", "Off-Grid", "Bypass", "Charging", "Unknown", "Fault/Alarm"], "notes": "CORRECT - 0=Standby, 1=Self-Test, 2=Grid-Tied (Normal), 3=Off-Grid (Normal), 4=Bypass, 5=Charging, 7=Fault/Alarm"},
     {"reg": 162, "name": "PV to AC Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy", "notes": "CORRECT - 0 for EP2000 - only used for smaller batteries?"},
     {"reg": 164, "name": "Self-Sufficiency Rate", "unit": "%", "mask": 255, "notes": "0 for me, app says 76% - while Register 164 is the output, the inputs to that number come from: Register 1200 (Total PV Power),Register 1420 (Total AC Load Power),Register 101 (Pack Current / Discharge state", "slave_id": 41 },
-    {"reg": 165, "name": "PV to AC Power", "len": 32, "unit": "W", "device_class": "power", "notes": "0 for me" },
-    {"reg": 167, "name": "Pack Total Discharge Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy", "notes": "0 for me" },
-    {"reg": 169, "name": "Rated Voltage", "unit": "V", "device_class": "voltage", "notes": "0 for me" },
-    {"reg": 170, "name": "Rated Frequency", "unit": "Hz", "device_class": "frequency", "notes": "0 for me" },
+    {"reg": 165, "name": "PV to AC Power", "len": 32, "unit": "W", "device_class": "power", "notes": "0 for me", "slave_id": 41  },
+    {"reg": 167, "name": "Pack Total Discharge Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy", "notes": "0 for me", "slave_id": 41  },
+    {"reg": 169, "name": "Rated Voltage", "unit": "V", "device_class": "voltage", "notes": "0 for me", "slave_id": 41  },
+    {"reg": 170, "name": "Rated Frequency", "unit": "Hz", "device_class": "frequency", "notes": "0 for me", "slave_id": 41  },
     {
         "reg": 171,
         "len": 1,
