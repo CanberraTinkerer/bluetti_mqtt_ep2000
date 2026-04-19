@@ -607,7 +607,7 @@ async def poll_device_registers(
     device_name: str,
     mqtt_client: mqtt.Client,
     device_address: str,
-    slave_switch_delay: float = 2.0,
+    slave_switch_delay: float = 0.8,
     disconnect_on_slave_change: bool = False,
     max_group_size: int = 32,
     force_protocol: Optional[str] = None,
@@ -828,7 +828,7 @@ async def async_main():  # noqa: C901
     parser.add_argument("--mqtt-port", type=int, default=1883, help="MQTT broker port")
     parser.add_argument("--mqtt-username", type=str, help="MQTT username")
     parser.add_argument("--mqtt-password", type=str, help="MQTT password")
-    parser.add_argument("--slave-switch-delay", type=float, default=2.0, help="Delay in seconds when switching slave IDs")
+    parser.add_argument("--slave-switch-delay", type=float, default=0.8, help="Delay in seconds when switching slave IDs")
     parser.add_argument("--disconnect-on-slave-change", action="store_true", help="Disconnect and reconnect Bluetooth when switching slaves (slow but reliable)")
     parser.add_argument("--max-group-size", type=int, default=32, help="Max registers per Modbus read command")
     parser.add_argument("--force-protocol", choices=["v1", "v2"], help="Force specific protocol version (v1=plaintext, v2=legacy mode; encryption is ignored)")
