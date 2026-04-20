@@ -499,13 +499,42 @@ def process_and_publish(command_info: Dict[str, Any], data: bytes, device_name: 
         is_ascii = command_info.get('ascii', False)
         is_split = 'outputs' in command_info
         outputs = command_info.get('outputs', [command_info])
+        output_type = command_info.get('type')
+
+        # Handle generic repeating patterns (e.g. Node Lists, Cell Data)
+        if output_type == 'repeating_nonzero':
+            block_regs = command_info.get('block_regs', 1)
+            check_reg_offset = command_info.get('check_reg_offset', 0)
+            block_size = block_regs * 2
+
+            for i in range(0, len(data), block_size):
+                chunk = data[i:i + block_size]
+                if len(chunk) < block_size:
+                    break
+
+                # Check the designated register for a non-zero value
+                check_val = int.from_bytes(chunk[check_reg_offset*2 : check_reg_offset*2 + 2], 'big')
+                if check_val == 0:
+                    continue
+
+                block_idx = (i // block_size) + 1
+                # Recursively process this chunk as a standalone command
+                # We append a block suffix to the register name for MQTT topic uniqueness
+                block_info = command_info.copy()
+                block_info['type'] = 'processed_block' # Prevent infinite loop
+                block_info['reg'] = f"{register}.b{block_idx}"
+                process_and_publish(block_info, chunk, device_name, mqtt_client, encrypted)
+            return
 
         # Parse the sliced data
         base_value = None
         output_format = command_info.get('format')
-        output_type = command_info.get('type')
 
-        if output_type == 'float':
+        if output_type == 'processed_block' or is_split:
+            # When processing a block or split registers, we don't calculate a single base_value
+            # Instead, the loop below will extract values from 'data' (which is the chunk/block)
+            base_value = 0 
+        elif output_type == 'float':
             swapped_data = data[2:4] + data[0:2]
             base_value = struct.unpack('>f', swapped_data)[0]
             base_value = round(base_value, 3)
@@ -537,7 +566,20 @@ def process_and_publish(command_info: Dict[str, Any], data: bytes, device_name: 
 
         # Process and Publish Outputs
         for output in outputs:
-            value = base_value
+            if output_type == 'processed_block' or (is_split and 'reg_offset' in output):
+                # Extract field-specific data from the chunk/block
+                f_offset = output.get('reg_offset', 0)
+                f_len = output.get('len', 16)
+                f_num_regs = f_len // 16 if not output.get('ascii') and f_len >= 16 else f_len
+                f_data = data[f_offset*2 : (f_offset + f_num_regs)*2]
+                
+                if output.get('ascii'):
+                    value = bytes_to_ascii(f_data)
+                else:
+                    value = int.from_bytes(f_data, 'little' if output.get('byte_swap') else 'big')
+            else:
+                value = base_value
+
             if not is_ascii and isinstance(value, int):
                 if 'offset' in output: value >>= output['offset']
                 if 'mask' in output: value &= output['mask']
