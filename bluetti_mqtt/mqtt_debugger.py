@@ -41,6 +41,9 @@ try:
 except ImportError:
     HAS_CRYPTO = False
 
+# Track discovered dynamic registers to avoid redundant discovery messages
+DISCOVERED_DYNAMIC_REGS = set()
+
 INVERTER_MODEL_ID_REGISTER = 1100
 BATTERY_PACK_MODEL_ID_REGISTER = 6100
 BMU_LOGIC_MODEL_ID_REGISTER = 7232
@@ -487,7 +490,7 @@ def group_commands(commands_to_poll: List[Dict[str, Any]], max_gap: int = 5, max
     return final_groups
 
 
-def process_and_publish(command_info: Dict[str, Any], data: bytes, device_name: str, mqtt_client: mqtt.Client, encrypted: bool):
+def process_and_publish(command_info: Dict[str, Any], data: bytes, device_name: str, mqtt_client: mqtt.Client, encrypted: bool, discovery_info: Dict[str, Any] = None):
     try:
         register = command_info['reg']
         slave_id = get_target_slave_id(command_info)
@@ -518,12 +521,49 @@ def process_and_publish(command_info: Dict[str, Any], data: bytes, device_name: 
                     continue
 
                 block_idx = (i // block_size) + 1
+                block_reg = f"{register}.b{block_idx}"
+
+                # Handle dynamic Home Assistant discovery for this new block
+                if discovery_info:
+                    slave_suffix = f"_s{slave_id}" if slave_id != 1 else ""
+                    trigger_suffix = f"_t{trigger_val}" if trigger_reg is not None else ""
+                    
+                    for output in outputs:
+                        topic_suffix = f".{output.get('offset', 0)}" if is_split else ""
+                        unique_id = f"{device_name}_{block_reg}{topic_suffix.replace('.', '_')}{slave_suffix}{trigger_suffix}"
+                        
+                        if unique_id not in DISCOVERED_DYNAMIC_REGS:
+                            discovery_topic = f"homeassistant/sensor/{unique_id}/config"
+                            state_topic = f"bluetti_debugger/{device_name}/{block_reg}{topic_suffix}{slave_suffix}{trigger_suffix}/state"
+                            
+                            payload = {
+                                "name": f"{block_reg} {output['name']}",
+                                "state_topic": state_topic,
+                                "unique_id": unique_id,
+                                "json_attributes_topic": state_topic,
+                                "value_template": "{{ value_json.value }}",
+                                "device": {
+                                    "identifiers": [discovery_info['address']],
+                                    "name": discovery_info['display_name'],
+                                    "model": discovery_info['type'],
+                                    "manufacturer": "Bluetti"
+                                }
+                            }
+                            if 'device_class' in output:
+                                payload['device_class'] = output['device_class']
+                            if 'unit' in output:
+                                payload['unit_of_measurement'] = output['unit']
+
+                            mqtt_client.publish(discovery_topic, json.dumps(payload), retain=True)
+                            DISCOVERED_DYNAMIC_REGS.add(unique_id)
+                            print(f"Sent dynamic discovery for {block_reg} ({output['name']})")
+
                 # Recursively process this chunk as a standalone command
                 # We append a block suffix to the register name for MQTT topic uniqueness
                 block_info = command_info.copy()
                 block_info['type'] = 'processed_block' # Prevent infinite loop
-                block_info['reg'] = f"{register}.b{block_idx}"
-                process_and_publish(block_info, chunk, device_name, mqtt_client, encrypted)
+                block_info['reg'] = block_reg
+                process_and_publish(block_info, chunk, device_name, mqtt_client, encrypted, discovery_info)
             return
 
         # Parse the sliced data
@@ -607,7 +647,7 @@ def process_and_publish(command_info: Dict[str, Any], data: bytes, device_name: 
             if 'notes' in output: state_payload["notes"] = output['notes']
 
             mqtt_client.publish(state_topic, json.dumps(state_payload))
-            print(f"Published {register}{topic_suffix} (Slave {slave_id}) ({output['name']}): {value}")
+            # print(f"Published {register}{topic_suffix} (Slave {slave_id}) ({output['name']}): {value}")
 
     except Exception as e:
         print(f"An error occurred while processing register {command_info.get('reg')}: {e}")
@@ -661,6 +701,8 @@ async def poll_device_registers(
     force_protocol: Optional[str] = None,
     debug_logging: bool = False,
     plaintext_slaves: Set[int] = set(),
+    device_type: str = "Bluetti Device",
+    display_name: str = "Bluetti Device"
 ) -> float:
     """
     Poll device registers and publish to MQTT.
@@ -689,6 +731,12 @@ async def poll_device_registers(
     else:
         device_protocol = detect_device_protocol(device_name)
         logging.info(f"Detected protocol for {device_name}: {device_protocol}")
+
+    discovery_info = {
+        "address": device_address,
+        "display_name": display_name,
+        "type": device_type
+    }
 
     # Parse plaintext slaves list
     if plaintext_slaves:
@@ -807,7 +855,7 @@ async def poll_device_registers(
                     start_byte = (register - group['start_reg']) * 2
                     end_byte = start_byte + (num_registers * 2)
                     data = group_data[start_byte:end_byte]
-                    process_and_publish(command_info, data, device_name, mqtt_client, False)
+                    process_and_publish(command_info, data, device_name, mqtt_client, False, discovery_info)
                 except Exception as e:
                     print(f"An error occurred while processing register {command_info.get('reg')}: {e}")
 
@@ -832,7 +880,7 @@ async def poll_device_registers(
                     if len(response) > 0:
                         print(f"  RX Packet: SlaveID={response[0]} Func={response[1]} Len={len(response)}")
                     data = single_command.parse_response(response)
-                    process_and_publish(command_info, data, device_name, mqtt_client, cmd_encrypted)
+                    process_and_publish(command_info, data, device_name, mqtt_client, cmd_encrypted, discovery_info)
                 except (BadConnectionError, BleakError, ModbusError, ParseError) as e:
                     print(f"Error individual polling register {command_info['reg']}: {e}")
 
@@ -848,7 +896,7 @@ async def poll_device_registers(
                             if len(response) > 0:
                                 print(f"  RX Packet: SlaveID={response[0]} Func={response[1]} Len={len(response)}")
                             data = single_command.parse_response(response)
-                            process_and_publish(command_info, data, device_name, mqtt_client, False)
+                            process_and_publish(command_info, data, device_name, mqtt_client, False, discovery_info)
                             success_plaintext = True
                         except Exception as e2:
                             print(f"Error plaintext fallback register {command_info['reg']}: {e2}")
@@ -940,6 +988,7 @@ async def async_main():  # noqa: C901
                 if current_config_mtime != last_config_mtime:
                     print("Config file has changed. Reloading and running discovery...")
                     last_config_mtime = current_config_mtime
+                    DISCOVERED_DYNAMIC_REGS.clear()
                     commands_to_poll = get_command_fields(args)
 
                     # Perform Home Assistant discovery
@@ -1009,6 +1058,8 @@ async def async_main():  # noqa: C901
                 force_protocol=args.force_protocol,
                 debug_logging=args.debug,
                 plaintext_slaves=plaintext_slaves,
+                device_type=device.type,
+                display_name=display_name
             )
 
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
