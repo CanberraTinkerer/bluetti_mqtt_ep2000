@@ -575,6 +575,51 @@ def process_and_publish(command_info: Dict[str, Any], data: bytes, device_name: 
                 process_and_publish(block_info, chunk, device_name, mqtt_client, encrypted, discovery_info)
             return
 
+        # Handle interleaved/segmented tables (e.g. 7200 BMU block)
+        if output_type == 'segmented_repeating':
+            count = command_info.get('count', 1)
+            segments = command_info.get('segments', [])
+            
+            # Process each Pack/Node
+            for i in range(count):
+                pack_idx = i + 1
+                # We use a synthetic register name for the pack summary
+                pack_reg_base = f"{register}.n{pack_idx}"
+                
+                # Iterate through defined segments for this specific node
+                for seg in segments:
+                    s_start = seg.get('start_offset', 0)
+                    s_stride = seg.get('stride', 1)
+                    s_outputs = seg.get('outputs', [])
+                    
+                    # Calculate where this node's data sits in this segment
+                    # node_offset = start_of_segment + (node_index * registers_per_node)
+                    node_offset = s_start + (i * s_stride)
+                    
+                    chunk = data[node_offset*2 : (node_offset + s_stride)*2]
+                    if not chunk:
+                        continue
+
+                    # Handle discovery for this segment's outputs
+                    if discovery_info:
+                        _handle_dynamic_discovery(
+                            discovery_info, 
+                            device_name, 
+                            pack_reg_base, 
+                            slave_id, 
+                            trigger_val, 
+                            trigger_reg, 
+                            s_outputs, 
+                            True, 
+                            mqtt_client
+                        )
+
+                    # Process the chunk as a standalone block
+                    seg_info = command_info.copy()
+                    seg_info.update({'type': 'processed_block', 'reg': pack_reg_base, 'outputs': s_outputs})
+                    process_and_publish(seg_info, chunk, device_name, mqtt_client, encrypted, discovery_info)
+            return
+
         # Handle the BMU block (Cells followed by NTCs with shifting start)
         if output_type == 'dynamic_bmu_block':
             # 1. Parse counts from headers (low bytes)

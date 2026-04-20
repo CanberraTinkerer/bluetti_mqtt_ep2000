@@ -1100,16 +1100,55 @@
     {"reg":7011,"name":"BMS Hardware Interface Type","type":"enum"},
 
     {
-      "reg": 7200,
-      "name": "BMU Logic Node List",
-      "type": "repeating_nonzero",
-      "block_regs": 4,
-      "check_reg_offset": 0,
-      "outputs": [
-        { "reg_offset": 0, "len": 32, "name": "BMU ID" },
-        { "reg_offset": 2, "name": "BMU Status Flags" }
-      ],
-      "slave_id": 41
+      "bulk_read": {
+        "slave_id": 41,
+        "read_start_reg": 7200,
+        "read_count": 100,
+        "registers": [
+          {
+            "reg": 7200,
+            "name": "BMU Interleaved Metadata",
+            "type": "segmented_repeating",
+            "count": 7,
+            "segments": [
+              {
+                "start_offset": 0, "stride": 4,
+                "outputs": [
+                  { "reg_offset": 0, "len": 32, "name": "BMU Unique ID" },
+                  { "reg_offset": 2, "name": "BMU Status Flags", "notes": "Expected 0250 (592)" }
+                ]
+              },
+              {
+                "start_offset": 28, "stride": 2,
+                "outputs": [
+                  { "reg_offset": 0, "name": "BMU Fault Bitmask" }
+                ]
+              },
+              {
+                "start_offset": 42, "stride": 1,
+                "outputs": [
+                  { "reg_offset": 0, "name": "NTC and Cell Counts", "outputs": [
+                    { "name": "Active Cells", "mask": 255 },
+                    { "name": "Active NTCs", "offset": 8, "mask": 255 }
+                  ]}
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "bulk_read": {
+        "slave_id": 41,
+        "read_start_reg": 7586,
+        "read_count": 3,
+        "registers": [
+          { "reg": 7586, "name": "BMS Aggregator CRC" },
+          { "reg": 7587, "name": "BMS System Status Mask", "notes": "FF01 = Fully Active" },
+          { "reg": 7588, "name": "BMS Aggregate SOC Mirror", "unit": "%", "device_class": "battery" }
+        ]
+      }
     },
     {"reg":7208,"name":"CELL_VOLT_01","unit":"mV","scale":1,"slave_id":41},
     {"reg":7209,"name":"CELL_VOLT_02","unit":"mV","scale":1,"slave_id":41},
