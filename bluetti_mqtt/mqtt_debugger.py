@@ -528,6 +528,45 @@ def process_and_publish(command_info: Dict[str, Any], data: bytes, device_name: 
         outputs = command_info.get('outputs', [command_info])
         output_type = command_info.get('type')
 
+        # Handle blocks driven by a count register (e.g. SysPhaseNumber)
+        if output_type == 'repeating_count':
+            count_offset = command_info.get('count_offset', 0)
+            start_offset = command_info.get('start_offset', 1)
+            block_regs = command_info.get('block_regs', 1)
+            block_size = block_regs * 2
+
+            # Read the loop count from the data
+            count_data = data[count_offset*2 : count_offset*2 + 2]
+            count = int.from_bytes(count_data, 'big')
+            
+            # Publish the count register itself first
+            count_info = command_info.copy()
+            count_info['type'] = 'numeric' # Prevent recursion
+            process_and_publish(count_info, count_data, device_name, mqtt_client, encrypted, discovery_info)
+
+            if count == 0:
+                return
+
+            # Process each block
+            for i in range(count):
+                current_byte_start = (start_offset * 2) + (i * block_size)
+                chunk = data[current_byte_start : current_byte_start + block_size]
+                if len(chunk) < block_size:
+                    break
+
+                block_idx = i + 1
+                block_reg = f"{register + start_offset}.p{block_idx}"
+
+                # Handle dynamic Home Assistant discovery for this new block
+                _handle_dynamic_discovery(discovery_info, device_name, block_reg, slave_id, trigger_val, trigger_reg, outputs, is_split, mqtt_client)
+
+                # Recursively process this chunk as a standalone command
+                block_info = command_info.copy()
+                block_info['type'] = 'processed_block' # Prevent infinite loop
+                block_info['reg'] = block_reg
+                process_and_publish(block_info, chunk, device_name, mqtt_client, encrypted, discovery_info)
+            return
+
         # Handle generic repeating patterns (e.g. Node Lists, Cell Data)
         if output_type == 'repeating_nonzero':
             block_regs = command_info.get('block_regs', 1)
@@ -651,6 +690,7 @@ def process_and_publish(command_info: Dict[str, Any], data: bytes, device_name: 
                     if length == 32: value = to_32bit_signed(value)
                     elif length == 16: value = to_signed(value)
                 if 'subtract' in output: value -= output['subtract']
+                if output.get('absolute', False): value = abs(value)
                 if 'scale' in output: value = apply_scale(value, output['scale'])
                 if output.get('type') == 'decimal': value = str(value)
                 if 'values' in output and isinstance(value, int) and 0 <= value < len(output['values']):
@@ -675,6 +715,43 @@ def process_and_publish(command_info: Dict[str, Any], data: bytes, device_name: 
 
     except Exception as e:
         print(f"An error occurred while processing register {command_info.get('reg')}: {e}")
+
+
+def _handle_dynamic_discovery(discovery_info, device_name, block_reg, slave_id, trigger_val, trigger_reg, outputs, is_split, mqtt_client):
+    """Helper to register dynamic entities with Home Assistant."""
+    if not discovery_info:
+        return
+
+    slave_suffix = f"_s{slave_id}" if slave_id != 1 else ""
+    trigger_suffix = f"_t{trigger_val}" if trigger_reg is not None else ""
+    
+    for output in outputs:
+        topic_suffix = f".{output.get('offset', 0)}" if is_split else ""
+        unique_id = f"{device_name}_{block_reg}{topic_suffix.replace('.', '_')}{slave_suffix}{trigger_suffix}"
+        
+        if unique_id not in DISCOVERED_DYNAMIC_REGS:
+            discovery_topic = f"homeassistant/sensor/{unique_id}/config"
+            state_topic = f"bluetti_debugger/{device_name}/{block_reg}{topic_suffix}{slave_suffix}{trigger_suffix}/state"
+            
+            payload = {
+                "name": f"{block_reg} {output['name']}",
+                "state_topic": state_topic,
+                "unique_id": unique_id,
+                "json_attributes_topic": state_topic,
+                "value_template": "{{ value_json.value }}",
+                "device": {
+                    "identifiers": [discovery_info['address']],
+                    "name": discovery_info['display_name'],
+                    "model": discovery_info['type'],
+                    "manufacturer": "Bluetti"
+                }
+            }
+            if 'device_class' in output: payload['device_class'] = output['device_class']
+            if 'unit' in output: payload['unit_of_measurement'] = output['unit']
+
+            mqtt_client.publish(discovery_topic, json.dumps(payload), retain=True)
+            DISCOVERED_DYNAMIC_REGS.add(unique_id)
+            print(f"Sent dynamic discovery for {block_reg} ({output['name']})")
 
 
 def publish_invalid(command_info: Dict[str, Any], device_name: str, mqtt_client: mqtt.Client, encrypted: bool):

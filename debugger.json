@@ -620,26 +620,33 @@
       {"reg": 1286, "name": "String 10 Current", "len": 16, "scale": 1, "unit": "A", "device_class": "current", "notes": "CORRECT" },
 
 
-    { "reg": 1300, "name": "INV_GRID_INFO: Grid Frequency Hz", "len": 16, "device_class": "frequency", "unit": "Hz", "scale": 1, "notes": "CORRECT" },
-    { "reg": 1301, "name": "Total Grid Power", "len": 32, "signed": true, "unit": "W", "device_class": "power" },
-    { "reg": 1303, "name": "Total Grid Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" },
-
-    { "reg": 1305, "name": "Total Feedback Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" },
-    { "reg": 1312, "name": "Grid Phase Count" },
-    { "reg": 1313, "name": "INV_GRID_INFO: Grid Power Phase 1", "len": 16, "signed": true, "device_class": "power", "unit": "W", "notes": "CORRECT - check when exporting" },
-    { "reg": 1314, "name": "INV_GRID_INFO: Grid Voltage Phase 1 V", "len": 16, "device_class": "voltage", "unit": "V", "scale": 1, "notes": "CORRECT - check when exporting" },
-    { "reg": 1315, "name": "INV_GRID_INFO: Grid Current Phase 1 A", "len": 16, "signed": true, "device_class": "current", "unit": "A", "scale": 1, "notes": "CORRECT - check when exporting" },
-    { "reg": 1316, "name": "Grid Phase 1 Apparent Power", "unit": "VA", "device_class": "apparent_power" },
-    { "reg": 1319, "name": "INV_GRID_INFO: Grid Power Phase 2", "len": 16, "signed": true, "device_class": "power", "unit": "W", "notes": "CORRECT - check when exporting" },
-    { "reg": 1319, "name": "Unknown Reg 1319 (Slave 41)", "slave_id": 41 },
-    { "reg": 1320, "name": "INV_GRID_INFO: Grid Voltage Phase 2 V", "len": 16, "device_class": "voltage", "unit": "V", "scale": 1, "notes": "CORRECT - check when exporting" },
-    { "reg": 1321, "name": "INV_GRID_INFO: Grid Current Phase 2 A", "len": 16, "signed": true, "device_class": "current", "unit": "A", "scale": 1, "notes": "CORRECT - check when exporting" },
-    { "reg": 1321, "name": "Unknown Reg 1321 (Slave 41)", "slave_id": 41 },
-    { "reg": 1322, "name": "Grid Phase 2 Apparent Power", "unit": "VA", "device_class": "apparent_power" },
-    { "reg": 1325, "name": "INV_GRID_INFO: Grid Power Phase 3", "len": 16, "signed": true, "device_class": "power", "unit": "W", "notes": "CORRECT - check when exporting" },
-    { "reg": 1326, "name": "INV_GRID_INFO: Grid Voltage Phase 3 V", "len": 16, "device_class": "voltage", "unit": "V", "scale": 1, "notes": "CORRECT - check when exporting" },
-    { "reg": 1327, "name": "INV_GRID_INFO: Grid Current Phase 3 A", "len": 16, "signed": true, "device_class": "current", "unit": "A", "scale": 1, "notes": "CORRECT - check when exporting" },
-    { "reg": 1328, "name": "Grid Phase 3 Apparent Power", "unit": "VA", "device_class": "apparent_power" },
+    {
+      "bulk_read": {
+        "read_start_reg": 1300,
+        "read_count": 31,
+        "registers": [
+          { "reg": 1300, "name": "Grid Frequency", "unit": "Hz", "scale": 1, "device_class": "frequency" },
+          { "reg": 1301, "len": 32, "name": "Total Grid Power", "unit": "W", "device_class": "power", "signed": true },
+          { "reg": 1303, "len": 32, "name": "Total Grid Energy", "unit": "kWh", "scale": 1, "device_class": "energy" },
+          { "reg": 1305, "len": 32, "name": "Total Feedback Energy", "unit": "kWh", "scale": 1, "device_class": "energy" },
+          { 
+            "reg": 1312, 
+            "name": "System Phase Count", 
+            "type": "repeating_count",
+            "len": 304,
+            "count_offset": 0,
+            "start_offset": 1,
+            "block_regs": 6,
+            "outputs": [
+              { "reg_offset": 0, "name": "Phase Grid Power", "unit": "W", "device_class": "power", "signed": true, "absolute": true },
+              { "reg_offset": 1, "name": "Phase Grid Voltage", "unit": "V", "scale": 1, "device_class": "voltage" },
+              { "reg_offset": 2, "name": "Phase Grid Current", "unit": "A", "scale": 1, "device_class": "current", "signed": true, "absolute": true },
+              { "reg_offset": 3, "name": "Phase Apparent Power", "unit": "VA", "device_class": "apparent_power" }
+            ]
+          }
+        ]
+      }
+    },
 
     { "reg": 1400, "name": "INV_LOAD_INFO: Total DC Load Power", "len": 32, "unit": "W", "device_class": "power" },
     { "reg": 1402, "name": "INV_LOAD_INFO: Total DC Load Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" },
