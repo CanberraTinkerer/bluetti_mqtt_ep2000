@@ -230,9 +230,9 @@ class EP2000(BluettiDevice):
     def polling_commands(self) -> List[ReadHoldingRegisters]:
         return [
             ReadHoldingRegisters(100, 60),
-            ReadHoldingRegisters(1100, 60),
+            ReadHoldingRegisters(1100, 70),
             ReadHoldingRegisters(1200, 92),
-            ReadHoldingRegisters(1300, 28),
+            ReadHoldingRegisters(1300, 31),
             ReadHoldingRegisters(1400, 60),
             ReadHoldingRegisters(1509, 30),
             ReadHoldingRegisters(2000, 60),
