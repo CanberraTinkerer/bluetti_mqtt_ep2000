@@ -116,6 +116,7 @@ Used when one register tells you how many blocks follow it (e.g., Number of Phas
 
 **Key Fields:**
 - `count_offset`: Distance from the `reg` where the count value is stored (0 = current register).
+- **Fallback**: If the register value is `0`, the script automatically calculates the count based on the `len` (total bytes read) and `block_regs`.
 - `start_offset`: Number of registers to skip after the count before the blocks start.
 - `block_regs`: Size of each repeating block in registers.
 - `outputs`: The fields to extract from each discovered block.
@@ -151,6 +152,19 @@ Used for interleaved data tables (like `7200` BMU metadata).
 ### Slave IDs for EP2000
 - **`1`**: The main Inverter / Gateway. (Default)
 - **`41`**: The BMS Gateway (HV800). This is where the majority of battery detail is found.
+
+---
+
+## 9. Session Maintenance (Keep-Alive)
+
+The EP2000 employs a "Low-Power Telemetry Strategy." If it does not detect a heartbeat from a controller, it clears the registers on Slave 41 to save resources.
+
+The Debugger automatically mimics the official app by sending the following "Session Lock" writes at the start of every poll:
+1. **Register 190 = 1 (Slave 1)**: Master session lock.
+2. **Register 30001 = 1 (Slave 0)**: Global broadcast mesh refresh.
+3. **Register 21000 = 6 (Slave 1)**: Forces a re-scan of peripheral nodes.
+
+*Note: This behavior is automatically triggered when the device is detected as a V2 protocol device.*
 
 ---
 

@@ -547,13 +547,14 @@ def process_and_publish(command_info: Dict[str, Any], data: bytes, device_name: 
             count_data = data[count_offset*2 : count_offset*2 + 2]
             count = int.from_bytes(count_data, 'big')
             
+            # Fallback: If count is 0, calculate based on payload length
+            if count == 0:
+                count = (len(data) // 2 - start_offset) // block_regs
+
             # Publish the count register itself first
             count_info = command_info.copy()
             count_info['type'] = 'numeric' # Prevent recursion
             process_and_publish(count_info, count_data, device_name, mqtt_client, encrypted, discovery_info)
-
-            if count == 0:
-                return
 
             # Process each block
             for i in range(count):
@@ -959,6 +960,31 @@ async def poll_device_registers(
     # Parse plaintext slaves list
     if plaintext_slaves:
         logging.info(f"Forcing plaintext for slaves: {sorted(plaintext_slaves)}")
+
+    # --- SESSION KEEP-ALIVE (App Mimicry) ---
+    # Replicate the official app routine to prevent the device from entering low-power mode
+    # and clearing the peripheral registers (Slave 41, Slave 0).
+    if device_protocol == "v2":
+        print("Refreshing Session Lock (Keep-Alive Heartbeat)...")
+        heartbeats = [
+            (190, 1, 1),     # 1. Master Session Lock (Slave 1)
+            (30001, 1, 0),   # 2. Global Mesh Refresh (Broadcast 0 - No Response)
+            (21000, 6, 1)    # 3. Peripheral Refresh (Slave 1)
+        ]
+        for reg, val, sid in heartbeats:
+            try:
+                cmd = WriteSingleRegister(reg, val, slave_id=sid)
+                if sid == 0:
+                    # Broadcast writes don't return a response; fire and forget
+                    await client.perform(cmd)
+                    await asyncio.sleep(0.1)
+                else:
+                    future = await client.perform_with_fallback(cmd, device_protocol)
+                    await future
+            except Exception as e:
+                logging.debug(f"Heartbeat write to {reg} ignored: {e}")
+        
+        await asyncio.sleep(0.5) # Wait for Inverter to bridge the refresh
 
     # Group commands for polling
     grouped_commands = group_commands(commands_to_poll, max_group_size=max_group_size)

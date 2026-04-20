@@ -1642,9 +1642,6 @@
     {"reg": 12078, "name": "Unknown Reg 12078", "notes": "non-zero"},
     {"reg": 12079, "name": "Unknown Reg 12079", "notes": "non-zero"},
     {"reg": 12161, "name": "Unknown Reg 12161", "notes": "non-zero"},
-    {"reg": 15039, "name": "Unknown Reg 15039", "notes": "non-zero"},
-    {"reg": 15058, "name": "Unknown Reg 15058", "notes": "non-zero"},
-    {"reg": 15059, "name": "Unknown Reg 15059", "notes": "non-zero"},
 
  
     { "reg": 21000, "name": "Node List Version", "notes": "Should be 1" },
@@ -1652,10 +1649,17 @@
       "reg": 21001, "name": "Total Node Count", "type": "repeating_count",
       "len": 4112, "count_offset": 0, "start_offset": 1, "block_regs": 8,
       "outputs": [
-        { "reg_offset": 0, "name": "Node Group" },
-        { "reg_offset": 1, "name": "Node Slave ID" },
+        { "reg_offset": 0, "name": "Group and Slave", "outputs": [
+            { "name": "Node Slave ID", "mask": 255 },
+            { "name": "Node Group ID", "offset": 8, "mask": 255 }
+        ]},
+        { "reg_offset": 1, "name": "Internal IDs", "outputs": [
+            { "name": "Node Parent ID", "mask": 255 },
+            { "name": "Node Sub ID", "offset": 8, "mask": 255 }
+        ]},
+        { "reg_offset": 2, "name": "Node Flags", "notes": "Bit 0: Online" },
         { "reg_offset": 4, "name": "Node Model ID" },
-        { "reg_offset": 5, "name": "Node SN", "len": 32, "ascii": true }
+        { "reg_offset": 5, "name": "Node Unique SN", "len": 48 }
       ]
     },
    
