@@ -297,11 +297,43 @@ def get_command_fields(args: Namespace) -> List[Dict[str, Any]]:
             return []
 
         flat_config = []
+
+        def process_bulk_read(bulk_item: Dict[str, Any], parent_slave: int, triggers: List = None, trigger_val: Any = None, default_delay: float = 0.2):
+            """Helper to extract registers from a bulk/grouped read container."""
+            regs = []
+            b_slave = bulk_item.get("slave_id", bulk_item.get("slave", parent_slave))
+            b_delay = bulk_item.get("delay", default_delay)
+            child_regs = bulk_item.get("registers", [])
+            
+            for r in child_regs:
+                # Apply metadata from trigger/bulk context
+                r.update({
+                    "triggers": triggers or [],
+                    "trigger_val": trigger_val,
+                    "trigger_delay": b_delay
+                })
+                if triggers:
+                    r["trigger_reg"] = triggers[0]["reg"]
+                if "slave_id" not in r and "slave" not in r:
+                    r["slave_id"] = b_slave
+                regs.append(r)
+            return regs
+
         for item in config:
-            if isinstance(item, dict) and "trigger_write" in item:
+            if not isinstance(item, dict):
+                continue
+
+            # Handle Standalone Bulk/Grouped Reads
+            if "bulk_read" in item or "grouped_read" in item:
+                bulk_data = item.get("bulk_read", item.get("grouped_read"))
+                flat_config.extend(process_bulk_read(bulk_data, item.get("slave_id", item.get("slave", 1))))
+            
+            # Handle Trigger Writes (which can now contain bulk_reads)
+            elif "trigger_write" in item:
                 trigger_data = item.get("trigger_write", [])
                 triggers, delay, regs = [], 0.2, []
                 item_slave = item.get("slave_id", item.get("slave", 1))
+                
                 for component in trigger_data:
                     if "trigger_metadata" in component:
                         m = component["trigger_metadata"]
@@ -310,27 +342,19 @@ def get_command_fields(args: Namespace) -> List[Dict[str, Any]]:
                         t_slave = m.get("slave_id", m.get("slave", item_slave))
                         if reg is not None:
                             triggers.append({"reg": reg, "val": val, "slave_id": t_slave})
-                    if "post_trigger_read" in component:
-                        r_info = component["post_trigger_read"]
-                        delay = r_info.get("delay", 0.8) # Default to 800ms "Rule"
-                        regs = r_info.get("registers", component.get("registers", []))
-                        r_slave = r_info.get("slave_id", r_info.get("slave", item_slave))
-                        for r in regs:
-                            if "slave_id" not in r and "slave" not in r:
-                                r["slave_id"] = r_slave
-                
-                # Determine primary trigger value for MQTT topic uniqueness (usually Category 2026)
-                primary_val = triggers[0]["val"] if triggers else None
-                for t in triggers:
-                    if t["reg"] == 2026:
-                        primary_val = t["val"]
-                        break
 
-                for r in regs:
-                    r.update({"triggers": triggers, "trigger_val": primary_val, "trigger_delay": delay})
-                    if triggers: r["trigger_reg"] = triggers[0]["reg"] # Compatibility
-                    if "slave_id" not in r and "slave" not in r: r["slave_id"] = item_slave
-                    flat_config.append(r)
+                    # Support both the old post_trigger_read and the new bulk_read keyword
+                    for k in ["bulk_read", "grouped_read", "post_trigger_read"]:
+                        if k in component:
+                            primary_val = triggers[0]["val"] if triggers else None
+                            # Category 2026 is often the primary selector for unique topics
+                            for t in triggers:
+                                if t["reg"] == 2026:
+                                    primary_val = t["val"]
+                                    break
+                            
+                            regs.extend(process_bulk_read(component[k], item_slave, triggers, primary_val))
+                flat_config.extend(regs)
             else:
                 flat_config.append(item)
         return flat_config
