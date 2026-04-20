@@ -1249,13 +1249,19 @@
     {"reg":13772,"name":"Firmware Verification Hash","notes":"Used to validate module headers"},
     {"reg":13776,"name":"BLE Client Pairing Trigger","notes":"Used to link new remotes or battery packs"},
 
-    {"reg":14000,"len":6,"ascii":true,"name":"HMI Model Name"},
-    {"reg":14006,"len":4,"ascii":true,"name":"HMI Serial Number"},
-    {"reg":14010,"len":32,"name":"HMI Boot Version"},
-    {"reg":14012,"len":32,"name":"HMI Kernel Version"},
-    {"reg":14014,"len":32,"name":"HMI File System Version"},
-    {"reg":14016,"len":32,"name":"HMI UI Version"},
-    {"reg":14018,"len":32,"name":"HMI Base Version"},
+    {
+      "bulk_read": {
+        "slave_id": 41,
+        "read_start_reg": 14000,
+        "read_count": 14,
+        "registers": [
+          { "reg": 14000, "len": 6, "ascii": true, "name": "Comms Bridge Model", "notes": "Expected: MEXCLD" },
+          { "reg": 14006, "len": 4, "ascii": true, "name": "Comms Bridge Serial Number" },
+          { "reg": 14010, "len": 32, "name": "Comms Bridge Firmware 1", "notes": "MEXCLD Primary FW" },
+          { "reg": 14012, "len": 32, "name": "Comms Bridge Firmware 2", "notes": "MEXCLD Secondary FW" }
+        ]
+      }
+    },
 
     {"reg":14700,"name":"Smart Plug Settings Block Start","notes":"Block Start. Compound settings toggle."},
     {"reg":14701,"name":"Smart Plug Master Switch","type":"enum","values":["Off","On"],"notes":"0: OFF, 1: ON"},
@@ -1636,13 +1642,6 @@
     {"reg": 12078, "name": "Unknown Reg 12078", "notes": "non-zero"},
     {"reg": 12079, "name": "Unknown Reg 12079", "notes": "non-zero"},
     {"reg": 12161, "name": "Unknown Reg 12161", "notes": "non-zero"},
-    {"reg": 14001, "name": "Unknown Reg 14001", "notes": "non-zero"},
-    {"reg": 14002, "name": "Unknown Reg 14002", "notes": "non-zero"},
-    {"reg": 14003, "name": "Unknown Reg 14003", "notes": "non-zero"},
-    {"reg": 14007, "name": "Unknown Reg 14007", "notes": "non-zero"},
-    {"reg": 14008, "name": "Unknown Reg 14008", "notes": "non-zero"},
-    {"reg": 14011, "name": "Unknown Reg 14011", "notes": "non-zero"},
-    {"reg": 14013, "name": "Unknown Reg 14013", "notes": "non-zero"},
     {"reg": 15039, "name": "Unknown Reg 15039", "notes": "non-zero"},
     {"reg": 15058, "name": "Unknown Reg 15058", "notes": "non-zero"},
     {"reg": 15059, "name": "Unknown Reg 15059", "notes": "non-zero"},
