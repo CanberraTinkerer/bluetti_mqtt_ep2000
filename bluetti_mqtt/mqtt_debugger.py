@@ -567,6 +567,70 @@ def process_and_publish(command_info: Dict[str, Any], data: bytes, device_name: 
                 process_and_publish(block_info, chunk, device_name, mqtt_client, encrypted, discovery_info)
             return
 
+        # Handle the BMU block (Cells followed by NTCs with shifting start)
+        if output_type == 'dynamic_bmu_block':
+            # 1. Parse counts from headers (low bytes)
+            cell_count = data[1] if len(data) > 1 else 0
+            ntc_count = data[3] if len(data) > 3 else 0
+
+            # Publish counts first
+            for i, name in enumerate(["Cell Count", "NTC Count"]):
+                count_info = {"reg": register + i, "name": name}
+                count_data = data[i*2 : (i+1)*2]
+                process_and_publish(count_info, count_data, device_name, mqtt_client, encrypted, discovery_info)
+
+            # 2. Process Cells (1 register each, starting at offset 2)
+            cell_outputs = command_info.get('cell_outputs', [])
+            for i in range(cell_count):
+                cell_idx = i + 1
+                cell_reg = register + 2 + i
+                chunk = data[(2 + i)*2 : (3 + i)*2]
+                
+                block_reg = f"{register + 2}.c{cell_idx}"
+                _handle_dynamic_discovery(discovery_info, device_name, block_reg, slave_id, trigger_val, trigger_reg, cell_outputs, True, mqtt_client)
+                
+                block_info = command_info.copy()
+                block_info.update({'type': 'processed_block', 'reg': block_reg, 'outputs': cell_outputs})
+                process_and_publish(block_info, chunk, device_name, mqtt_client, encrypted, discovery_info)
+
+            # 3. Process NTCs (2 values per register, starting after cells)
+            ntc_start_offset = 2 + cell_count
+            ntc_outputs = command_info.get('ntc_outputs', [])
+            
+            for i in range(ntc_count):
+                ntc_idx = i + 1
+                reg_within_block = i // 2
+                is_high_byte = (i % 2) != 0
+                
+                # Get the register containing this NTC
+                chunk = data[(ntc_start_offset + reg_within_block)*2 : (ntc_start_offset + reg_within_block + 1)*2]
+                if len(chunk) < 2: break
+                
+                # Extract the specific byte (Low byte first, then High byte)
+                # In Big Endian [High, Low], chunk[1] is Low, chunk[0] is High
+                val = chunk[0] if is_high_byte else chunk[1]
+                
+                block_reg = f"{register + ntc_start_offset}.t{ntc_idx}"
+                
+                # Handle Discovery
+                if discovery_info:
+                    unique_id = f"{device_name}_{block_reg.replace('.', '_')}_s{slave_id}"
+                    if unique_id not in DISCOVERED_DYNAMIC_REGS:
+                        _handle_dynamic_discovery(discovery_info, device_name, block_reg, slave_id, trigger_val, trigger_reg, ntc_outputs, False, mqtt_client)
+                
+                # Publish the temperature value
+                state_topic = f"bluetti_debugger/{device_name}/{block_reg}/state"
+                processed_val = val - 40 # Standard NTC scaling
+                state_payload = {
+                    "value": processed_val,
+                    "PossibleName": f"NTC {ntc_idx} Temp",
+                    "modbus_register": block_reg,
+                    "valid": True,
+                    "unit": "°C"
+                }
+                mqtt_client.publish(state_topic, json.dumps(state_payload))
+            return
+
         # Handle generic repeating patterns (e.g. Node Lists, Cell Data)
         if output_type == 'repeating_nonzero':
             block_regs = command_info.get('block_regs', 1)
@@ -1028,7 +1092,7 @@ async def async_main():  # noqa: C901
     parser.add_argument("--mqtt-password", type=str, help="MQTT password")
     parser.add_argument("--slave-switch-delay", type=float, default=0.8, help="Delay in seconds when switching slave IDs")
     parser.add_argument("--disconnect-on-slave-change", action="store_true", help="Disconnect and reconnect Bluetooth when switching slaves (slow but reliable)")
-    parser.add_argument("--max-group-size", type=int, default=32, help="Max registers per Modbus read command")
+    parser.add_argument("--max-group-size", type=int, default=250, help="Max registers per Modbus read command")
     parser.add_argument("--force-protocol", choices=["v1", "v2"], help="Force specific protocol version (v1=plaintext, v2=legacy mode; encryption is ignored)")
     parser.add_argument("--plaintext-slaves", type=str, help="Comma-separated list of slave IDs to force plaintext protocol (e.g., '41,42,43')")
     parser.add_argument("--debug", action="store_true", help="Enable verbose debug logging")
