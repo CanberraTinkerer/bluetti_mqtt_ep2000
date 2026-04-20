@@ -200,7 +200,8 @@
             ]
           }
         ]
-      }
+        }
+      }  
     ]},
     {"trigger_write": [
       { "trigger_metadata": { "trigger_reg": 2027, "trigger_value": 2, "delay": 0.2, "slave_id": 0 } },
