@@ -181,27 +181,46 @@
     { "reg": 146, "name": "APP_HOME_DATA: Grid Power All", "len": 32, "signed": true, "device_class": "power", "unit": "W", "notes": "probably is AC coupled inverter production (old PV)" },
     { "reg": 148, "name": "APP_HOME_DATA: Total Inverter Power", "len": 32, "signed": true, "device_class": "power", "unit": "W", "notes": "negative when sunny, battery is charging and solar is covering consumption" },
 
-    {"trigger_write": [
-      { "trigger_metadata": { "trigger_reg": 2027, "trigger_value": 1, "delay": 0.2, "slave_id": 1 } },
-      { "trigger_metadata": { "trigger_reg": 2026, "trigger_value": 1, "delay": 0.2, "slave_id": 1 } },
-      { "trigger_metadata": { "trigger_reg": 2028, "trigger_value": 1, "delay": 0.8, "slave_id": 1 } },
-      { "bulk_read": { "slave_id": 41, "delay": 0.2, 
-        "registers": [
-          { "reg": 150, "name": "PV Total Energy Low", "len": 32, "unit": "kWh", "scale": 1, "slave_id": 41, "device_class": "energy" },
-          { "reg": 154, "name": "PV Today Energy", "len": 32, "unit": "kWh", "scale": 1, "slave_id": 41, "device_class": "energy" },
-          { "reg": 156, "name": "PV Month Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" },
-          { 
-            "reg": 3002, "name": "Category Fault Log", "type": "repeating_count", "len": 400, "count_offset": -2, "start_offset": 0, "block_regs": 5,
-            "outputs": [
-              { "reg_offset": 0, "name": "Fault Timestamp Y/M", "outputs": [{"name": "Month", "mask": 255}, {"name": "Year", "mask": 255, "offset": 8, "subtract": -2000}] },
-              { "reg_offset": 1, "name": "Fault Timestamp D/H", "outputs": [{"name": "Hour", "mask": 255}, {"name": "Day", "mask": 255, "offset": 8}] },
-              { "reg_offset": 3, "name": "Fault ID", "mask": 255 },
-              { "reg_offset": 4, "name": "Fault Diagnostic Code" }
-            ]
+    {"trigger_write": 
+      [
+        { "trigger_metadata": { "trigger_reg": 2027, "trigger_value": 1, "delay": 0.2, "slave_id": 1 } },
+        { "trigger_metadata": { "trigger_reg": 2026, "trigger_value": 1, "delay": 0.2, "slave_id": 1 } },
+        { "trigger_metadata": { "trigger_reg": 2028, "trigger_value": 1, "delay": 0.8, "slave_id": 1 } },
+        { "bulk_read": 
+          { "slave_id": 41, "delay": 0.2, 
+            "registers": 
+            [
+              { "reg": 150, "name": "PV Total Energy Low", "len": 32, "unit": "kWh", "scale": 1, "slave_id": 41, "device_class": "energy" },
+              { "reg": 154, "name": "PV Today Energy", "len": 32, "unit": "kWh", "scale": 1, "slave_id": 41, "device_class": "energy" },
+              { "reg": 156, "name": "PV Month Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" },
+              { "reg": 3002, "name": "Category Fault Log", "type": "repeating_count", "len": 400, "count_offset": -2, "start_offset": 0, "block_regs": 5,
+                "outputs": 
+                [
+                  { "reg_offset": 0, "name": "Fault Timestamp Y/M", "outputs": 
+                    [
+                      {"name": "Month", "mask": 255
+                      }, 
+                      {"name": "Year", "mask": 255, "offset": 8, "subtract": -2000
+                      }
+                    ] 
+                  },
+                  { "reg_offset": 1, "name": "Fault Timestamp D/H", "outputs": 
+                    [
+                      {"name": "Hour", "mask": 255
+                      }, 
+                      {"name": "Day", "mask": 255, "offset": 8
+                      }
+                    ] 
+                  },
+                  { "reg_offset": 3, "name": "Fault ID", "mask": 255 },
+                  { "reg_offset": 4, "name": "Fault Diagnostic Code" }
+                ]
+             }
+           ]
           }
-        ]
-      }
-    ]},
+        }  
+      ]
+    },
     {"trigger_write": [
       { "trigger_metadata": { "trigger_reg": 2027, "trigger_value": 2, "delay": 0.2, "slave_id": 0 } },
       { "trigger_metadata": { "trigger_reg": 2026, "trigger_value": 2, "delay": 0.2, "slave_id": 0 } },
@@ -1014,28 +1033,47 @@
       }
     },
 	
-    {"reg":6100,"name":"Pack ID"},
-    {"reg":6101,"len":6,"ascii":true,"name":"Pack Type"},
-    {"reg":6107,"len":64,"name":"Pack Serial Number"},
-    {"reg":6111,"name":"Pack Voltage","scale":2,"unit":"V","device_class":"voltage","notes":"High precision"},
-    {"reg":6112,"name":"Pack Current","scale":1,"unit":"A","device_class":"current"},
-    {"reg":6113,"name":"Pack SOC","unit":"%","device_class":"battery"},
-    {"reg":6114,"name":"Pack SOH","unit":"%","device_class":"battery"},
-    {"reg":6115,"name":"Pack Average Temp","subtract":40,"unit":"°C","device_class":"temperature"},
-    {"reg":6124,"name":"Pack Running Status","type":"enum"},
-    {"reg":6125,"name":"Pack Charging Status","type":"enum"},
-    {"reg":6129,"name":"Pack Online Status","type":"enum","values":["Offline","Online"],"notes":"0: Offline / 1: Online"},
-    {"reg":6144,"name":"Pack Charge Protection","notes":"Bitfield"},
-    {"reg":6145,"name":"Pack Discharge Protection","notes":"Bitfield"},
-    {"reg":6146,"len":48,"name":"Pack High Volt Faults","notes":"Bitfield"},
-    {"reg":6149,"name":"Pack High Volt Alarms","notes":"Bitfield"},
-    {"reg":6154,"name":"Total Cell Count"},
-    {"reg":6155,"name":"NTC Count"},
+    {
+      "bulk_read": {
+        "slave_id": 41,
+        "read_start_reg": 6100,
+        "read_count": 85,
+        "registers": [
+          { "reg": 6100, "name": "Pack Index ID" },
+          { "reg": 6101, "len": 6, "ascii": true, "name": "Pack Model Name", "notes": "Expected: HV800" },
+          { "reg": 6107, "len": 64, "name": "Pack Serial Number Block" },
+          { "reg": 6111, "name": "Pack Precise Voltage", "scale": 1, "unit": "V", "device_class": "voltage", "notes": "0.1V resolution in your trace" },
+          { "reg": 6112, "name": "Pack Real-time Current", "signed": true, "scale": 1, "unit": "A", "device_class": "current" },
+          { "reg": 6113, "name": "Pack SOC", "unit": "%", "device_class": "battery" },
+          { "reg": 6114, "name": "Pack SOH", "unit": "%", "device_class": "battery" },
+          { "reg": 6115, "name": "Pack Average Temp", "subtract": 40, "unit": "°C", "device_class": "temperature" },
+          { "reg": 6124, "name": "BMS Internal Running Status" },
+          { "reg": 6125, "name": "BMS Active Charging Stage" },
+          { "reg": 6129, "name": "Pack Full Capacity Estimate", "unit": "Ah" },
+          { "reg": 6144, "name": "Pack Protection Bitmask" },
+          { "reg": 6146, "len": 48, "name": "BMS Critical Hardware Errors" },
+          { "reg": 6151, "name": "Legacy Pack Cell Count" },
+          { "reg": 6152, "name": "Max Theoretical Cell Count" },
+          { "reg": 6153, "name": "Active Cell Count", "notes": "Source of Truth for cell loops (112)" },
+          { "reg": 6154, "name": "Physical BMU Count", "notes": "Source of Truth for pack count (7)" },
+          { "reg": 6156, "name": "BMU Hardware Profile ID" },
+          { 
+            "reg": 6173, "name": "Firmware Module Count", "type": "repeating_count",
+            "count_offset": 0, "start_offset": 1, "block_regs": 3,
+            "outputs": [
+              { "reg_offset": 0, "name": "Firmware Module ID" },
+              { "reg_offset": 1, "name": "Firmware Version", "len": 32 }
+            ]
+          }
+        ]
+      }
+    },
     {
       "bulk_read": {
         "registers": [
           {
             "reg": 6300,
+            "name": "Battery Pack Detailed Cell Info",
             "type": "dynamic_bmu_block",
             "len": 2720,
             "cell_outputs": [

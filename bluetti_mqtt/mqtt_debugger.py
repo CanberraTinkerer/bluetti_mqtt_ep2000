@@ -306,17 +306,19 @@ def get_command_fields(args: Namespace) -> List[Dict[str, Any]]:
             child_regs = bulk_item.get("registers", [])
             
             for r in child_regs:
+                # Copy to avoid modifying the original list if shared
+                r_copy = r.copy()
                 # Apply metadata from trigger/bulk context
-                r.update({
+                r_copy.update({
                     "triggers": triggers or [],
                     "trigger_val": trigger_val,
                     "trigger_delay": b_delay
                 })
                 if triggers:
-                    r["trigger_reg"] = triggers[0]["reg"]
-                if "slave_id" not in r and "slave" not in r:
-                    r["slave_id"] = b_slave
-                regs.append(r)
+                    r_copy["trigger_reg"] = triggers[0]["reg"]
+                if "slave_id" not in r_copy and "slave" not in r_copy:
+                    r_copy["slave_id"] = b_slave
+                regs.append(r_copy)
             return regs
 
         for item in config:
@@ -353,7 +355,13 @@ def get_command_fields(args: Namespace) -> List[Dict[str, Any]]:
                                     primary_val = t["val"]
                                     break
                             
-                            regs.extend(process_bulk_read(component[k], item_slave, triggers, primary_val))
+                            # Handle case where 'registers' is a sibling of the keyword (common in existing config)
+                            bulk_data = component[k]
+                            if "registers" not in bulk_data and "registers" in component:
+                                bulk_data = bulk_data.copy()
+                                bulk_data["registers"] = component["registers"]
+                            
+                            regs.extend(process_bulk_read(bulk_data, item_slave, triggers, primary_val))
                 flat_config.extend(regs)
             else:
                 flat_config.append(item)
@@ -1159,12 +1167,22 @@ async def async_main():  # noqa: C901
                     # Perform Home Assistant discovery
                     print(f"Publishing {len(commands_to_poll)} Home Assistant auto-discovery configs...")
                     for command_info in commands_to_poll:
-                        register = command_info['reg']
+                        # Skip dynamic types that register themselves during the polling loop
+                        if command_info.get('type') in ['dynamic_bmu_block', 'repeating_nonzero', 'repeating_count']:
+                            continue
+
+                        register = command_info.get('reg')
+                        if register is None:
+                            continue
+
                         outputs = command_info.get('outputs', [command_info])
                         is_split = 'outputs' in command_info
 
                         for output in outputs:
-                            output_name = output['name']
+                            output_name = output.get('name')
+                            if not output_name:
+                                continue
+
                             slave_id = get_target_slave_id(command_info)
                             trigger_reg = command_info.get('trigger_reg')
                             trigger_val = command_info.get('trigger_val')
