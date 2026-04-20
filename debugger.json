@@ -181,46 +181,27 @@
     { "reg": 146, "name": "APP_HOME_DATA: Grid Power All", "len": 32, "signed": true, "device_class": "power", "unit": "W", "notes": "probably is AC coupled inverter production (old PV)" },
     { "reg": 148, "name": "APP_HOME_DATA: Total Inverter Power", "len": 32, "signed": true, "device_class": "power", "unit": "W", "notes": "negative when sunny, battery is charging and solar is covering consumption" },
 
-    {"trigger_write": 
-      [
-        { "trigger_metadata": { "trigger_reg": 2027, "trigger_value": 1, "delay": 0.2, "slave_id": 1 } },
-        { "trigger_metadata": { "trigger_reg": 2026, "trigger_value": 1, "delay": 0.2, "slave_id": 1 } },
-        { "trigger_metadata": { "trigger_reg": 2028, "trigger_value": 1, "delay": 0.8, "slave_id": 1 } },
-        { "bulk_read": 
-          { "slave_id": 41, "delay": 0.2, 
-            "registers": 
-            [
-              { "reg": 150, "name": "PV Total Energy Low", "len": 32, "unit": "kWh", "scale": 1, "slave_id": 41, "device_class": "energy" },
-              { "reg": 154, "name": "PV Today Energy", "len": 32, "unit": "kWh", "scale": 1, "slave_id": 41, "device_class": "energy" },
-              { "reg": 156, "name": "PV Month Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" },
-              { "reg": 3002, "name": "Category Fault Log", "type": "repeating_count", "len": 400, "count_offset": -2, "start_offset": 0, "block_regs": 5,
-                "outputs": 
-                [
-                  { "reg_offset": 0, "name": "Fault Timestamp Y/M", "outputs": 
-                    [
-                      {"name": "Month", "mask": 255
-                      }, 
-                      {"name": "Year", "mask": 255, "offset": 8, "subtract": -2000
-                      }
-                    ] 
-                  },
-                  { "reg_offset": 1, "name": "Fault Timestamp D/H", "outputs": 
-                    [
-                      {"name": "Hour", "mask": 255
-                      }, 
-                      {"name": "Day", "mask": 255, "offset": 8
-                      }
-                    ] 
-                  },
-                  { "reg_offset": 3, "name": "Fault ID", "mask": 255 },
-                  { "reg_offset": 4, "name": "Fault Diagnostic Code" }
-                ]
-             }
-           ]
+    {"trigger_write": [
+      { "trigger_metadata": { "trigger_reg": 2027, "trigger_value": 1, "delay": 0.2, "slave_id": 1 } },
+      { "trigger_metadata": { "trigger_reg": 2026, "trigger_value": 1, "delay": 0.2, "slave_id": 1 } },
+      { "trigger_metadata": { "trigger_reg": 2028, "trigger_value": 1, "delay": 0.8, "slave_id": 1 } },
+      { "bulk_read": { "slave_id": 41, "delay": 0.2, 
+        "registers": [
+          { "reg": 150, "name": "PV Total Energy Low", "len": 32, "unit": "kWh", "scale": 1, "slave_id": 41, "device_class": "energy" },
+          { "reg": 154, "name": "PV Today Energy", "len": 32, "unit": "kWh", "scale": 1, "slave_id": 41, "device_class": "energy" },
+          { "reg": 156, "name": "PV Month Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" },
+          { 
+            "reg": 3002, "name": "Category Fault Log", "type": "repeating_count", "len": 400, "count_offset": -2, "start_offset": 0, "block_regs": 5,
+            "outputs": [
+              { "reg_offset": 0, "name": "Fault Timestamp Y/M", "outputs": [{"name": "Month", "mask": 255}, {"name": "Year", "mask": 255, "offset": 8, "subtract": -2000}] },
+              { "reg_offset": 1, "name": "Fault Timestamp D/H", "outputs": [{"name": "Hour", "mask": 255}, {"name": "Day", "mask": 255, "offset": 8}] },
+              { "reg_offset": 3, "name": "Fault ID", "mask": 255 },
+              { "reg_offset": 4, "name": "Fault Diagnostic Code" }
+            ]
           }
-        }  
-      ]
-    },
+        ]
+      }
+    ]},
     {"trigger_write": [
       { "trigger_metadata": { "trigger_reg": 2027, "trigger_value": 2, "delay": 0.2, "slave_id": 0 } },
       { "trigger_metadata": { "trigger_reg": 2026, "trigger_value": 2, "delay": 0.2, "slave_id": 0 } },
@@ -1100,55 +1081,16 @@
     {"reg":7011,"name":"BMS Hardware Interface Type","type":"enum"},
 
     {
-      "bulk_read": {
-        "slave_id": 41,
-        "read_start_reg": 7200,
-        "read_count": 100,
-        "registers": [
-          {
-            "reg": 7200,
-            "name": "BMU Interleaved Metadata",
-            "type": "segmented_repeating",
-            "count": 7,
-            "segments": [
-              {
-                "start_offset": 0, "stride": 4,
-                "outputs": [
-                  { "reg_offset": 0, "len": 32, "name": "BMU Unique ID" },
-                  { "reg_offset": 2, "name": "BMU Status Flags", "notes": "Expected 0250 (592)" }
-                ]
-              },
-              {
-                "start_offset": 28, "stride": 2,
-                "outputs": [
-                  { "reg_offset": 0, "name": "BMU Fault Bitmask" }
-                ]
-              },
-              {
-                "start_offset": 42, "stride": 1,
-                "outputs": [
-                  { "reg_offset": 0, "name": "NTC and Cell Counts", "outputs": [
-                    { "name": "Active Cells", "mask": 255 },
-                    { "name": "Active NTCs", "offset": 8, "mask": 255 }
-                  ]}
-                ]
-              }
-            ]
-          }
-        ]
-      }
-    },
-    {
-      "bulk_read": {
-        "slave_id": 41,
-        "read_start_reg": 7586,
-        "read_count": 3,
-        "registers": [
-          { "reg": 7586, "name": "BMS Aggregator CRC" },
-          { "reg": 7587, "name": "BMS System Status Mask", "notes": "FF01 = Fully Active" },
-          { "reg": 7588, "name": "BMS Aggregate SOC Mirror", "unit": "%", "device_class": "battery" }
-        ]
-      }
+      "reg": 7200,
+      "name": "BMU Logic Node List",
+      "type": "repeating_nonzero",
+      "block_regs": 4,
+      "check_reg_offset": 0,
+      "outputs": [
+        { "reg_offset": 0, "len": 32, "name": "BMU ID" },
+        { "reg_offset": 2, "name": "BMU Status Flags" }
+      ],
+      "slave_id": 41
     },
     {"reg":7208,"name":"CELL_VOLT_01","unit":"mV","scale":1,"slave_id":41},
     {"reg":7209,"name":"CELL_VOLT_02","unit":"mV","scale":1,"slave_id":41},
@@ -1212,19 +1154,67 @@
     {"reg":11178,"len":16,"ascii":true,"name":"Profile 2 SSID"},
     {"reg":11194,"len":32,"ascii":true,"name":"Profile 2 Password"},
 
-    {"reg":12002,"name":"WiFi Config Flag","notes":"Bitfield, Used during network pairing"},
-    {"reg":12003,"len":16,"ascii":true,"name":"Current SSID"},
-    {"reg":12019,"len":32,"ascii":true,"name":"WiFi Password","notes":"SECURITY RISK: Exposes password in plain text"},
-	
-    {"reg":12163,"name":"Extreme Weather Alert Mode","type":"enum","values":["Off","On"],"notes":"0: OFF / 1: ON"},
-    {"reg":12170,"name":"Address Sorting Trigger","notes":"Write 1 to re-sort"},
-    {"reg":12174,"len":2,"name":"IoT Module Gateway IP","format":"ipv4"},
-    {"reg":12185,"name":"IoT Server Connection Switch","type":"enum","values":["Off","On"],"notes":"0: OFF / 1: ON"},
-    {"reg":12195,"name":"IoT Client Management","notes":"Bitfield"}	,
-	
-    {"reg":12205,"name":"LCD Screen Time","unit":"s","notes":"Time until the screen turns off"},
-    {"reg":12206,"outputs":[{"name":"Temperature Unit","offset":2,"mask":3,"type":"enum","values":["Celsius","Fahrenheit"],"notes":"0: Celsius, 1: Fahrenheit"}]},
-	
+    {
+      "bulk_read": {
+        "read_start_reg": 12001,
+        "read_count": 50,
+        "registers": [
+          { "reg": 12001, "name": "IoT Module Base Status" },
+          { "reg": 12002, "len": 16, "ascii": true, "name": "WiFi SSID Name" },
+          { "reg": 12018, "len": 32, "ascii": true, "name": "WiFi Password Storage" },
+          { 
+            "reg": 12050, "name": "WiFi Protocol Config",
+            "outputs": [
+               { "name": "No Password Mode", "mask": 1, "offset": 0, "type": "enum", "values": ["Disabled", "Enabled"] },
+               { "name": "Password Length Flag", "mask": 255, "offset": 8, "notes": "0xA5 indicates 32-bit password support" }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "bulk_read": {
+        "read_start_reg": 12067,
+        "read_count": 13,
+        "registers": [
+           { "reg": 12067, "len": 13, "ascii": true, "name": "Cloud IoT Broker Address" }
+        ]
+      }
+    },
+    {
+      "bulk_read": {
+        "read_start_reg": 12161,
+        "read_count": 25,
+        "registers": [
+          {
+            "reg": 12161, "name": "Connectivity Interface 1",
+            "outputs": [
+              { "name": "WiFi Station Link", "mask": 3, "offset": 0, "type": "enum", "values": ["Offline", "Online", "Error", "Error"] },
+              { "name": "4G LTE Link", "mask": 3, "offset": 12, "type": "enum", "values": ["Offline", "Online", "Error", "Error"] }
+            ]
+          },
+          {
+            "reg": 12162, "name": "Connectivity Interface 2",
+            "outputs": [
+              { "name": "Ethernet Link", "mask": 3, "offset": 0, "type": "enum", "values": ["Offline", "Online", "Error", "Error"] },
+              { "name": "WiFi Mesh Link", "mask": 3, "offset": 2, "type": "enum", "values": ["Offline", "Online", "Error", "Error"] },
+              { "name": "Bluetooth Client Mode", "mask": 3, "offset": 10, "type": "enum", "values": ["Disabled", "Active", "Error", "Error"] }
+            ]
+          },
+          {
+            "reg": 12163, "name": "Disaster Alert Mode",
+            "outputs": [
+              { "name": "Disaster Logic Enable", "mask": 3, "offset": 0, "type": "enum", "values": ["Off", "On", "Err", "Err"] },
+              { "name": "Disaster System Status", "mask": 3, "offset": 2, "type": "enum", "values": ["Normal", "Alerting", "Err", "Err"] },
+              { "name": "Regional Warning Flag", "mask": 3, "offset": 6, "type": "enum", "values": ["Clear", "Warning", "Err", "Err"] }
+            ]
+          },
+          { "reg": 12170, "name": "IoT Addressing Sort Order" },
+          { "reg": 12174, "len": 2, "name": "Network Subnet Mask", "format": "ipv4" },
+          { "reg": 12176, "len": 2, "name": "Network Gateway IP", "format": "ipv4" }
+        ]
+      }
+    },
 
     {"reg":13088,"len":16,"ascii":true,"name":"Matter SN","notes":"Unique identifier for smart home linking"},
     {"reg":13104,"len":16,"ascii":true,"name":"Matter Pairing Code","notes":"The setup code for HomeKit/Google Home"},
@@ -1633,14 +1623,6 @@
     {"reg": 11029, "name": "Unknown Reg 11029", "notes": "non-zero"},
     {"reg": 11031, "name": "Unknown Reg 11031", "notes": "non-zero"},
     {"reg": 11032, "name": "Unknown Reg 11032", "notes": "non-zero"},
-    {"reg": 12001, "name": "Unknown Reg 12001", "notes": "non-zero"},
-    {"reg": 12018, "name": "Unknown Reg 12018", "notes": "non-zero"},
-    {"reg": 12020, "name": "Unknown Reg 12020", "notes": "non-zero"},
-    {"reg": 12021, "name": "Unknown Reg 12021", "notes": "non-zero"},
-    {"reg": 12022, "name": "Unknown Reg 12022", "notes": "non-zero"},
-    {"reg": 12050, "name": "Unknown Reg 12050", "notes": "non-zero"},
-    {"reg": 12067, "name": "Unknown Reg 12067", "notes": "non-zero"},
-    {"reg": 12068, "name": "Unknown Reg 12068", "notes": "non-zero"},
     {"reg": 12069, "name": "Unknown Reg 12069", "notes": "non-zero"},
     {"reg": 12070, "name": "Unknown Reg 12070", "notes": "non-zero"},
     {"reg": 12071, "name": "Unknown Reg 12071", "notes": "non-zero"},
