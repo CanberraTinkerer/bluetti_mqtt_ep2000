@@ -95,7 +95,7 @@ def swap_bytes(data: bytes) -> bytes:
 
 
 def bytes_to_ascii(response_bytes: bytes) -> str:
-    return swap_bytes(response_bytes).decode('ascii').strip('\x00')
+    return swap_bytes(response_bytes).decode('ascii', errors='replace').strip('\x00')
 
 
 class ReadHoldingRegistersV2(ReadHoldingRegisters):
