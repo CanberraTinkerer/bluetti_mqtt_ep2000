@@ -182,16 +182,23 @@
     { "reg": 148, "name": "APP_HOME_DATA: Total Inverter Power", "len": 32, "signed": true, "device_class": "power", "unit": "W", "notes": "negative when sunny, battery is charging and solar is covering consumption" },
 
     {"trigger_write": [
-      { "trigger_metadata": { "trigger_reg": 2027, "trigger_value": 1, "delay": 0.2, "slave_id": 0 } },
-      { "trigger_metadata": { "trigger_reg": 2026, "trigger_value": 1, "delay": 0.2, "slave_id": 0 } },
-      { "trigger_metadata": { "trigger_reg": 30001, "trigger_value": 1, "delay": 0.2, "slave_id": 1 } },	  
-      { "trigger_metadata": { "trigger_reg": 2028, "trigger_value": 1, "delay": 0.2, "slave_id": 0 } },
-      { "post_trigger_read": { "read_start_reg": 150, "read_count": 8, "delay": 0.2, "slave_id": 41 },
+      { "trigger_metadata": { "trigger_reg": 2027, "trigger_value": 1, "delay": 0.2, "slave_id": 1 } },
+      { "trigger_metadata": { "trigger_reg": 2026, "trigger_value": 1, "delay": 0.2, "slave_id": 1 } },
+      { "trigger_metadata": { "trigger_reg": 2028, "trigger_value": 1, "delay": 0.8, "slave_id": 1 } },
+      { "bulk_read": { "slave_id": 41, "delay": 0.2, 
         "registers": [
           { "reg": 150, "name": "PV Total Energy Low", "len": 32, "unit": "kWh", "scale": 1, "slave_id": 41, "device_class": "energy" },
-          { "reg": 152, "name": "PV Total Energy High", "len": 32, "unit": "kWh", "scale": 1, "slave_id": 41, "device_class": "energy" },
           { "reg": 154, "name": "PV Today Energy", "len": 32, "unit": "kWh", "scale": 1, "slave_id": 41, "device_class": "energy" },
-          { "reg": 156, "name": "PV Month Energy", "len": 32, "unit": "kWh", "scale": 1, "slave_id": 41, "device_class": "energy" }
+          { "reg": 156, "name": "PV Month Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" },
+          { 
+            "reg": 3002, "name": "Category Fault Log", "type": "repeating_count", "len": 400, "count_offset": -2, "start_offset": 0, "block_regs": 5,
+            "outputs": [
+              { "reg_offset": 0, "name": "Fault Timestamp Y/M", "outputs": [{"name": "Month", "mask": 255}, {"name": "Year", "mask": 255, "offset": 8, "subtract": -2000}] },
+              { "reg_offset": 1, "name": "Fault Timestamp D/H", "outputs": [{"name": "Hour", "mask": 255}, {"name": "Day", "mask": 255, "offset": 8}] },
+              { "reg_offset": 3, "name": "Fault ID", "mask": 255 },
+              { "reg_offset": 4, "name": "Fault Diagnostic Code" }
+            ]
+          }
         ]
       }
     ]},
@@ -864,24 +871,24 @@
     {"reg":2510,"name":"Battery Discharge Power Limit","unit":"W","device_class":"power","notes":"Max power from battery to AC bus"},
     {"reg":2511,"name":"Battery Charge Power Limit","unit":"W","device_class":"power","notes":"Max power from AC bus to battery"},
     {"reg":2512,"name":"Micro-Inverter Sync Mode","notes":"Inverter Sync Mode Enum"},	
-    { "reg": 3001, "name": "Legacy Network Type", "len": 16, "type": "enum", "values": ["Unknown", "WiFi", "Ethernet", "4G"], "notes": "V1/Legacy Protocol" },
-
-    {"reg":3001,"name":"Working Mode","type":"enum","values":["Self-Consumption","Manual","UPS"],"notes":"0:Self-Consumption, 1:Manual, 2:UPS. Legacy Network Type is also at this address"},
-    { "reg": 3002, "name": "Legacy WiFi Signal Strength", "len": 16, "signed": true, "unit": "dBm", "device_class": "signal_strength", "notes": "V1/Legacy Protocol" },
-    {"reg":3007,"name":"AC Output Switch","type":"enum","values":["Off","On"],"notes":"0:OFF / 1:ON"},
-    {"reg":3008,"name":"DC Output Switch","type":"enum","values":["Off","On"],"notes":"0:OFF / 1:ON"},
-    { "reg": 3010, "name": "Legacy Cloud Connection", "len": 16, "type": "enum", "values": ["Disconnected", "Connected"], "notes": "V1/Legacy Protocol" },
-    {"reg":3010,"name":"Grid Feed-In Toggle","type":"enum","values":["Off","On"],"notes":"0:OFF / 1:ON. Legacy Cloud Connection is also at this address"},
-    {"reg":3011,"name":"Grid Charging Toggle","type":"enum","values":["Off","On"],"notes":"0:OFF / 1:ON"},
-    {"reg":3015,"name":"SOC Low Limit","unit":"%","device_class":"battery"},
-    {"reg":3016,"name":"SOC High Limit","unit":"%","device_class":"battery"},
-    {"reg":3019,"name":"Max Grid Charging Current","scale":1,"unit":"A","device_class":"current"},
-    { "reg": 3020, "name": "Legacy Mesh Node Count", "len": 16, "notes": "V1/Legacy Protocol" },
-    {"reg":3023,"name":"Charge Start Time","outputs":[{"name":"Charge Start Minute","mask":255},{"name":"Charge Start Hour","offset":8,"mask":255}]},
-    {"reg":3024,"name":"Charge End Time","outputs":[{"name":"Charge End Minute","mask":255},{"name":"Charge End Hour","offset":8,"mask":255}]},
-    {"reg":3061,"name":"LCD Timeout","unit":"s"},
-    {"reg":3065,"name":"Silent Mode","type":"enum","values":["Off","On"],"notes":"0:OFF / 1:ON"},
-    {"reg":3066,"name":"Power Lifting Mode","type":"enum","values":["Off","On"],"notes":"0:OFF / 1:ON"},
+    {
+      "bulk_read": {
+        "read_start_reg": 3000,
+        "read_count": 40,
+        "registers": [
+          { "reg": 3000, "name": "Total History Log Pages" },
+          { "reg": 3001, "name": "Active Log Page Index" },
+          { "reg": 3002, "name": "System Working Mode", "type": "enum", "values": ["Unknown", "Standalone", "Parallel", "Master/Slave"] },
+          { "reg": 3003, "name": "Global Charge Current Limit", "unit": "A" },
+          { "reg": 3004, "name": "Global Discharge Current Limit", "unit": "A" },
+          { "reg": 3007, "name": "AC Master Switch", "type": "enum", "values": ["Off", "On"] },
+          { "reg": 3008, "name": "DC Master Switch", "type": "enum", "values": ["Off", "On"] },
+          { "reg": 3030, "name": "System Eco Mode Switch", "type": "enum", "values": ["Off", "On"] },
+          { "reg": 3035, "name": "UPS Operational Mode", "type": "enum", "values": ["Unknown", "Standard", "PV Priority", "Time Control"] },
+          { "reg": 3039, "name": "Working Time Start/Stop" }
+        ]
+      }
+    },
 
     {"reg":3600,"name":"Energy Category","notes":"1:PV, 2:Grid-In, 3:Grid-Out, 4:Load"},
     {"reg":3601,"name":"Selected Year","notes":"Year being queried"},
