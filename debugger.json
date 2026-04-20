@@ -765,22 +765,75 @@
     {"reg":2067,"name":"LCD Timeout","unit":"s"},
     {"reg":2078,"name":"LED Color","type":"enum","values":["Cool","Warm","SOS"],"notes":"0:Cool / 1:Warm / 2:SOS"},
 
-    {"reg": 2211, "name": "Max Charge Voltage", "scale": 1, "unit": "V", "device_class": "voltage"},
-    {"reg": 2212, "name": "Max PV Current", "scale": 1, "unit": "A", "device_class": "current"},
-    {"reg": 2214, "name": "Max Grid Current", "scale": 1, "unit": "A", "device_class": "current"},
-    {"reg": 2216, "name": "Max Feed-in Current", "scale": 1, "unit": "A", "device_class": "current"},
-    {"reg": 2218, "name": "Grid Region", "notes": "Enum: Australia, Germany, etc."},
-    {"reg": 2218, "name": "Unknown Reg 2218 (Slave 41)"},
-    {"reg": 2225, "name": "Grid Self-Adaption", "type": "enum", "values": ["Disabled", "Enabled"], "notes": "0:Disable / 1:Enable"},
-    {"reg": 2226, "name": "Switch Recovery", "type": "enum", "values": ["Disabled", "Enabled"], "notes": "0:Disable / 1:Enable Auto-restore"},
-    {"reg": 2227, "name": "INV_INFO: ADVANCED_SETTINGS_CTRL_METER", "notes": "non-zero", "type": "enum", "values": ["control/polling OFF", "control/polling ON"], "notes": "CORRECT"},
-    {"reg": 2228, "name": "Inverter Meter Type", "type": "enum", "values":["ADL400", "AGF_AE_D", "ADL200N_CT", "ADL400N_CT", "ADL400M", "NONE"], "notes": "CORRECT"},
-    {"reg": 2232, "outputs": [{"name": "ATS Enable", "offset": 0, "mask": 1, "type": "enum", "values": ["Inactive", "Active"], "notes": "1: ATS Active"}]},
-    {"reg": 2241, "name": "Control Mode", "type": "enum", "values": ["Local", "Cloud"], "notes": "0:Local / 1:Cloud"},
-    {"reg": 2244, "outputs": [{"name": "Grid CT Ratio", "mask": 255}, {"name": "PV CT Ratio", "offset": 8, "mask": 255}]},
-    {"reg": 2246, "name": "Generator Settings", "notes": "Bitfield for Auto-start/Stop"},
-    {"reg": 2271, "name": "Phase Mode", "type": "enum", "values": ["Single", "Split", "Three-Phase"], "notes": "0:Single / 1:Split / 2:Three"},
-    {"reg": 2280, "name": "Heat Pump (SG Ready)", "type": "enum", "values": ["Off", "On"], "notes": "0:OFF / 1:ON"},
+    {
+      "bulk_read": {
+        "read_start_reg": 2200,
+        "read_count": 93,
+        "registers": [
+          { "reg": 2200, "len": 64, "ascii": true, "name": "Expert Mode Password" },
+          { "reg": 2206, "name": "Factory Reset Trigger", "notes": "Write 1 to reset" },
+          { "reg": 2207, "name": "Grid Interface Enable", "type": "enum", "values": ["Off", "On"] },
+          { "reg": 2208, "name": "Grid Export (Anti-backflow)", "type": "enum", "values": ["Disallowed", "Allowed"] },
+          { "reg": 2209, "name": "Target Output Voltage", "unit": "V" },
+          { "reg": 2210, "name": "Target Output Frequency", "scale": 2, "unit": "Hz" },
+          { "reg": 2211, "name": "Max Bulk Charge Voltage", "scale": 1, "unit": "V", "device_class": "voltage" },
+          { "reg": 2212, "name": "Max Solar Charge Current", "scale": 1, "unit": "A", "device_class": "current" },
+          { "reg": 2213, "name": "Max Grid Input Power", "unit": "W", "device_class": "power" },
+          { "reg": 2214, "name": "Max Grid Input Current", "scale": 1, "unit": "A", "device_class": "current" },
+          { "reg": 2215, "name": "Max Grid Export Power", "unit": "W", "device_class": "power" },
+          { "reg": 2216, "name": "Max Grid Export Current", "scale": 1, "unit": "A", "device_class": "current" },
+          { "reg": 2217, "name": "Rated Off-Grid Power", "unit": "W" },
+          { "reg": 2218, "name": "Grid Region Index" },
+          { "reg": 2225, "name": "Enhanced Grid Stability", "type": "enum", "values": ["Off", "On"] },
+          { "reg": 2226, "name": "System Auto-Recovery Status" },
+          { "reg": 2227, "name": "External Meter Polling", "type": "enum", "values": ["Off", "On"] },
+          { "reg": 2228, "name": "Meter Model Type", "type": "enum", "values": ["ADL400", "AGF", "ADL200N", "ADL400N", "ADL400M"] },
+          { "reg": 2230, "name": "Parallel Inverter Address" },
+          { "reg": 2231, "name": "Last CT Test Result" },
+          { "reg": 2242, "name": "EMS Optimization Mode" },
+          { "reg": 2248, "name": "Generator Auto-Start SOC", "unit": "%" },
+          { "reg": 2249, "name": "Generator Auto-Stop SOC", "unit": "%" },
+          { "reg": 2267, "name": "LCD Screen Dim Timeout", "unit": "s" },
+          { "reg": 2268, "len": 32, "name": "Configured Max Load", "unit": "W", "device_class": "power" },
+          { "reg": 2270, "len": 32, "name": "Rated AC Capacity", "unit": "W", "device_class": "power" },
+          { "reg": 2273, "name": "Custom Function Enable Bits", "outputs": [
+              { "name": "Custom Functionality", "mask": 1, "offset": 0, "type": "enum", "values": ["Disabled", "Enabled"] },
+              { "name": "Charging Mode Set", "mask": 1, "offset": 1, "type": "enum", "values": ["Disabled", "Enabled"] },
+              { "name": "Child Lock Status", "mask": 1, "offset": 2, "type": "enum", "values": ["Unlocked", "Locked"] }
+          ]},
+          { "reg": 2275, "name": "Holding Mode Min SOC", "unit": "%" },
+          { "reg": 2277, "len": 32, "name": "Auto-Sleep Time Remaining", "unit": "min" },
+          { "reg": 2279, "name": "LED Ring Config", "outputs": [
+              { "name": "LED Color", "mask": 255 },
+              { "name": "LED Brightness", "mask": 255, "offset": 8 }
+          ]},
+          { "reg": 2280, "name": "Pack Count Settings", "outputs": [
+              { "name": "System Pack Count", "mask": 255 },
+              { "name": "Display Pack Count", "mask": 255, "offset": 8 }
+          ]},
+          { "reg": 2281, "name": "Inverter Count Settings", "outputs": [
+              { "name": "Set Inverter Count", "mask": 255 },
+              { "name": "Actual Inverter Count", "mask": 255, "offset": 8 }
+          ]},
+          { "reg": 2283, "name": "SOC Holding Thresholds", "outputs": [
+              { "name": "SOC Holding Enable", "mask": 255, "type": "enum", "values": ["Off", "On"] },
+              { "name": "SOC High Threshold", "mask": 255, "offset": 8, "unit": "%" }
+          ]},
+          { "reg": 2285, "name": "12V Port Output Level", "mask": 3, "type": "enum", "values": ["Low", "Medium", "High", "Max"] },
+          { "reg": 2287, "name": "System Design Capacity", "scale": 1, "unit": "Ah" },
+          { "reg": 2288, "name": "System Actual Capacity", "scale": 1, "unit": "Ah" },
+          { "reg": 2289, "name": "System Start Time (Y/M)", "outputs": [
+              { "name": "Start Month", "mask": 255 },
+              { "name": "Start Year", "mask": 255, "offset": 8, "subtract": -2000 }
+          ]},
+          { "reg": 2292, "name": "System Feature Flags", "outputs": [
+              { "name": "Eco Mutex", "mask": 1, "offset": 0 },
+              { "name": "Eco Mode Disable", "mask": 1, "offset": 1 },
+              { "name": "Backup Power Mode", "mask": 1, "offset": 2 }
+          ]}
+        ]
+      }
+    },
 	
     {"reg": 2401, "name": "Grid Certification Country Code", "notes": "Enum: UK, AU, DE, etc."},
     {"reg": 2402, "name": "Grid Under-Voltage Level 1", "scale": 1, "unit": "V", "device_class": "voltage"},
@@ -1419,16 +1472,6 @@
     {"reg": 1526, "name": "Unknown Reg 1526", "notes": "non-zero"},
     {"reg": 2003, "name": "Unknown Reg 2003", "notes": "non-zero"},
     {"reg": 2004, "name": "Unknown Reg 2004", "notes": "non-zero"},
-    {"reg": 2208, "name": "Unknown Reg 2208", "notes": "non-zero"},
-    {"reg": 2209, "name": "Unknown Reg 2209", "notes": "non-zero"},
-    {"reg": 2215, "name": "Unknown Reg 2215", "notes": "non-zero"},
-    {"reg": 2242, "name": "Unknown Reg 2242", "notes": "non-zero"},
-    {"reg": 2267, "name": "Unknown Reg 2267", "notes": "non-zero"},
-    {"reg": 2285, "name": "Unknown Reg 2285", "notes": "non-zero"},
-    {"reg": 2287, "name": "Unknown Reg 2287", "notes": "non-zero"},
-    {"reg": 2288, "name": "Unknown Reg 2288", "notes": "non-zero"},
-    {"reg": 2289, "name": "Unknown Reg 2289", "notes": "non-zero"},
-    {"reg": 2290, "name": "Unknown Reg 2290", "notes": "non-zero"},
     {"reg": 2410, "name": "Unknown Reg 2410", "notes": "non-zero"},
     {"reg": 6013, "name": "Unknown Reg 6013", "notes": "non-zero"},
     {"reg": 6016, "name": "Unknown Reg 6016", "notes": "non-zero"},
