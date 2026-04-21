@@ -99,20 +99,41 @@ def bytes_to_ascii(response_bytes: bytes) -> str:
 
 
 def get_topic_suffix(output: Dict[str, Any], is_split: bool) -> str:
-    """Calculate suffix based on register and bit offsets."""
+    """Calculate suffix based on bit offset only."""
     if not is_split:
         return ""
-    parts = []
-    if 'reg_offset' in output:
-        parts.append(str(output['reg_offset']))
     if 'offset' in output:
-        parts.append(str(output['offset']))
-    return "." + ".".join(parts) if parts else ".0"
+        return f".{output['offset']}"
+    # If no bit offset, but it's a split register with no register offset,
+    # use .0 to avoid collisions with the base register.
+    if 'reg_offset' not in output:
+        return ".0"
+    return ""
 
 
 def get_id_suffix(output: Dict[str, Any], is_split: bool) -> str:
     """Calculate Unique ID suffix (underscores instead of dots)."""
     return get_topic_suffix(output, is_split).replace('.', '_')
+
+
+def get_display_register(base_reg: Any, output: Dict[str, Any]) -> str:
+    """Calculate the display register address including offsets."""
+    reg_offset = output.get('reg_offset', 0)
+    if reg_offset == 0:
+        return str(base_reg)
+
+    if isinstance(base_reg, str) and '.' in base_reg:
+        parts = base_reg.split('.')
+        try:
+            actual_reg = int(parts[0]) + reg_offset
+            return ".".join([str(actual_reg)] + parts[1:])
+        except ValueError:
+            pass
+
+    if isinstance(base_reg, int):
+        return str(base_reg + reg_offset)
+
+    return f"{base_reg}.{reg_offset}"
 
 
 class ReadHoldingRegistersV2(ReadHoldingRegisters):
@@ -834,12 +855,13 @@ def process_and_publish(command_info: Dict[str, Any], data: bytes, device_name: 
 
             slave_suffix = f"_s{slave_id}" if slave_id != 1 else ""
             trigger_suffix = f"_t{trigger_val}" if trigger_reg is not None else ""
+            display_reg = get_display_register(register, output)
             topic_suffix = get_topic_suffix(output, is_split)
-            state_topic = f"bluetti_debugger/{device_name}/{register}{topic_suffix}{slave_suffix}{trigger_suffix}/state"
+            state_topic = f"bluetti_debugger/{device_name}/{display_reg}{topic_suffix}{slave_suffix}{trigger_suffix}/state"
             state_payload = {
                 "value": value, 
                 "PossibleName": output['name'], 
-                "modbus_register": f"{register}{topic_suffix}",
+                "modbus_register": f"{display_reg}{topic_suffix}",
                 "slave_id": slave_id,
                 "encrypted": encrypted,
                 "valid": True
@@ -862,16 +884,17 @@ def _handle_dynamic_discovery(discovery_info, device_name, block_reg, slave_id, 
     trigger_suffix = f"_t{trigger_val}" if trigger_reg is not None else ""
     
     for output in outputs:
+        display_reg = get_display_register(block_reg, output)
         topic_suffix = get_topic_suffix(output, is_split)
         id_suffix = get_id_suffix(output, is_split)
-        unique_id = f"{device_name}_{block_reg.replace('.', '_')}{id_suffix}{slave_suffix}{trigger_suffix}"
+        unique_id = f"{device_name}_{display_reg.replace('.', '_')}{id_suffix}{slave_suffix}{trigger_suffix}"
         
         if unique_id not in DISCOVERED_DYNAMIC_REGS:
             discovery_topic = f"homeassistant/sensor/{unique_id}/config"
-            state_topic = f"bluetti_debugger/{device_name}/{block_reg}{topic_suffix}{slave_suffix}{trigger_suffix}/state"
+            state_topic = f"bluetti_debugger/{device_name}/{display_reg}{topic_suffix}{slave_suffix}{trigger_suffix}/state"
             
             payload = {
-                "name": f"{block_reg} {output['name']}",
+                "name": f"{display_reg} {output['name']}",
                 "state_topic": state_topic,
                 "unique_id": unique_id,
                 "json_attributes_topic": state_topic,
@@ -1278,14 +1301,15 @@ async def async_main():  # noqa: C901
                             trigger_val = command_info.get('trigger_val')
                             slave_suffix = f"_s{slave_id}" if slave_id != 1 else ""
                             trigger_suffix = f"_t{trigger_val}" if trigger_reg is not None else ""
+                            display_reg = get_display_register(register, output)
                             topic_suffix = get_topic_suffix(output, is_split)
                             id_suffix = get_id_suffix(output, is_split)
-                            unique_id = f"{device_name}_{register}{id_suffix}{slave_suffix}{trigger_suffix}"
+                            unique_id = f"{device_name}_{display_reg.replace('.', '_')}{id_suffix}{slave_suffix}{trigger_suffix}"
                             discovery_topic = f"homeassistant/sensor/{unique_id}/config"
-                            state_topic = f"bluetti_debugger/{device_name}/{register}{topic_suffix}{slave_suffix}{trigger_suffix}/state"
+                            state_topic = f"bluetti_debugger/{device_name}/{display_reg}{topic_suffix}{slave_suffix}{trigger_suffix}/state"
 
                             payload = {
-                                "name": f"{register} {output_name}",
+                                "name": f"{display_reg} {output_name}",
                                 "state_topic": state_topic,
                                 "unique_id": unique_id,
                                 "json_attributes_topic": state_topic,
