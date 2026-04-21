@@ -181,28 +181,46 @@
     { "reg": 146, "name": "APP_HOME_DATA: Grid Power All", "len": 32, "signed": true, "device_class": "power", "unit": "W", "notes": "probably is AC coupled inverter production (old PV)" },
     { "reg": 148, "name": "APP_HOME_DATA: Total Inverter Power", "len": 32, "signed": true, "device_class": "power", "unit": "W", "notes": "negative when sunny, battery is charging and solar is covering consumption" },
 
-    {"trigger_write": [
-      { "trigger_metadata": { "trigger_reg": 2027, "trigger_value": 1, "delay": 0.2, "slave_id": 1 } },
-      { "trigger_metadata": { "trigger_reg": 2026, "trigger_value": 1, "delay": 0.2, "slave_id": 1 } },
-      { "trigger_metadata": { "trigger_reg": 2028, "trigger_value": 1, "delay": 0.8, "slave_id": 1 } },
-      { "bulk_read": { "slave_id": 41, "delay": 0.2, 
-        "registers": [
-          { "reg": 150, "name": "PV Total Energy Low", "len": 32, "unit": "kWh", "scale": 1, "slave_id": 41, "device_class": "energy" },
-          { "reg": 154, "name": "PV Today Energy", "len": 32, "unit": "kWh", "scale": 1, "slave_id": 41, "device_class": "energy" },
-          { "reg": 156, "name": "PV Month Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" },
-          { 
-            "reg": 3002, "name": "Category Fault Log", "type": "repeating_count", "len": 400, "count_offset": -2, "start_offset": 0, "block_regs": 5,
-            "outputs": [
-              { "reg_offset": 0, "name": "Fault Timestamp Y/M", "outputs": [{"name": "Month", "mask": 255}, {"name": "Year", "mask": 255, "offset": 8, "subtract": -2000}] },
-              { "reg_offset": 1, "name": "Fault Timestamp D/H", "outputs": [{"name": "Hour", "mask": 255}, {"name": "Day", "mask": 255, "offset": 8}] },
-              { "reg_offset": 3, "name": "Fault ID", "mask": 255 },
-              { "reg_offset": 4, "name": "Fault Diagnostic Code" }
-            ]
+    {"trigger_write": 
+      [
+        { "trigger_metadata": { "pagination_selector": 2028, "pagination_count_reg": 3000, "slave_id": 1 } },
+        { "trigger_metadata": { "trigger_reg": 2027, "trigger_value": 1, "delay": 0.2, "slave_id": 1 } },
+        { "trigger_metadata": { "trigger_reg": 2026, "trigger_value": 1, "delay": 0.2, "slave_id": 1 } },
+        { "bulk_read": 
+          { "slave_id": 41, "delay": 0.2, 
+            "registers": 
+            [
+              { "reg": 150, "name": "PV Total Energy Low", "len": 32, "unit": "kWh", "scale": 1, "slave_id": 41, "device_class": "energy" },
+              { "reg": 154, "name": "PV Today Energy", "len": 32, "unit": "kWh", "scale": 1, "slave_id": 41, "device_class": "energy" },
+              { "reg": 156, "name": "PV Month Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" },
+              { "reg": 3002, "name": "Category Fault Log", "type": "repeating_count", "len": 400, "count_offset": -2, "start_offset": 0, "block_regs": 5,
+                "outputs": 
+                [
+                  { "reg_offset": 0, "name": "Fault Timestamp Y/M", "outputs": 
+                    [
+                      {"name": "Month", "mask": 255
+                      }, 
+                      {"name": "Year", "mask": 255, "offset": 8, "subtract": -2000
+                      }
+                    ] 
+                  },
+                  { "reg_offset": 1, "name": "Fault Timestamp D/H", "outputs": 
+                    [
+                      {"name": "Hour", "mask": 255
+                      }, 
+                      {"name": "Day", "mask": 255, "offset": 8
+                      }
+                    ] 
+                  },
+                  { "reg_offset": 3, "name": "Fault ID", "mask": 255 },
+                  { "reg_offset": 4, "name": "Fault Diagnostic Code" }
+                ]
+             }
+           ]
           }
-        ]
-        }
-      }  
-    ]},
+        }  
+      ]
+    },
     {"trigger_write": [
       { "trigger_metadata": { "trigger_reg": 2027, "trigger_value": 2, "delay": 0.2, "slave_id": 0 } },
       { "trigger_metadata": { "trigger_reg": 2026, "trigger_value": 2, "delay": 0.2, "slave_id": 0 } },
@@ -520,7 +538,7 @@
       {"reg": 724, "name": "Module 1 Processor Type", "notes": "1=ARM, 2=DSP, 3=BMS" },
       {"reg": 725, "name": "Module 1 Firmware Depth" },
       {"reg": 726, "name": "Module 1 Upgrade Progress", "unit": "%" },
-      {"reg": 727, "name": "Module 1 OTA Error Code", "notes": "0=Success. Non-zero=Specific failure reason." },
+      {"reg": 727, "name": "Module 1 OTA Error Code", "notes": "0=Success. Non-zero=Specific failure reason." }
     {
       "bulk_read": {
         "read_start_reg": 1100,
@@ -672,7 +690,6 @@
           { "reg": 1422, "name": "Total AC Load Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" },
           { 
             "reg": 1429, "name": "Load Phase Count", "type": "repeating_count",
-            "len": 304,
             "count_offset": 0, "start_offset": 1, "block_regs": 6,
             "outputs": [
               { "reg_offset": 0, "name": "Phase Load Power", "unit": "W", "device_class": "power" },
@@ -687,24 +704,16 @@
     {
       "bulk_read": {
         "registers": [
-          { "reg": 1500, "name": "Inverter Output Frequency", "unit": "Hz", "scale": 1, "device_class": "frequency" },
-          { "reg": 1502, "name": "Lifetime Inverter Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" },
-          { 
-            "reg": 1517, "name": "Inverter Phase Count", "type": "repeating_count",
-            "len": 592, "count_offset": 0, "start_offset": 1, "block_regs": 12,
-            "outputs": [
-              { "reg_offset": 0, "name": "Phase Operating Status", "type": "enum", "values": ["Standby", "Normal", "Fault"] },
-              { "reg_offset": 1, "name": "Phase Inverter Power", "unit": "W", "device_class": "power" },
-              { "reg_offset": 3, "name": "Phase Inverter Voltage", "unit": "V", "scale": 1, "device_class": "voltage" },
-              { "reg_offset": 4, "name": "Phase Inverter Current", "unit": "A", "scale": 1, "device_class": "current" }
-            ]
-          }
+          { "reg": 1502, "name": "Lifetime Inverter Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" }
         ]
       }
     },
 
-    { "reg": 1700, "name": "Meter Model Name", "len": 4, "ascii": true, "notes": "Registers 1700-1705 (12 bytes)" },
-    { "reg": 1706, "name": "Meter Serial Number", "len": 4, "ascii": true, "notes": "Registers 1706-1711 (12 bytes)" },
+    { "reg": 1700, "name": "Meter Model Name", "len": 6, "ascii": true, "notes": "Registers 1700-1705 (12 bytes)" },
+    { "reg": 1706, "name": "Meter Serial Number", "len": 6, "ascii": true, "notes": "Registers 1706-1711 (12 bytes)" },
+	
+	
+	
     {
       "bulk_read": {
         "read_start_reg": 2000,
@@ -901,6 +910,49 @@
     {"reg":3657,"name":"Day 30 Energy","unit":"kWh","scale":1,"device_class":"energy"},
     {"reg":3658,"name":"Day 31 Energy","unit":"kWh","scale":1,"device_class":"energy"},
 
+
+    {"reg":4200,"len":6,"ascii":true,"name":"Wind Turbine Model Name"},
+    {"reg":4206,"len":64,"name":"WT Serial Number"},
+    {"reg":4210,"name":"WT Software Type 1","type":"enum"},
+    {"reg":4211,"len":32,"name":"WT Software Ver 1"},
+    {"reg":4213,"name":"WT Software Type 2","type":"enum"},
+    {"reg":4214,"len":32,"name":"WT Software Ver 2"},
+    {"reg":4216,"name":"Wind Speed","scale":1,"unit":"m/s"},
+    {"reg":4217,"name":"Wind Direction","unit":"°"},
+    {"reg":4218,"name":"Anemometer Status","type":"enum"},
+    {"reg":4219,"name":"WT Motor Mode","type":"enum"},
+    {"reg":4220,"name":"WT Energy Flow","notes":"Bitfield"},
+    {"reg":4221,"name":"WT Motor Speed","unit":"RPM"},
+    {"reg":4227,"name":"WT Input Power","len":32,"unit":"W","device_class":"power"},
+    {"reg":4229,"name":"WT Motor Input Voltage","scale":1,"unit":"V","device_class":"voltage"},
+    {"reg":4230,"name":"WT Motor Input Current","scale":1,"unit":"A","device_class":"current"},
+    {"reg":4235,"name":"WT Grid Output Power","len":32,"unit":"W","device_class":"power"},
+    {"reg":4237,"name":"WT Grid Output Voltage","scale":1,"unit":"V","device_class":"voltage"},
+    {"reg":4238,"name":"WT Grid Output Current","scale":1,"unit":"A","device_class":"current"},
+    {"reg":4239,"name":"WT Internal Batt Voltage","scale":1,"unit":"V","device_class":"voltage"},
+    {"reg":4240,"name":"WT Internal Batt Current","scale":1,"unit":"A","device_class":"current"},
+    {"reg":4241,"name":"WT Internal Batt Temp","subtract":40,"unit":"°C","device_class":"temperature"},
+    {"reg":4242,"name":"WT Internal Batt SOC","unit":"%","device_class":"battery"},
+	
+    {"reg":4400,"name":"WT Enable Bits","notes":"Bitfield for various WT features"},
+    {"reg":4401,"name":"WT Start Voltage","unit":"V","device_class":"voltage"},
+    {"reg":4402,"name":"WT Stop Voltage","unit":"V","device_class":"voltage"},
+    {"reg":4403,"name":"WT Pole Pairs","notes":"Motor configuration"},
+    {"reg":4404,"name":"WT Dq Inductance","notes":"Motor Dq-axis inductance value"},
+    {"reg":4405,"name":"WT Phase Resistance","notes":"Phase resistance of the motor coils"},
+    {"reg":4406,"name":"WT Flux Constant","notes":"Motor magnetic flux constant"},
+    {"reg":4407,"name":"WT Mechanical Inertia","notes":"Inertia value for the turbine blades/rotor"},
+    {"reg":4408,"name":"WT Rated Speed","unit":"RPM"},
+    {"reg":4409,"name":"WT Rated Power","unit":"W","device_class":"power"},	
+
+    {"reg":5000,"name":"Network Status","type":"enum","values":["Unknown","WiFi","Ethernet","4G"],"notes":"1:WiFi, 2:Ethernet, 3:4G"},
+    {"reg":5001,"name":"Cloud Connected","type":"enum","values":["Offline","Online"],"notes":"0: Disconnected, 1: Online"},
+    {"reg":5002,"name":"OTA Download Progress","unit":"%"},
+    {"reg":5003,"name":"OTA Upgrade Module ID"},
+    {"reg":5004,"len":4,"name":"Local IP","format":"ipv4"},
+    {"reg":5008,"len":6,"name":"MAC Address","format":"mac"},
+    {"reg":5049,"name":"WiFi Strength","signed":true,"unit":"dBm","device_class":"signal_strength"},	
+	
     {
       "bulk_read": {
         "slave_id": 41,
@@ -961,6 +1013,7 @@
           { "reg": 6156, "name": "BMU Hardware Profile ID" },
           { 
             "reg": 6173, "name": "Firmware Module Count", "type": "repeating_count",
+            "len": 400,
             "count_offset": 0, "start_offset": 1, "block_regs": 3,
             "outputs": [
               { "reg_offset": 0, "name": "Firmware Module ID" },
@@ -1002,16 +1055,56 @@
     {"reg":7011,"name":"BMS Hardware Interface Type","type":"enum"},
 
     {
-      "reg": 7200,
-      "name": "BMU Logic Node List",
-      "type": "repeating_nonzero",
-      "block_regs": 4,
-      "check_reg_offset": 0,
-      "outputs": [
-        { "reg_offset": 0, "len": 32, "name": "BMU ID" },
-        { "reg_offset": 2, "name": "BMU Status Flags" }
-      ],
-      "slave_id": 41
+      "bulk_read": {
+        "slave_id": 41,
+        "read_start_reg": 7200,
+        "read_count": 100,
+        "registers": [
+          {
+            "reg": 7200,
+            "name": "BMU Interleaved Metadata",
+            "type": "segmented_repeating",
+            "len": 800,
+            "count": 7,
+            "segments": [
+              {
+                "start_offset": 0, "stride": 4,
+                "outputs": [
+                  { "reg_offset": 0, "len": 32, "name": "BMU Unique ID" },
+                  { "reg_offset": 2, "name": "BMU Status Flags", "notes": "Expected 0250 (592)" }
+                ]
+              },
+              {
+                "start_offset": 28, "stride": 2,
+                "outputs": [
+                  { "reg_offset": 0, "name": "BMU Fault Bitmask" }
+                ]
+              },
+              {
+                "start_offset": 42, "stride": 1,
+                "outputs": [
+                  { "reg_offset": 0, "name": "NTC and Cell Counts", "outputs": [
+                    { "name": "Active Cells", "mask": 255 },
+                    { "name": "Active NTCs", "offset": 8, "mask": 255 }
+                  ]}
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "bulk_read": {
+        "slave_id": 41,
+        "read_start_reg": 7586,
+        "read_count": 3,
+        "registers": [
+          { "reg": 7586, "name": "BMS Aggregator CRC" },
+          { "reg": 7587, "name": "BMS System Status Mask", "notes": "FF01 = Fully Active" },
+          { "reg": 7588, "name": "BMS Aggregate SOC Mirror", "unit": "%", "device_class": "battery" }
+        ]
+      }
     },
     {"reg":7208,"name":"CELL_VOLT_01","unit":"mV","scale":1,"slave_id":41},
     {"reg":7209,"name":"CELL_VOLT_02","unit":"mV","scale":1,"slave_id":41},
@@ -1068,39 +1161,80 @@
     {"reg":11062,"len":10,"ascii":true,"name":"IMSI Number"},
     {"reg":11072,"len":10,"ascii":true,"name":"ICCID Number"},
 
-    {
-      "bulk_read": {
-        "read_start_reg": 12001,
-        "read_count": 50,
-        "registers": [
-          { "reg": 12002, "len": 16, "ascii": true, "name": "WiFi SSID Name" }
-        ]
-      }
-    },
-    {
-      "bulk_read": {
-        "read_start_reg": 12161,
-        "read_count": 25,
-        "registers": [
-          { "reg": 12170, "name": "IoT Addressing Sort Order" },
-          { "reg": 12174, "len": 2, "name": "Network Subnet Mask", "format": "ipv4" },
-          { "reg": 12176, "len": 2, "name": "Network Gateway IP", "format": "ipv4" }
-        ]
-      }
-    },
-    {
-      "bulk_read": {
-        "slave_id": 41,
-        "read_start_reg": 14000,
-        "read_count": 14,
-        "registers": [
-          { "reg": 14000, "len": 6, "ascii": true, "name": "Comms Bridge Model", "notes": "Expected: MEXCLD" },
-          { "reg": 14006, "len": 4, "ascii": true, "name": "Comms Bridge Serial Number" },
-          { "reg": 14010, "len": 32, "name": "Comms Bridge Firmware 1", "notes": "MEXCLD Primary FW" },
-          { "reg": 14012, "len": 32, "name": "Comms Bridge Firmware 2", "notes": "MEXCLD Secondary FW" }
-        ]
-      }
-    },
+    {"reg":11106,"name":"WiFi Profile Mask","notes":"Bitfield, indicates which profiles (1-3) are populated"},
+    {"reg":11127,"len":16,"name":"Server RSSI","signed":true,"unit":"dBm","device_class":"signal_strength","notes":"Signal strength to the BLUETTI cloud"},
+    {"reg":11130,"len":16,"ascii":true,"name":"Profile 1 SSID"},
+    {"reg":11146,"len":32,"ascii":true,"name":"Profile 1 Password"},
+    {"reg":11178,"len":16,"ascii":true,"name":"Profile 2 SSID"},
+    {"reg":11194,"len":32,"ascii":true,"name":"Profile 2 Password"},
+
+    {"reg":12002,"name":"WiFi Config Flag","notes":"Bitfield, Used during network pairing"},
+    {"reg":12003,"len":16,"ascii":true,"name":"Current SSID"},
+    {"reg":12019,"len":32,"ascii":true,"name":"WiFi Password","notes":"SECURITY RISK: Exposes password in plain text"},
+	
+    {"reg":12163,"name":"Extreme Weather Alert Mode","type":"enum","values":["Off","On"],"notes":"0: OFF / 1: ON"},
+    {"reg":12170,"name":"Address Sorting Trigger","notes":"Write 1 to re-sort"},
+    {"reg":12174,"len":2,"name":"IoT Module Gateway IP","format":"ipv4"},
+    {"reg":12185,"name":"IoT Server Connection Switch","type":"enum","values":["Off","On"],"notes":"0: OFF / 1: ON"},
+    {"reg":12195,"name":"IoT Client Management","notes":"Bitfield"}	,
+	
+    {"reg":12205,"name":"LCD Screen Time","unit":"s","notes":"Time until the screen turns off"},
+    {"reg":12206,"outputs":[{"name":"Temperature Unit","offset":2,"mask":3,"type":"enum","values":["Celsius","Fahrenheit"],"notes":"0: Celsius, 1: Fahrenheit"}]},
+	
+
+    {"reg":13088,"len":16,"ascii":true,"name":"Matter SN","notes":"Unique identifier for smart home linking"},
+    {"reg":13104,"len":16,"ascii":true,"name":"Matter Pairing Code","notes":"The setup code for HomeKit/Google Home"},
+
+
+    {"reg":13100,"len":32,"type":"float","name":"L1 High-Res Voltage","unit":"V","device_class":"voltage"},
+    {"reg":13102,"len":32,"type":"float","name":"L1 High-Res Current","unit":"A","device_class":"current"},
+    {"reg":13104,"len":32,"type":"float","name":"L1 High-Res Power","unit":"W","device_class":"power"},
+    {"reg":13106,"len":32,"type":"float","name":"L1 Reactive Power","unit":"Var","device_class":"reactive_power"},
+    {"reg":13120,"len":32,"type":"float","name":"L2 High-Res Voltage","unit":"V","device_class":"voltage"},
+    {"reg":13122,"len":32,"type":"float","name":"L2 High-Res Current","unit":"A","device_class":"current"},
+    {"reg":13124,"len":32,"type":"float","name":"L2 High-Res Power","unit":"W","device_class":"power"},
+    {"reg":13140,"len":32,"type":"float","name":"L3 High-Res Voltage","unit":"V","device_class":"voltage"},
+    {"reg":13142,"len":32,"type":"float","name":"L3 High-Res Current","unit":"A","device_class":"current"},
+    {"reg":13144,"len":32,"type":"float","name":"L3 High-Res Power","unit":"W","device_class":"power"},
+	
+    {"reg":13500,"len":6,"ascii":true,"name":"Mesh Cluster ID","notes":"Name assigned to the device group"},
+
+    {"reg":13509,"len":3,"format":"mac","name":"Station BSSID","notes":"Hardware ID of the connection point"},
+	
+
+    {"reg":13603,"len":64,"name":"IoT BLE Server Key","notes":"AES Encryption Key, raw hex value is in debug log"},
+    {"reg":13611,"name":"WiFi Failover Profile 1 Trigger"},
+    {"reg":13612,"name":"WiFi Switching Frequency","unit":"s","notes":"How often to scan for a better signal"},
+    {"reg":13613,"name":"WiFi Config Enable","notes":"Bitfield to toggle specific network features"},
+    {"reg":13624,"name":"WiFi Failover Profile 2 Trigger"},
+    {"reg":13625,"len":2,"format":"ipv4","name":"Static IP Set","notes":"Start of the Static IP block"},
+	
+
+    {"reg":13732,"len":4,"name":"Advanced Static IP","format":"ipv4","notes":"Advanced static IP assignment block"},
+
+
+    {"reg":14000,"len":6,"ascii":true,"name":"HMI Model Name"},
+    {"reg":14006,"len":4,"ascii":true,"name":"HMI Serial Number"},
+    {"reg":14010,"len":32,"name":"HMI Boot Version"},
+    {"reg":14012,"len":32,"name":"HMI Kernel Version"},
+    {"reg":14014,"len":32,"name":"HMI File System Version"},
+    {"reg":14016,"len":32,"name":"HMI UI Version"},
+    {"reg":14018,"len":32,"name":"HMI Base Version"},
+
+    {"reg":14700,"name":"Smart Plug Settings Block Start","notes":"Block Start. Compound settings toggle."},
+    {"reg":14701,"name":"Smart Plug Master Switch","type":"enum","values":["Off","On"],"notes":"0: OFF, 1: ON"},
+    {"reg":14702,"name":"Smart Plug Enable Config 1","notes":"Bitfield for various automation modes."},
+    {"reg":14703,"name":"Smart Plug Enable Config 2","notes":"Extended bitfield for automation."},
+    {"reg":14704,"len":32,"name":"Smart Plug Time Sync","notes":"Current system time synchronized to the plug."},
+    {"reg":14706,"name":"Smart Plug Overload Power","unit":"W","device_class":"power","notes":"Max power before trip."},
+    {"reg":14707,"name":"Smart Plug Underload Power","unit":"W","device_class":"power","notes":"Min power before shutdown."},
+    {"reg":14708,"name":"Smart Plug Indicator Light","type":"enum","values":["Off","On"],"notes":"Physical LED on plug."},
+    {"reg":14709,"len":32,"name":"Smart Plug Timer Settings","notes":"Compound block for one-time timers."},
+    {"reg":14711,"outputs":[{"name":"Smart Plug Delay Minute","mask":255},{"name":"Smart Plug Delay Hour","offset":8,"mask":255}],"notes":"Countdown timer hours/minutes."},
+    {"reg":14712,"name":"Smart Plug Schedule 1 Config","notes":"Days of Week (Bitfield) + Active Flag."},
+    {"reg":14713,"name":"Smart Plug Schedule 1 Action","type":"enum","values":["Off","On"]},
+    {"reg":14714,"outputs":[{"name":"Smart Plug Schedule 1 Start Minute","mask":255},{"name":"Smart Plug Schedule 1 Start Hour","offset":8,"mask":255}]},
+    {"reg":14715,"outputs":[{"name":"Smart Plug Schedule 1 End Minute","mask":255},{"name":"Smart Plug Schedule 1 End Hour","offset":8,"mask":255}]},
 
     {"reg":15000,"name":"PPS Charging Status","type":"enum","values":["Idle","Charging","Discharging"],"notes":"0: Idle, 1: Charging, 2: Discharging"},
     {"reg":15001,"len":6,"ascii":true,"name":"PPS Model Name"},
@@ -1112,7 +1246,166 @@
     {"reg":15017,"len":32,"scale":1,"name":"PPS Total Discharge Energy","unit":"kWh","device_class":"energy"},
     {"reg":15019,"len":32,"scale":1,"name":"PPS Total Charge Energy","unit":"kWh","device_class":"energy"},
 
+    {"reg":15603,"name":"DC2 Target Voltage","unit":"V","device_class":"voltage"},
+    {"reg":15606,"name":"DC3 Target Current","unit":"A","device_class":"current"},
+    {"reg":15614,"name":"DC Input Mode","type":"enum","values":["PV","Car","Battery"],"notes":"0:PV, 1:Car, 2:Battery"},
+    {"reg":15618,"name":"Car Charging Switch","type":"enum","values":["Idle","Active"],"notes":"1: Active / 0: Idle"},
+    {"reg":15620,"name":"Charging Voltage Set","unit":"V","device_class":"voltage","notes":"Target DC bus voltage"},
+    {"reg":15621,"name":"DC3 Power Limit","unit":"W","device_class":"power"},
+    {"reg":15622,"name":"DC Power Limit","unit":"W","device_class":"power","notes":"Master wattage cap for charger"},
+    {"reg":15628,"name":"Inverter Sleep Mode","type":"enum","values":["Off","On"]},
+    {"reg":15631,"name":"Reverse Charging","type":"enum","values":["Off","Charging car"],"notes":"1: Charging car / 0: OFF"},
 
+    {"reg": 16000, "len": 16, "name": "System Working State", "type": "enum", "values": ["Standby", "Working", "Fault", "Shutdown"], "notes": "V2 Protocol - May be encrypted", "slave_id": 1},
+    {"reg": 16001, "len": 16, "name": "Active Warning Index", "notes": "V2 Protocol - May be encrypted", "slave_id": 1},
+    {"reg": 16002, "len": 16, "name": "Active Fault Index", "notes": "V2 Protocol - May be encrypted", "slave_id": 1},
+    {"reg": 16008, "len": 16, "name": "Total SOC", "unit": "%", "device_class": "battery", "notes": "V2 Protocol - May be encrypted", "slave_id": 1},
+    {"reg": 16010, "len": 16, "name": "AC Output Switch", "type": "enum", "values": ["Off", "On"], "notes": "V2 Protocol - May be encrypted", "slave_id": 1},
+    {"reg": 16011, "len": 16, "name": "DC Output Switch", "type": "enum", "values": ["Off", "On"], "notes": "V2 Protocol - May be encrypted", "slave_id": 1},
+    {"reg": 16013, "len": 16, "name": "Eco Mode State", "type": "enum", "values": ["Off", "On"], "notes": "V2 Protocol - May be encrypted", "slave_id": 1},
+    {"reg": 16015, "len": 16, "name": "Grid Charge Limit", "unit": "A", "device_class": "current", "notes": "V2 Protocol - May be encrypted", "slave_id": 1},
+    {"reg": 16101, "len": 16, "name": "Pack SOC", "unit": "%", "device_class": "battery", "notes": "V2 Protocol - May be encrypted", "slave_id": 1},
+    {"reg": 16102, "len": 16, "name": "Pack Voltage", "scale": 1, "unit": "V", "device_class": "voltage", "notes": "V2 Protocol - May be encrypted", "slave_id": 1},
+    {"reg": 16103, "len": 16, "name": "Pack Current", "scale": 1, "unit": "A", "device_class": "current", "signed": true, "notes": "V2 Protocol - May be encrypted", "slave_id": 1},
+    {"reg": 16104, "len": 32, "name": "Pack Power", "unit": "W", "device_class": "power", "signed": true, "notes": "V2 Protocol - May be encrypted", "no_word_swap": true, "slave_id": 1},
+    {"reg": 16106, "len": 16, "name": "Max Cell Temp", "unit": "°C", "device_class": "temperature", "scale": 1, "signed": true, "notes": "V2 Protocol - May be encrypted", "slave_id": 1},
+    {"reg": 16108, "len": 16, "name": "Max Cell Voltage", "unit": "mV", "device_class": "voltage", "notes": "V2 Protocol - May be encrypted", "slave_id": 1},
+    { "reg": 16201, "len": 16, "name": "PV1 Voltage", "scale": 1, "unit": "V", "device_class": "voltage", "notes": "V2 Protocol - May be encrypted", "slave_id": 1 },
+    { "reg": 16202, "len": 16, "name": "PV1 Current", "scale": 1, "unit": "A", "device_class": "current", "notes": "V2 Protocol - May be encrypted", "slave_id": 1 },
+    { "reg": 16203, "len": 16, "name": "PV1 Power", "unit": "W", "device_class": "power", "notes": "V2 Protocol - May be encrypted", "slave_id": 1 },
+    { "reg": 16204, "len": 16, "name": "PV2 Voltage", "scale": 1, "unit": "V", "device_class": "voltage", "notes": "V2 Protocol - May be encrypted", "slave_id": 1 },
+    { "reg": 16205, "len": 16, "name": "PV2 Current", "scale": 1, "unit": "A", "device_class": "current", "notes": "V2 Protocol - May be encrypted", "slave_id": 1 },
+    { "reg": 16206, "len": 16, "name": "PV2 Power", "unit": "W", "device_class": "power", "notes": "V2 Protocol - May be encrypted", "slave_id": 1 },
+    { "reg": 16210, "len": 32, "name": "Total PV Power", "unit": "W", "device_class": "power", "notes": "V2 Protocol - May be encrypted", "no_word_swap": true, "slave_id": 1 },
+    { "reg": 16215, "len": 16, "name": "PV Status", "type": "enum", "values": ["Standby", "Normal/Charging", "PV Voltage too low", "Fault", "PV Over-voltage"], "notes": "V2 Protocol - May be encrypted. 0=Standby, 1=Normal, 2=PV Low, 4=PV High", "slave_id": 1 },
+    { "reg": 16216, "len": 32, "name": "PV Warning Bits", "notes": "V2 Protocol - May be encrypted. Bitmask for warnings like PV Over-voltage.", "no_word_swap": true, "slave_id": 1 },
+    { "reg": 16220, "len": 16, "name": "DC Output Voltage", "scale": 1, "unit": "V", "device_class": "voltage", "notes": "V2 Protocol - May be encrypted", "slave_id": 1 },
+    { "reg": 16221, "len": 16, "name": "DC Output Current", "scale": 1, "unit": "A", "device_class": "current", "notes": "V2 Protocol - May be encrypted", "slave_id": 1 },
+    { "reg": 16225, "len": 16, "name": "DCDC Temp", "unit": "°C", "device_class": "temperature", "notes": "V2 Protocol - May be encrypted", "slave_id": 1 },
+    { "reg": 16250, "len": 32, "name": "Daily PV Generation", "scale": 1, "unit": "kWh", "device_class": "energy", "notes": "V2 Protocol - May be encrypted", "no_word_swap": true, "slave_id": 1 },
+    { "reg": 16252, "len": 32, "name": "Total Lifetime PV Generation", "scale": 1, "unit": "kWh", "device_class": "energy", "notes": "V2 Protocol - May be encrypted", "no_word_swap": true, "slave_id": 1 },
+    { "reg": 16301, "len": 16, "name": "AC Output Voltage", "scale": 1, "unit": "V", "device_class": "voltage", "notes": "V2 Protocol - May be encrypted", "slave_id": 1 },
+    { "reg": 16302, "len": 16, "name": "AC Output Current", "scale": 1, "unit": "A", "device_class": "current", "notes": "V2 Protocol - May be encrypted", "slave_id": 1 },
+    { "reg": 16303, "len": 32, "name": "AC Output Power", "unit": "W", "device_class": "power", "notes": "V2 Protocol - May be encrypted", "no_word_swap": true, "slave_id": 1 },
+    { "reg": 16304, "len": 16, "name": "AC Output Frequency", "scale": 2, "unit": "Hz", "device_class": "frequency", "notes": "V2 Protocol - May be encrypted", "slave_id": 1 },
+    { "reg": 16305, "len": 16, "name": "AC Load Percentage", "unit": "%", "notes": "V2 Protocol - May be encrypted", "slave_id": 1 },
+    { "reg": 16306, "len": 16, "name": "Inverter Temp", "unit": "°C", "device_class": "temperature", "notes": "V2 Protocol - May be encrypted", "slave_id": 1 },
+    { "reg": 16310, "len": 16, "name": "Grid Input Voltage", "scale": 1, "unit": "V", "device_class": "voltage", "notes": "V2 Protocol - May be encrypted", "slave_id": 1 },
+    { "reg": 16311, "len": 16, "name": "Grid Input Current", "scale": 1, "unit": "A", "device_class": "current", "notes": "V2 Protocol - May be encrypted", "slave_id": 1 },
+    { "reg": 16312, "len": 32, "name": "Grid Input Power", "unit": "W", "device_class": "power", "signed": true, "notes": "V2 Protocol - May be encrypted", "no_word_swap": true, "slave_id": 1 },
+    { "reg": 16313, "len": 16, "name": "Grid Input Frequency", "scale": 2, "unit": "Hz", "device_class": "frequency", "notes": "V2 Protocol - May be encrypted", "slave_id": 1 },
+    { "reg": 16315, "len": 16, "name": "AC Mode Status", "type": "enum", "values": ["Standby", "Inverting", "Bypass", "Charging"], "notes": "V2 Protocol - May be encrypted", "slave_id": 1 },
+    { "reg": 16316, "len": 32, "name": "Inverter Warning Bits", "notes": "V2 Protocol - Type 1 Warning. May be encrypted.", "no_word_swap": true, "slave_id": 1 },
+    { "reg": 16317, "len": 32, "name": "Inverter Fault Bits", "notes": "V2 Protocol - Type 1 Fault. May be encrypted.", "no_word_swap": true, "slave_id": 1 },
+    { "reg": 16350, "len": 32, "name": "Total AC Discharge Energy", "scale": 1, "unit": "kWh", "device_class": "energy", "notes": "V2 Protocol - May be encrypted", "no_word_swap": true, "slave_id": 1 },
+    { "reg": 16401, "len": 16, "name": "Working Mode", "type": "enum", "values": ["Standard", "PV Priority", "Time Control", "Custom"], "notes": "V2 Protocol - May be encrypted", "slave_id": 1 },
+    { "reg": 16402, "len": 16, "name": "Max Grid Charge Current", "unit": "A", "device_class": "current", "notes": "V2 Protocol - May be encrypted", "slave_id": 1 },
+    { "reg": 16403, "len": 16, "name": "Eco Mode Switch", "type": "enum", "values": ["Off", "On"], "notes": "V2 Protocol - May be encrypted", "slave_id": 1 },
+    { "reg": 16404, "len": 16, "name": "Eco Mode Shutdown Time", "unit": "min", "notes": "V2 Protocol - May be encrypted", "slave_id": 1 },
+    { "reg": 16405, "len": 16, "name": "AC Output Frequency Set", "type": "enum", "values": ["50Hz", "60Hz"], "notes": "V2 Protocol - May be encrypted", "slave_id": 1 },
+    { "reg": 16406, "len": 16, "name": "AC Output Voltage Set", "notes": "V2 Protocol - 0/1/2 maps to low/high voltage settings. May be encrypted", "slave_id": 1 },
+    { "reg": 16407, "len": 16, "name": "DC Output Switch", "type": "enum", "values": ["Off", "On"], "notes": "V2 Protocol - May be encrypted", "slave_id": 1 },
+    { "reg": 16408, "len": 16, "name": "AC Output Switch", "type": "enum", "values": ["Off", "On"], "notes": "V2 Protocol - May be encrypted", "slave_id": 1 },
+    { "reg": 16410, "len": 16, "name": "Buzzer/Mute", "type": "enum", "values": ["Silent", "Enabled"], "notes": "V2 Protocol - May be encrypted", "slave_id": 1 },
+    { "reg": 16411, "len": 16, "name": "Screen Timeout", "unit": "s", "notes": "V2 Protocol - May be encrypted", "slave_id": 1 },
+    { "reg": 16412, "len": 16, "name": "Grid Charging Switch", "type": "enum", "values": ["Off", "On"], "notes": "V2 Protocol - May be encrypted", "slave_id": 1 },
+    { "reg": 16420, "len": 32, "name": "System/IOT Fault Bits", "notes": "V2 Protocol - Type 5 Fault. May be encrypted.", "no_word_swap": true, "slave_id": 1 },
+    { "reg": 16490, "len": 16, "name": "UPS Mode Toggle", "type": "enum", "values": ["Off", "On"], "notes": "V2 Protocol - May be encrypted", "slave_id": 1 },
+    { "reg": 16491, "len": 16, "name": "Power Lifting/Turbo Mode", "type": "enum", "values": ["Off", "On"], "notes": "V2 Protocol - May be encrypted", "slave_id": 1 },
+    { "reg": 16500, "len": 32, "name": "Total AC Output Energy", "scale": 1, "unit": "kWh", "device_class": "energy", "notes": "V2 Protocol - May be encrypted", "no_word_swap": true, "slave_id": 1 },
+    { "reg": 16502, "len": 32, "name": "Total AC Input Energy", "scale": 1, "unit": "kWh", "device_class": "energy", "notes": "V2 Protocol - May be encrypted", "no_word_swap": true, "slave_id": 1 },
+    { "reg": 16504, "len": 32, "name": "Total PV Input Energy", "scale": 1, "unit": "kWh", "device_class": "energy", "notes": "V2 Protocol - May be encrypted", "no_word_swap": true, "slave_id": 1 },
+    { "reg": 16506, "len": 32, "name": "Total DC Output Energy", "scale": 1, "unit": "kWh", "device_class": "energy", "notes": "V2 Protocol - May be encrypted", "no_word_swap": true, "slave_id": 1 },
+    { "reg": 16510, "len": 32, "name": "Daily AC Output", "scale": 2, "unit": "kWh", "device_class": "energy", "notes": "V2 Protocol - May be encrypted", "no_word_swap": true, "slave_id": 1 },
+    { "reg": 16512, "len": 32, "name": "Daily AC Input", "scale": 2, "unit": "kWh", "device_class": "energy", "notes": "V2 Protocol - May be encrypted", "no_word_swap": true, "slave_id": 1 },
+    { "reg": 16514, "len": 32, "name": "Daily PV Input", "scale": 2, "unit": "kWh", "device_class": "energy", "notes": "V2 Protocol - May be encrypted", "no_word_swap": true, "slave_id": 1 },
+    { "reg": 16520, "len": 16, "name": "Charging Cycle Count", "notes": "V2 Protocol - May be encrypted", "slave_id": 1 },
+    { "reg": 16530, "len": 16, "name": "Inverter Run Time", "unit": "h", "notes": "V2 Protocol - May be encrypted", "slave_id": 1 },
+    { "reg": 16532, "len": 16, "name": "System Up Time", "unit": "h", "notes": "V2 Protocol - May be encrypted", "slave_id": 1 },
+    { "reg": 16550, "len": 32, "name": "Metering/Comm Fault Bits", "notes": "V2 Protocol - Type 6 Fault. May be encrypted.", "no_word_swap": true, "slave_id": 1 },
+    { "reg": 16561, "len": 32, "name": "Feed-in Energy", "scale": 1, "unit": "kWh", "device_class": "energy", "notes": "V2 Protocol - May be encrypted", "no_word_swap": true, "slave_id": 1 },
+    { "reg": 16563, "len": 32, "name": "Self-consumption Energy", "scale": 1, "unit": "kWh", "device_class": "energy", "notes": "V2 Protocol - May be encrypted", "no_word_swap": true, "slave_id": 1 },
+    { "reg": 17000, "len": 16, "name": "TOU Master Switch", "type": "enum", "values": ["Disabled", "Enabled"], "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 17001, "len": 16, "name": "Peak Start Time 1", "notes": "V2 Protocol - Format HHMM. May be encrypted" },
+    { "reg": 17002, "len": 16, "name": "Peak End Time 1", "notes": "V2 Protocol - Format HHMM. May be encrypted" },
+    { "reg": 17003, "len": 16, "name": "Peak SOC Limit 1", "unit": "%", "device_class": "battery", "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 17004, "len": 16, "name": "Peak Start Time 2", "notes": "V2 Protocol - Format HHMM. May be encrypted" },
+    { "reg": 17005, "len": 16, "name": "Peak End Time 2", "notes": "V2 Protocol - Format HHMM. May be encrypted" },
+    { "reg": 17006, "len": 16, "name": "Peak SOC Limit 2", "unit": "%", "device_class": "battery", "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 17010, "len": 16, "name": "Off-Peak Charge Start", "notes": "V2 Protocol - Format HHMM. May be encrypted" },
+    { "reg": 17011, "len": 16, "name": "Off-Peak Charge End", "notes": "V2 Protocol - Format HHMM. May be encrypted" },
+    { "reg": 17012, "len": 16, "name": "Off-Peak SOC Target", "unit": "%", "device_class": "battery", "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 17020, "len": 16, "name": "Discharge Current Limit", "unit": "A", "device_class": "current", "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 17021, "len": 16, "name": "Charge Current Limit", "unit": "A", "device_class": "current", "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 17101, "len": 16, "name": "Parallel Role", "type": "enum", "values": ["Standalone", "Master", "Slave"], "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 17102, "len": 16, "name": "Parallel Phase", "type": "enum", "values": ["Phase A (L1)", "Phase B (L2)"], "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 17103, "len": 16, "name": "Parallel Unit Total", "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 17105, "len": 16, "name": "Sync Status", "type": "enum", "values": ["Not Synced", "Synced", "Error"], "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 17201, "len": 16, "name": "Grid Feed-in Switch", "type": "enum", "values": ["Off", "On"], "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 17202, "len": 16, "name": "Max Export Power", "unit": "W", "device_class": "power", "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 17205, "len": 16, "name": "Anti-Backflow Switch", "type": "enum", "values": ["Off", "On"], "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 17210, "len": 16, "name": "Grid Standard", "notes": "V2 Protocol - Integer mapping to region. May be encrypted" },
+    { "reg": 17401, "len": 16, "name": "Balcony Output Power Limit", "unit": "W", "device_class": "power", "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 17402, "len": 16, "name": "Balcony Feed-in Priority", "type": "enum", "values": ["Battery First", "House Load First"], "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 17410, "len": 16, "name": "Balcony Micro-Inv Mode", "type": "enum", "values": ["Discharge", "Bypass", "Off-Grid"], "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 17800, "len": 16, "name": "OTA Master Status", "type": "enum", "values": ["Idle", "Ready", "Downloading", "Upgrading", "Success", "Failed"], "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 17801, "len": 16, "name": "Global OTA Progress", "unit": "%", "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 17802, "len": 16, "name": "OTA Target Module", "type": "enum", "values": ["Unknown", "INV", "PACK", "IOT", "LCD", "PBOX", "DCDC", "WT"], "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 17805, "len": 16, "name": "OTA Error Code", "type": "enum", "values": ["None", "Checksum Fail", "Version Mismatch", "Low Battery"], "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 17810, "len": 16, "name": "DSP Version Part 1", "notes": "V2 Protocol - Inverter FW. May be encrypted" },
+    { "reg": 17811, "len": 16, "name": "DSP Version Part 2", "notes": "V2 Protocol - Inverter FW. May be encrypted" },
+    { "reg": 17812, "len": 16, "name": "DSP Version Part 3", "notes": "V2 Protocol - Inverter FW. May be encrypted" },
+    { "reg": 17820, "len": 16, "name": "BMS Version Part 1", "notes": "V2 Protocol - Battery FW. May be encrypted" },
+    { "reg": 17821, "len": 16, "name": "BMS Version Part 2", "notes": "V2 Protocol - Battery FW. May be encrypted" },
+    { "reg": 17822, "len": 16, "name": "BMS Version Part 3", "notes": "V2 Protocol - Battery FW. May be encrypted" },
+    { "reg": 17830, "len": 16, "name": "ARM Version Part 1", "notes": "V2 Protocol - IOT FW. May be encrypted" },
+    { "reg": 17831, "len": 16, "name": "ARM Version Part 2", "notes": "V2 Protocol - IOT FW. May be encrypted" },
+    { "reg": 17832, "len": 16, "name": "ARM Version Part 3", "notes": "V2 Protocol - IOT FW. May be encrypted" },
+    { "reg": 17840, "len": 16, "name": "HMI Version Part 1", "notes": "V2 Protocol - LCD FW. May be encrypted" },
+    { "reg": 17841, "len": 16, "name": "HMI Version Part 2", "notes": "V2 Protocol - LCD FW. May be encrypted" },
+    { "reg": 17842, "len": 16, "name": "HMI Version Part 3", "notes": "V2 Protocol - LCD FW. May be encrypted" },
+    { "reg": 18000, "len": 16, "name": "Panel Connection State", "type": "enum", "values": ["Offline", "Online", "Fault"], "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 18001, "len": 16, "name": "Panel Grid Voltage", "scale": 1, "unit": "V", "device_class": "voltage", "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 18002, "len": 16, "name": "Panel Load Total", "unit": "W", "device_class": "power", "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 18003, "len": 16, "name": "Panel Temperature", "unit": "°C", "device_class": "temperature", "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 18005, "len": 16, "name": "Panel Bypass Switch", "type": "enum", "values": ["Grid Bypass", "Inverter Power"], "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 18010, "len": 16, "name": "Panel Working Mode", "type": "enum", "values": ["Manual", "App Control"], "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 18101, "len": 16, "name": "Circuit 1 Power", "unit": "W", "device_class": "power", "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 18102, "len": 16, "name": "Circuit 2 Power", "unit": "W", "device_class": "power", "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 18103, "len": 16, "name": "Circuit 3 Power", "unit": "W", "device_class": "power", "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 18104, "len": 16, "name": "Circuit 4 Power", "unit": "W", "device_class": "power", "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 18105, "len": 16, "name": "Circuit 5 Power", "unit": "W", "device_class": "power", "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 18106, "len": 16, "name": "Circuit 6 Power", "unit": "W", "device_class": "power", "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 18107, "len": 16, "name": "Circuit 7 Power", "unit": "W", "device_class": "power", "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 18108, "len": 16, "name": "Circuit 8 Power", "unit": "W", "device_class": "power", "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 18109, "len": 16, "name": "Circuit 9 Power", "unit": "W", "device_class": "power", "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 18110, "len": 16, "name": "Circuit 10 Power", "unit": "W", "device_class": "power", "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 18111, "len": 16, "name": "Circuit 11 Power", "unit": "W", "device_class": "power", "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 18112, "len": 16, "name": "Circuit 12 Power", "unit": "W", "device_class": "power", "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 18121, "len": 16, "name": "Circuit 1 Switch", "type": "enum", "values": ["Off", "On"], "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 18122, "len": 16, "name": "Circuit 2 Switch", "type": "enum", "values": ["Off", "On"], "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 18123, "len": 16, "name": "Circuit 3 Switch", "type": "enum", "values": ["Off", "On"], "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 18124, "len": 16, "name": "Circuit 4 Switch", "type": "enum", "values": ["Off", "On"], "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 18125, "len": 16, "name": "Circuit 5 Switch", "type": "enum", "values": ["Off", "On"], "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 18126, "len": 16, "name": "Circuit 6 Switch", "type": "enum", "values": ["Off", "On"], "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 18127, "len": 16, "name": "Circuit 7 Switch", "type": "enum", "values": ["Off", "On"], "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 18128, "len": 16, "name": "Circuit 8 Switch", "type": "enum", "values": ["Off", "On"], "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 18129, "len": 16, "name": "Circuit 9 Switch", "type": "enum", "values": ["Off", "On"], "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 18130, "len": 16, "name": "Circuit 10 Switch", "type": "enum", "values": ["Off", "On"], "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 18131, "len": 16, "name": "Circuit 11 Switch", "type": "enum", "values": ["Off", "On"], "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 18132, "len": 16, "name": "Circuit 12 Switch", "type": "enum", "values": ["Off", "On"], "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 18141, "len": 16, "name": "Circuit 1 Priority", "type": "enum", "values": ["Essential", "Non-essential"], "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 18142, "len": 16, "name": "Circuit 2 Priority", "type": "enum", "values": ["Essential", "Non-essential"], "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 18143, "len": 16, "name": "Circuit 3 Priority", "type": "enum", "values": ["Essential", "Non-essential"], "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 18144, "len": 16, "name": "Circuit 4 Priority", "type": "enum", "values": ["Essential", "Non-essential"], "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 18145, "len": 16, "name": "Circuit 5 Priority", "type": "enum", "values": ["Essential", "Non-essential"], "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 18146, "len": 16, "name": "Circuit 6 Priority", "type": "enum", "values": ["Essential", "Non-essential"], "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 18152, "len": 16, "name": "Circuit 12 Priority", "type": "enum", "values": ["Essential", "Non-essential"], "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 18201, "len": 16, "name": "Plug 1 Power", "unit": "W", "device_class": "power", "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 18202, "len": 16, "name": "Plug 1 Switch", "type": "enum", "values": ["Off", "On"], "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 18210, "len": 16, "name": "Plug Count", "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 18801, "len": 16, "name": "Matter Admin State", "type": "enum", "values": ["Not Commissioned", "Commissioning", "Active"], "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 18802, "len": 16, "name": "Matter Fabric Index", "notes": "V2 Protocol - May be encrypted" },
     { "reg": 19001, "len": 16, "name": "WT Input Voltage", "scale": 1, "unit": "V", "device_class": "voltage", "notes": "V2 Protocol - May be encrypted" },
     { "reg": 19002, "len": 16, "name": "WT Input Current", "scale": 1, "unit": "A", "device_class": "current", "notes": "V2 Protocol - May be encrypted" },
     { "reg": 19003, "len": 32, "name": "WT Input Power", "unit": "W", "device_class": "power", "notes": "V2 Protocol - May be encrypted", "no_word_swap": true },
@@ -1125,6 +1418,16 @@
     { "reg": 19103, "len": 16, "name": "Node Type", "type": "enum", "values": ["Master", "Slave", "Observer"], "notes": "V2 Protocol - May be encrypted" },
     { "reg": 19105, "len": 16, "name": "Heartbeat Interval", "unit": "s", "notes": "V2 Protocol - May be encrypted" },
     { "reg": 19110, "len": 32, "name": "Sync Clock Time", "notes": "V2 Protocol - Unix Timestamp. May be encrypted", "no_word_swap": true },
+    { "reg": 19201, "len": 32, "name": "External Grid Power", "unit": "W", "device_class": "power", "notes": "V2 Protocol - Signed. May be encrypted", "no_word_swap": true, "signed": true },
+    { "reg": 19203, "len": 16, "name": "External Grid Voltage", "scale": 1, "unit": "V", "device_class": "voltage", "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 19205, "len": 16, "name": "Meter Comm State", "type": "enum", "values": ["Fault", "Normal"], "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 19210, "len": 32, "name": "Feed-in Energy Total", "scale": 2, "unit": "kWh", "device_class": "energy", "notes": "V2 Protocol - May be encrypted", "no_word_swap": true },
+    { "reg": 19212, "len": 32, "name": "Consumption Total", "scale": 2, "unit": "kWh", "device_class": "energy", "notes": "V2 Protocol - May be encrypted", "no_word_swap": true },
+    { "reg": 19901, "len": 16, "name": "System Reset Trigger", "notes": "V2 Protocol - Write-only (0xA5A5=Factory, 0x5A5A=Reboot). May be encrypted" },
+    { "reg": 19902, "len": 16, "name": "Log Export Trigger", "type": "enum", "values": ["Idle", "Export to USB/IOT"], "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 19905, "len": 16, "name": "Clear Energy History", "notes": "V2 Protocol - Write-only (1=Reset). May be encrypted" },
+    { "reg": 19910, "len": 16, "name": "Self-Test Result", "type": "enum", "values": ["Passing", "Fail", "Testing"], "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 19920, "len": 16, "name": "Hardware Version ID", "notes": "V2 Protocol - May be encrypted" },
     { "reg": 21001, "len": 16, "name": "Pack 1 Cell 01 Voltage", "unit": "mV", "device_class": "voltage", "notes": "V2 Protocol - May be encrypted" },
     { "reg": 21016, "len": 16, "name": "Pack 1 Cell 16 Voltage", "unit": "mV", "device_class": "voltage", "notes": "V2 Protocol - May be encrypted" },
     { "reg": 21017, "len": 16, "name": "Pack 1 Cell Temp 1", "unit": "°C", "device_class": "temperature", "scale": 1, "signed": true, "notes": "V2 Protocol - May be encrypted" },
@@ -1132,6 +1435,56 @@
     { "reg": 21025, "len": 16, "name": "Pack 1 SOC (High Res)", "unit": "%", "device_class": "battery", "scale": 1, "notes": "V2 Protocol - May be encrypted" },
     { "reg": 21026, "len": 16, "name": "Pack 1 BMS Hardware Ver", "notes": "V2 Protocol - May be encrypted" },
     { "reg": 21030, "len": 32, "name": "Pack 1 Cell Balance Status", "notes": "V2 Protocol - Bitmask. May be encrypted", "no_word_swap": true },
+    { "reg": 22001, "len": 16, "name": "Battery SOH", "unit": "%", "device_class": "battery", "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 22002, "len": 16, "name": "Cycle Count", "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 22005, "len": 16, "name": "Deep Discharge Count", "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 22010, "len": 32, "name": "Design Capacity", "unit": "Ah", "scale": 3, "notes": "V2 Protocol - May be encrypted", "no_word_swap": true },
+    { "reg": 22012, "len": 32, "name": "Remaining Capacity", "unit": "Ah", "scale": 3, "notes": "V2 Protocol - May be encrypted", "no_word_swap": true },
+    { "reg": 22020, "len": 16, "name": "Maintenance Req.", "type": "enum", "values": ["Normal", "Required"], "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 23001, "len": 16, "name": "Sub-Pack Count", "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 23002, "len": 16, "name": "Sub-Pack Online Map", "notes": "V2 Protocol - Bitmask. May be encrypted" },
+    { "reg": 23010, "len": 16, "name": "Sub-Pack 1 Fault", "notes": "V2 Protocol - Bitmask. May be encrypted" },
+    { "reg": 23011, "len": 16, "name": "Sub-Pack 1 Warn", "notes": "V2 Protocol - Bitmask. May be encrypted" },
+    { "reg": 25001, "len": 10, "ascii": true, "name": "Battery Serial Number", "notes": "V2 Protocol - 160 bits. May be encrypted" },
+    { "reg": 25020, "len": 16, "name": "Manufacturing Date", "notes": "V2 Protocol - Packed YYYYMMDD. May be encrypted" },
+    { "reg": 25100, "len": 16, "name": "BMS Bootloader Ver", "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 30001, "len": 16, "name": "Main State Machine", "type": "enum", "values": ["PowerOn", "Standby", "StartUp", "Working", "Fault", "Shutdown"], "notes": "V2 Protocol - May be encrypted", "slave_id": 1 },
+    { "reg": 30005, "len": 16, "name": "Charging Stage", "type": "enum", "values": ["Idle", "Trickle", "CC", "CV"], "notes": "V2 Protocol - May be encrypted", "slave_id": 1 },
+    { "reg": 30008, "len": 16, "name": "Max Discharge Capability", "unit": "W", "device_class": "power", "notes": "V2 Protocol - May be encrypted", "slave_id": 1 },
+    { "reg": 30010, "len": 16, "name": "System Fan Duty", "unit": "%", "notes": "V2 Protocol - May be encrypted", "slave_id": 1 },
+    { "reg": 30012, "len": 32, "name": "DC Bus Voltage", "scale": 1, "unit": "V", "device_class": "voltage", "notes": "V2 Protocol - May be encrypted", "no_word_swap": true, "slave_id": 1 },
+    { "reg": 30015, "len": 16, "name": "Isolation Resistance", "unit": "kΩ", "notes": "V2 Protocol - May be encrypted", "slave_id": 1 },
+    { "reg": 30020, "name": "Grid Power Factor", "len": 16, "scale": 3, "device_class": "power_factor", "notes": "V2 Protocol - May be encrypted", "slave_id": 1 },
+    { "reg": 30030, "name": "Inverter Heatsink Temp", "len": 16, "scale": 1, "unit": "°C", "device_class": "temperature", "signed": true, "notes": "V2 Protocol - May be encrypted", "slave_id": 1 },
+    { "reg": 30031, "name": "DCDC Heatsink Temp", "len": 16, "scale": 1, "unit": "°C", "device_class": "temperature", "signed": true, "notes": "V2 Protocol - May be encrypted", "slave_id": 1 },
+    { "reg": 30032, "name": "Ambient Temperature", "len": 16, "scale": 1, "unit": "°C", "device_class": "temperature", "signed": true, "notes": "V2 Protocol - May be encrypted", "slave_id": 1 },
+    { "reg": 30070, "name": "Logic Warning Mask", "len": 16, "notes": "V2 Protocol - May be encrypted", "slave_id": 1, "outputs": [
+        { "name": "Low Battery", "mask": 1, "offset": 0, "type": "enum", "values": ["OK", "Warning"] },
+        { "name": "Overload", "mask": 1, "offset": 1, "type": "enum", "values": ["OK", "Warning"] },
+        { "name": "High Temp", "mask": 1, "offset": 2, "type": "enum", "values": ["OK", "Warning"] },
+        { "name": "Low Temp", "mask": 1, "offset": 3, "type": "enum", "values": ["OK", "Warning"] }
+    ]},
+    { "reg": 30071, "name": "Logic Fault Mask", "len": 16, "notes": "V2 Protocol - May be encrypted", "slave_id": 1, "outputs": [
+        { "name": "Inverter Fail", "mask": 1, "offset": 0, "type": "enum", "values": ["OK", "Fault"] },
+        { "name": "Bus Overvoltage", "mask": 1, "offset": 1, "type": "enum", "values": ["OK", "Fault"] },
+        { "name": "Short Circuit", "mask": 1, "offset": 2, "type": "enum", "values": ["OK", "Fault"] }
+    ]},
+    { "reg": 30101, "len": 16, "name": "Grid L1 Voltage", "scale": 1, "unit": "V", "device_class": "voltage", "notes": "V2 Protocol - May be encrypted", "slave_id": 1 },
+    { "reg": 30102, "len": 16, "name": "Grid L1 Current", "scale": 1, "unit": "A", "device_class": "current", "signed": true, "notes": "V2 Protocol - May be encrypted", "slave_id": 1 },
+    { "reg": 30103, "len": 32, "name": "Grid L1 Active Power", "unit": "W", "device_class": "power", "signed": true, "notes": "V2 Protocol - May be encrypted", "no_word_swap": true, "slave_id": 1 },
+    { "reg": 30105, "len": 32, "name": "Grid L1 Reactive Power", "unit": "Var", "device_class": "reactive_power", "signed": true, "notes": "V2 Protocol - May be encrypted", "no_word_swap": true, "slave_id": 1 },
+    { "reg": 30107, "len": 16, "name": "Grid Power Factor", "scale": 3, "notes": "V2 Protocol - May be encrypted", "slave_id": 1 },
+    { "reg": 30110, "len": 16, "name": "Inverter Phase Angle", "scale": 1, "unit": "°", "notes": "V2 Protocol - May be encrypted", "slave_id": 1 },
+    { "reg": 30201, "len": 16, "name": "MPPT 1 State", "type": "enum", "values": ["Off", "Tracking", "Limited"], "notes": "V2 Protocol - May be encrypted", "slave_id": 1 },
+    { "reg": 30202, "len": 16, "name": "MPPT 2 State", "type": "enum", "values": ["Off", "Tracking", "Limited"], "notes": "V2 Protocol - May be encrypted", "slave_id": 1 },
+    { "reg": 30210, "len": 16, "name": "DCDC HeatSink Temp", "scale": 1, "unit": "°C", "device_class": "temperature", "signed": true, "notes": "V2 Protocol - May be encrypted", "slave_id": 1 },
+    { "reg": 30220, "len": 32, "name": "PV Total Daily Yield", "scale": 2, "unit": "kWh", "device_class": "energy", "notes": "V2 Protocol - May be encrypted", "no_word_swap": true, "slave_id": 1 },
+    { "reg": 30801, "len": 16, "name": "Inverter Fault Mask", "notes": "V2 Protocol - Bitmask. May be encrypted", "slave_id": 1 },
+    { "reg": 30802, "len": 16, "name": "Grid/Bypass Fault Mask", "notes": "V2 Protocol - Bitmask. May be encrypted", "slave_id": 1 },
+    { "reg": 30803, "len": 16, "name": "BMS/Pack Fault Mask", "notes": "V2 Protocol - Bitmask. May be encrypted", "slave_id": 1 },
+    { "reg": 30804, "len": 16, "name": "DCDC/PV Fault Mask", "notes": "V2 Protocol - Bitmask. May be encrypted", "slave_id": 1 },
+    { "reg": 30805, "len": 16, "name": "System/IOT Fault Mask", "notes": "V2 Protocol - Bitmask. May be encrypted", "slave_id": 1 },
+    { "reg": 30806, "len": 16, "name": "Comm/Meter Fault Mask", "notes": "V2 Protocol - Bitmask. May be encrypted", "slave_id": 1 },
     { "reg": 40001, "len": 32, "name": "History Total Record Count", "notes": "V2 Protocol - May be encrypted", "no_word_swap": true },
     { "reg": 40003, "len": 32, "name": "History Current Record Index", "notes": "V2 Protocol - Write index to move window. May be encrypted", "no_word_swap": true },
     { "reg": 40005, "len": 16, "name": "History Records per Read", "notes": "V2 Protocol - May be encrypted" },
@@ -1235,6 +1588,14 @@
     {"reg": 11029, "name": "Unknown Reg 11029", "notes": "non-zero"},
     {"reg": 11031, "name": "Unknown Reg 11031", "notes": "non-zero"},
     {"reg": 11032, "name": "Unknown Reg 11032", "notes": "non-zero"},
+    {"reg": 12001, "name": "Unknown Reg 12001", "notes": "non-zero"},
+    {"reg": 12018, "name": "Unknown Reg 12018", "notes": "non-zero"},
+    {"reg": 12020, "name": "Unknown Reg 12020", "notes": "non-zero"},
+    {"reg": 12021, "name": "Unknown Reg 12021", "notes": "non-zero"},
+    {"reg": 12022, "name": "Unknown Reg 12022", "notes": "non-zero"},
+    {"reg": 12050, "name": "Unknown Reg 12050", "notes": "non-zero"},
+    {"reg": 12067, "name": "Unknown Reg 12067", "notes": "non-zero"},
+    {"reg": 12068, "name": "Unknown Reg 12068", "notes": "non-zero"},
     {"reg": 12069, "name": "Unknown Reg 12069", "notes": "non-zero"},
     {"reg": 12070, "name": "Unknown Reg 12070", "notes": "non-zero"},
     {"reg": 12071, "name": "Unknown Reg 12071", "notes": "non-zero"},
@@ -1247,6 +1608,16 @@
     {"reg": 12078, "name": "Unknown Reg 12078", "notes": "non-zero"},
     {"reg": 12079, "name": "Unknown Reg 12079", "notes": "non-zero"},
     {"reg": 12161, "name": "Unknown Reg 12161", "notes": "non-zero"},
+    {"reg": 14001, "name": "Unknown Reg 14001", "notes": "non-zero"},
+    {"reg": 14002, "name": "Unknown Reg 14002", "notes": "non-zero"},
+    {"reg": 14003, "name": "Unknown Reg 14003", "notes": "non-zero"},
+    {"reg": 14007, "name": "Unknown Reg 14007", "notes": "non-zero"},
+    {"reg": 14008, "name": "Unknown Reg 14008", "notes": "non-zero"},
+    {"reg": 14011, "name": "Unknown Reg 14011", "notes": "non-zero"},
+    {"reg": 14013, "name": "Unknown Reg 14013", "notes": "non-zero"},
+    {"reg": 15039, "name": "Unknown Reg 15039", "notes": "non-zero"},
+    {"reg": 15058, "name": "Unknown Reg 15058", "notes": "non-zero"},
+    {"reg": 15059, "name": "Unknown Reg 15059", "notes": "non-zero"},
 
  
     { "reg": 21000, "name": "Node List Version", "notes": "Should be 1" },
@@ -1254,17 +1625,10 @@
       "reg": 21001, "name": "Total Node Count", "type": "repeating_count",
       "len": 4112, "count_offset": 0, "start_offset": 1, "block_regs": 8,
       "outputs": [
-        { "reg_offset": 0, "name": "Group and Slave", "outputs": [
-            { "name": "Node Slave ID", "mask": 255 },
-            { "name": "Node Group ID", "offset": 8, "mask": 255 }
-        ]},
-        { "reg_offset": 1, "name": "Internal IDs", "outputs": [
-            { "name": "Node Parent ID", "mask": 255 },
-            { "name": "Node Sub ID", "offset": 8, "mask": 255 }
-        ]},
-        { "reg_offset": 2, "name": "Node Flags", "notes": "Bit 0: Online" },
+        { "reg_offset": 0, "name": "Node Group" },
+        { "reg_offset": 1, "name": "Node Slave ID" },
         { "reg_offset": 4, "name": "Node Model ID" },
-        { "reg_offset": 5, "name": "Node Unique SN", "len": 48 }
+        { "reg_offset": 5, "name": "Node SN", "len": 32, "ascii": true }
       ]
     },
    

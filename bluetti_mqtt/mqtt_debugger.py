@@ -374,12 +374,16 @@ def get_command_fields(args: Namespace) -> List[Dict[str, Any]]:
             # Handle Trigger Writes (which can now contain bulk_reads)
             elif "trigger_write" in item:
                 trigger_data = item.get("trigger_write", [])
-                triggers, delay, regs = [], 0.2, []
+                triggers, delay, regs, p_info = [], 0.2, [], None
                 item_slave = item.get("slave_id", item.get("slave", 1))
                 
                 for component in trigger_data:
                     if "trigger_metadata" in component:
                         m = component["trigger_metadata"]
+                        # Detect Pagination
+                        if "pagination_selector" in m:
+                            p_info = {"selector": m["pagination_selector"], "count_reg": m["pagination_count_reg"]}
+                        
                         reg = m.get("trigger_reg")
                         val = m.get("trigger_value", m.get("trigger_val"))
                         t_slave = m.get("slave_id", m.get("slave", item_slave))
@@ -402,7 +406,11 @@ def get_command_fields(args: Namespace) -> List[Dict[str, Any]]:
                                 bulk_data = bulk_data.copy()
                                 bulk_data["registers"] = component["registers"]
                             
-                            regs.extend(process_bulk_read(bulk_data, item_slave, triggers, primary_val))
+                            extracted = process_bulk_read(bulk_data, item_slave, triggers, primary_val)
+                            if p_info:
+                                for r in extracted:
+                                    r.update({"pagination_selector": p_info["selector"], "pagination_count_reg": p_info["count_reg"]})
+                            regs.extend(extracted)
                 flat_config.extend(regs)
             else:
                 flat_config.append(item)
@@ -502,6 +510,7 @@ def group_commands(commands_to_poll: List[Dict[str, Any]], max_gap: int = 5, max
         cmd_encrypted = is_encrypted(cmd)
         cmd_slave_id = get_target_slave_id(cmd)
         cmd_triggers = get_trigger_key(cmd)
+        cmd_pag_selector = cmd.get('pagination_selector')
 
         if not current_group:
             current_group.append(cmd)
@@ -522,7 +531,8 @@ def group_commands(commands_to_poll: List[Dict[str, Any]], max_gap: int = 5, max
             new_group_size <= max_group_size and 
             cmd_encrypted == current_group_encrypted and
             cmd_slave_id == current_group_slave_id and
-            cmd_triggers == current_group_triggers):
+            cmd_triggers == current_group_triggers and
+            cmd_pag_selector == current_group[0].get('pagination_selector')):
             current_group.append(cmd)
         else:
             groups.append(current_group)
@@ -542,6 +552,8 @@ def group_commands(commands_to_poll: List[Dict[str, Any]], max_gap: int = 5, max
         slave_id = get_target_slave_id(group[0])
         triggers = group[0].get('triggers', [])
         trigger_delay = group[0].get('trigger_delay', 0.2)
+        p_selector = group[0].get('pagination_selector')
+        p_count_reg = group[0].get('pagination_count_reg')
         
         # Find the end register of the group
         end_reg = 0
@@ -557,7 +569,9 @@ def group_commands(commands_to_poll: List[Dict[str, Any]], max_gap: int = 5, max
             'encrypted': encrypted,
             'slave_id': slave_id,
             'triggers': triggers,
-            'trigger_delay': trigger_delay
+            'trigger_delay': trigger_delay,
+            'pagination_selector': p_selector,
+            'pagination_count_reg': p_count_reg
         })
 
     return final_groups
@@ -1088,74 +1102,106 @@ async def poll_device_registers(
 
         previous_slave_id = slave_id
 
-        # Handle Trigger Register Write if defined for this group
-        if group.get('triggers'):
-            print(f"  --- TRIGGER START ---")
-            for t in group['triggers']:
-                t_reg, t_val = t['reg'], t['val']
-                t_slave = t.get('slave_id', slave_id)
-                print(f"  Action: Write {t_val} to {t_reg} (Slave {t_slave})")
-                trigger_cmd = WriteSingleRegister(t_reg, t_val, slave_id=t_slave)
-                tx_type = "Plaintext"
-                print(f"    TX Packet ({tx_type}): {bytes(trigger_cmd).hex()}")
+        # --- PAGINATION LOGIC ---
+        p_selector = group.get('pagination_selector')
+        p_count_reg = group.get('pagination_count_reg')
+        total_pages = 1
 
+        if p_selector and p_count_reg:
+            print(f"  --- PAGINATION DISCOVERY (Selector {p_selector}) ---")
+            try:
+                # 1. Write Page 1 to trigger the count
+                trigger_cmd = WriteSingleRegister(p_selector, 1, slave_id=slave_id)
+                await (await client.perform_with_fallback(trigger_cmd, device_protocol))
+                await asyncio.sleep(0.8)
+
+                # 2. Read the Page Count register
+                read_count_cmd = ReadHoldingRegisters(p_count_reg, 1, slave_id=slave_id)
+                count_res = cast(bytes, await (await client.perform_with_fallback(read_count_cmd, device_protocol)))
+                total_pages = int.from_bytes(read_count_cmd.parse_response(count_res), 'big')
+                print(f"    Found {total_pages} pages in register {p_count_reg}")
+            except Exception as e:
+                print(f"    Pagination discovery failed: {e}")
+                total_pages = 1
+
+        for page_idx in range(1, total_pages + 1):
+            if total_pages > 1:
+                print(f"  --- POLLING PAGE {page_idx} of {total_pages} ---")
+                # Write the specific page index to the selector
+                page_trigger = WriteSingleRegister(p_selector, page_idx, slave_id=slave_id)
                 try:
-                    t_future = await client.perform_with_fallback(trigger_cmd, device_protocol)
-                    t_res = cast(bytes, await t_future)
-                    if t_res:
-                        print(f"    RX Packet: {t_res.hex()}")
-                    print("    Result: Success (Write accepted)")
+                    await (await client.perform_with_fallback(page_trigger, device_protocol))
+                    await asyncio.sleep(0.8)
                 except Exception as e:
-                    print(f"    Result: Failed - {e}")
-            
-            delay = group.get('trigger_delay', 0.8)
-            print(f"  Waiting {delay}s for Commit/Paging...")
-            await asyncio.sleep(delay)
-            print(f"  --- TRIGGER END ---")
+                    print(f"    Page switch failed: {e}")
 
-        command = ReadHoldingRegisters(group['start_reg'], group['num_regs'], slave_id=slave_id)
-        tx_type = "Plaintext"
-        print(f"  TX Packet ({tx_type}): {bytes(command).hex()}")
-        try:
-            print(f"  Attempting {tx_type} command...")
-            future = await client.perform_with_fallback(command, device_protocol)
-            response = cast(bytes, await future)
-            print(f"  ✓ {tx_type} command succeeded")
+            # Handle Static Trigger Register Write if defined for this group
+            if group.get('triggers'):
+                print(f"  --- TRIGGER START ---")
+                for t in group['triggers']:
+                    t_reg, t_val = t['reg'], t['val']
+                    t_slave = t.get('slave_id', slave_id)
+                    print(f"  Action: Write {t_val} to {t_reg} (Slave {t_slave})")
+                    trigger_cmd = WriteSingleRegister(t_reg, t_val, slave_id=t_slave)
+                    try:
+                        t_future = await client.perform_with_fallback(trigger_cmd, device_protocol)
+                        await t_future
+                        print("    Result: Success (Write accepted)")
+                    except Exception as e:
+                        print(f"    Result: Failed - {e}")
+                
+                delay = group.get('trigger_delay', 0.8)
+                print(f"  Waiting {delay}s for Commit/Paging...")
+                await asyncio.sleep(delay)
+                print(f"  --- TRIGGER END ---")
 
-            if len(response) > 0:
-                 print(f"  RX Packet: SlaveID={response[0]} Func={response[1]} Len={len(response)}")
+            command = ReadHoldingRegisters(group['start_reg'], group['num_regs'], slave_id=slave_id)
+            tx_type = "Plaintext"
+            print(f"  TX Packet ({tx_type}): {bytes(command).hex()}")
+            try:
+                print(f"  Attempting {tx_type} command...")
+                future = await client.perform_with_fallback(command, device_protocol)
+                response = cast(bytes, await future)
+                print(f"  ✓ {tx_type} command succeeded")
 
-            if len(response) > 0 and response[0] != slave_id:
-                print(f"  [WARN] Response Unit ID {response[0]} does not match requested {slave_id}!")
+                group_data = command.parse_response(response)
+                print(f"Read group (Slave {slave_id}) starting at {group['start_reg']} raw: {group_data.hex()}")
 
-            group_data = command.parse_response(response)
-            print(f"Read group (Slave {slave_id}) starting at {group['start_reg']} raw: {group_data.hex()}")
+                for command_info in group['commands']:
+                    try:
+                        # If paginating, modify the register identity so topics remain unique
+                        cmd_info_copy = command_info.copy()
+                        if total_pages > 1:
+                            base_reg = cmd_info_copy['reg']
+                            cmd_info_copy['reg'] = f"{base_reg}.p{page_idx}"
 
-            for command_info in group['commands']:
-                try:
-                    register = command_info['reg']
-                    length = command_info.get('len', 1)
-                    is_ascii = command_info.get('ascii', False)
-                    is_split = 'outputs' in command_info
-                    outputs = command_info.get('outputs', [command_info])
+                        register = command_info['reg']
+                        length = command_info.get('len', 1)
+                        is_ascii = command_info.get('ascii', False)
 
-                    # Determine number of registers for this command and slice data
-                    num_registers = length // 16 if not is_ascii and length >= 16 else length
-                    start_byte = (register - group['start_reg']) * 2
-                    end_byte = start_byte + (num_registers * 2)
-                    data = group_data[start_byte:end_byte]
-                    process_and_publish(command_info, data, device_name, mqtt_client, False, discovery_info)
-                except Exception as e:
-                    print(f"An error occurred while processing register {command_info.get('reg')}: {e}")
+                        num_registers = length // 16 if not is_ascii and length >= 16 else length
+                        start_byte = (register - group['start_reg']) * 2
+                        end_byte = start_byte + (num_registers * 2)
+                        data = group_data[start_byte:end_byte]
+                        process_and_publish(cmd_info_copy, data, device_name, mqtt_client, False, discovery_info)
+                    except Exception as e:
+                        print(f"An error occurred while processing register {command_info.get('reg')}: {e}")
 
-        except (BadConnectionError, BleakError, ModbusError, ParseError) as e:
-            print(f"Error polling group starting at {group['start_reg']}: {e}. Falling back to individual polling.")
-            # Fallback: Try polling each command in the group individually
-            for command_info in group['commands']:
-                try:
-                    # Recalculate if this specific command is encrypted
-                    cmd_encrypted = False
-                    register = command_info['reg']
+            except (BadConnectionError, BleakError, ModbusError, ParseError) as e:
+                print(f"Error polling group starting at {group['start_reg']}: {e}. Falling back to individual polling.")
+                # Fallback: Try polling each command in the group individually
+                for command_info in group['commands']:
+                    try:
+                        cmd_info_copy = command_info.copy()
+                        if total_pages > 1:
+                            base_reg = cmd_info_copy['reg']
+                            cmd_info_copy['reg'] = f"{base_reg}.p{page_idx}"
+
+                        register = command_info['reg']
+                        length = command_info.get('len', 1)
+                        is_ascii = command_info.get('ascii', False)
+                        num_registers = length // 16 if not is_ascii and length >= 16 else length
+                        slave_id = get_target_slave_id(command_info)
                     length = command_info.get('len', 1)
                     is_ascii = command_info.get('ascii', False)
                     num_registers = length // 16 if not is_ascii and length >= 16 else length
