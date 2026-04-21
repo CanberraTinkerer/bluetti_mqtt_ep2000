@@ -223,8 +223,13 @@
                       }
                     ] 
                   },
-                  { "reg_offset": 3, "name": "Fault ID", "mask": 255 },
-                  { "reg_offset": 4, "name": "Fault Diagnostic Code" }
+                  { "reg_offset": 3, "name": "Fault Category and Index", "outputs": 
+                    [
+                      {"name": "Fault Index", "mask": 255 }, 
+                      {"name": "Fault Category ID", "mask": 255, "offset": 8 }
+                    ] 
+                  },
+                  { "reg_offset": 4, "name": "Raw Diagnostic Code" }
                 ]
              }
            ]
@@ -549,7 +554,7 @@
       {"reg": 724, "name": "Module 1 Processor Type", "notes": "1=ARM, 2=DSP, 3=BMS" },
       {"reg": 725, "name": "Module 1 Firmware Depth" },
       {"reg": 726, "name": "Module 1 Upgrade Progress", "unit": "%" },
-      {"reg": 727, "name": "Module 1 OTA Error Code", "notes": "0=Success. Non-zero=Specific failure reason." }
+      {"reg": 727, "name": "Module 1 OTA Error Code", "notes": "0=Success. Non-zero=Specific failure reason." },
     {
       "bulk_read": {
         "read_start_reg": 1100,
