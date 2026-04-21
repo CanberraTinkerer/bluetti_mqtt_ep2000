@@ -104,8 +104,11 @@ def get_topic_suffix(output: Dict[str, Any], is_split: bool) -> str:
         return ""
     if 'offset' in output:
         return f".{output['offset']}"
-    # If no bit offset, but it's a split register with no register offset,
-    # use .0 to avoid collisions with the base register.
+    
+    # If this is a split register (is_split=True) but we DON'T have a 
+    # register offset, we use .0 as a safety suffix to prevent collisions 
+    # with the base register topic. If we DO have a reg_offset, the 
+    # display_reg already handles uniqueness.
     if 'reg_offset' not in output:
         return ".0"
     return ""
@@ -911,7 +914,7 @@ def _handle_dynamic_discovery(discovery_info, device_name, block_reg, slave_id, 
 
             mqtt_client.publish(discovery_topic, json.dumps(payload), retain=True)
             DISCOVERED_DYNAMIC_REGS.add(unique_id)
-            print(f"Sent dynamic discovery for {block_reg} ({output['name']})")
+            print(f"Sent dynamic discovery for {display_reg} ({output['name']})")
 
 
 def publish_invalid(command_info: Dict[str, Any], device_name: str, mqtt_client: mqtt.Client, encrypted: bool):

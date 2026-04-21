@@ -672,6 +672,7 @@
           { "reg": 1422, "name": "Total AC Load Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" },
           { 
             "reg": 1429, "name": "Load Phase Count", "type": "repeating_count",
+            "len": 304,
             "count_offset": 0, "start_offset": 1, "block_regs": 6,
             "outputs": [
               { "reg_offset": 0, "name": "Phase Load Power", "unit": "W", "device_class": "power" },
