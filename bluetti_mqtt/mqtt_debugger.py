@@ -98,6 +98,23 @@ def bytes_to_ascii(response_bytes: bytes) -> str:
     return swap_bytes(response_bytes).decode('ascii', errors='replace').strip('\x00')
 
 
+def get_topic_suffix(output: Dict[str, Any], is_split: bool) -> str:
+    """Calculate suffix based on register and bit offsets."""
+    if not is_split:
+        return ""
+    parts = []
+    if 'reg_offset' in output:
+        parts.append(str(output['reg_offset']))
+    if 'offset' in output:
+        parts.append(str(output['offset']))
+    return "." + ".".join(parts) if parts else ".0"
+
+
+def get_id_suffix(output: Dict[str, Any], is_split: bool) -> str:
+    """Calculate Unique ID suffix (underscores instead of dots)."""
+    return get_topic_suffix(output, is_split).replace('.', '_')
+
+
 class ReadHoldingRegistersV2(ReadHoldingRegisters):
     # KEY is now provided per instance from ECDH session
 
@@ -564,7 +581,8 @@ def process_and_publish(command_info: Dict[str, Any], data: bytes, device_name: 
                     break
 
                 block_idx = i + 1
-                block_reg = f"{register + start_offset}.p{block_idx}"
+                # Calculate the actual starting register for this specific block
+                block_reg = f"{register + start_offset + (i * block_regs)}.p{block_idx}"
 
                 # Handle dynamic Home Assistant discovery for this new block
                 _handle_dynamic_discovery(discovery_info, device_name, block_reg, slave_id, trigger_val, trigger_reg, outputs, is_split, mqtt_client)
@@ -816,7 +834,7 @@ def process_and_publish(command_info: Dict[str, Any], data: bytes, device_name: 
 
             slave_suffix = f"_s{slave_id}" if slave_id != 1 else ""
             trigger_suffix = f"_t{trigger_val}" if trigger_reg is not None else ""
-            topic_suffix = f".{output.get('offset', 0)}" if is_split else ""
+            topic_suffix = get_topic_suffix(output, is_split)
             state_topic = f"bluetti_debugger/{device_name}/{register}{topic_suffix}{slave_suffix}{trigger_suffix}/state"
             state_payload = {
                 "value": value, 
@@ -844,8 +862,9 @@ def _handle_dynamic_discovery(discovery_info, device_name, block_reg, slave_id, 
     trigger_suffix = f"_t{trigger_val}" if trigger_reg is not None else ""
     
     for output in outputs:
-        topic_suffix = f".{output.get('offset', 0)}" if is_split else ""
-        unique_id = f"{device_name}_{block_reg}{topic_suffix.replace('.', '_')}{slave_suffix}{trigger_suffix}"
+        topic_suffix = get_topic_suffix(output, is_split)
+        id_suffix = get_id_suffix(output, is_split)
+        unique_id = f"{device_name}_{block_reg.replace('.', '_')}{id_suffix}{slave_suffix}{trigger_suffix}"
         
         if unique_id not in DISCOVERED_DYNAMIC_REGS:
             discovery_topic = f"homeassistant/sensor/{unique_id}/config"
@@ -1259,8 +1278,8 @@ async def async_main():  # noqa: C901
                             trigger_val = command_info.get('trigger_val')
                             slave_suffix = f"_s{slave_id}" if slave_id != 1 else ""
                             trigger_suffix = f"_t{trigger_val}" if trigger_reg is not None else ""
-                            topic_suffix = f".{output.get('offset', 0)}" if is_split else ""
-                            id_suffix = f"_{output.get('offset', 0)}" if is_split else ""
+                            topic_suffix = get_topic_suffix(output, is_split)
+                            id_suffix = get_id_suffix(output, is_split)
                             unique_id = f"{device_name}_{register}{id_suffix}{slave_suffix}{trigger_suffix}"
                             discovery_topic = f"homeassistant/sensor/{unique_id}/config"
                             state_topic = f"bluetti_debugger/{device_name}/{register}{topic_suffix}{slave_suffix}{trigger_suffix}/state"
