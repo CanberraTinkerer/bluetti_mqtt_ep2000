@@ -374,7 +374,7 @@ def get_command_fields(args: Namespace) -> List[Dict[str, Any]]:
             # Handle Trigger Writes (which can now contain bulk_reads)
             elif "trigger_write" in item:
                 trigger_data = item.get("trigger_write", [])
-                triggers, delay, regs, p_info = [], 0.2, [], None
+                triggers, delay, regs, p_info = [], 0.2, [], None 
                 item_slave = item.get("slave_id", item.get("slave", 1))
                 
                 for component in trigger_data:
@@ -382,7 +382,11 @@ def get_command_fields(args: Namespace) -> List[Dict[str, Any]]:
                         m = component["trigger_metadata"]
                         # Detect Pagination
                         if "pagination_selector" in m:
-                            p_info = {"selector": m["pagination_selector"], "count_reg": m["pagination_count_reg"]}
+                            p_info = {
+                                "selector": m["pagination_selector"], 
+                                "count_reg": m["pagination_count_reg"],
+                                "slave_id": m.get("slave_id", m.get("slave", item_slave))
+                            }
                         
                         reg = m.get("trigger_reg")
                         val = m.get("trigger_value", m.get("trigger_val"))
@@ -409,7 +413,11 @@ def get_command_fields(args: Namespace) -> List[Dict[str, Any]]:
                             extracted = process_bulk_read(bulk_data, item_slave, triggers, primary_val)
                             if p_info:
                                 for r in extracted:
-                                    r.update({"pagination_selector": p_info["selector"], "pagination_count_reg": p_info["count_reg"]})
+                                    r.update({
+                                        "pagination_selector": p_info["selector"], 
+                                        "pagination_count_reg": p_info["count_reg"],
+                                        "pagination_slave": p_info["slave_id"]
+                                    })
                             regs.extend(extracted)
                 flat_config.extend(regs)
             else:
@@ -571,7 +579,8 @@ def group_commands(commands_to_poll: List[Dict[str, Any]], max_gap: int = 5, max
             'triggers': triggers,
             'trigger_delay': trigger_delay,
             'pagination_selector': p_selector,
-            'pagination_count_reg': p_count_reg
+            'pagination_count_reg': p_count_reg,
+            'pagination_slave': group[0].get('pagination_slave')
         })
 
     return final_groups
@@ -1102,24 +1111,25 @@ async def poll_device_registers(
 
         previous_slave_id = slave_id
 
-        # --- PAGINATION LOGIC ---
+        # --- PAGINATION LOGIC --- 
         p_selector = group.get('pagination_selector')
         p_count_reg = group.get('pagination_count_reg')
+        p_slave = group.get('pagination_slave', slave_id)
         total_pages = 1
 
         if p_selector and p_count_reg:
             print(f"  --- PAGINATION DISCOVERY (Selector {p_selector}) ---")
             try:
                 # 1. Write Page 1 to trigger the count
-                trigger_cmd = WriteSingleRegister(p_selector, 1, slave_id=slave_id)
+                trigger_cmd = WriteSingleRegister(p_selector, 1, slave_id=p_slave)
                 await (await client.perform_with_fallback(trigger_cmd, device_protocol))
                 await asyncio.sleep(0.8)
 
                 # 2. Read the Page Count register
-                read_count_cmd = ReadHoldingRegisters(p_count_reg, 1, slave_id=slave_id)
+                read_count_cmd = ReadHoldingRegisters(p_count_reg, 1, slave_id=p_slave)
                 count_res = cast(bytes, await (await client.perform_with_fallback(read_count_cmd, device_protocol)))
                 total_pages = int.from_bytes(read_count_cmd.parse_response(count_res), 'big')
-                print(f"    Found {total_pages} pages in register {p_count_reg}")
+                print(f"    Found {total_pages} pages in register {p_count_reg} (Slave {p_slave})")
             except Exception as e:
                 print(f"    Pagination discovery failed: {e}")
                 total_pages = 1
@@ -1128,7 +1138,7 @@ async def poll_device_registers(
             if total_pages > 1:
                 print(f"  --- POLLING PAGE {page_idx} of {total_pages} ---")
                 # Write the specific page index to the selector
-                page_trigger = WriteSingleRegister(p_selector, page_idx, slave_id=slave_id)
+                page_trigger = WriteSingleRegister(p_selector, page_idx, slave_id=p_slave)
                 try:
                     await (await client.perform_with_fallback(page_trigger, device_protocol))
                     await asyncio.sleep(0.8)
@@ -1202,26 +1212,22 @@ async def poll_device_registers(
                         is_ascii = command_info.get('ascii', False)
                         num_registers = length // 16 if not is_ascii and length >= 16 else length
                         slave_id = get_target_slave_id(command_info)
-                    length = command_info.get('len', 1)
-                    is_ascii = command_info.get('ascii', False)
-                    num_registers = length // 16 if not is_ascii and length >= 16 else length
-                    slave_id = get_target_slave_id(command_info)
 
-                    single_command = ReadHoldingRegisters(register, num_registers, slave_id=slave_id)
-                    tx_type = "Plaintext"
-                    print(f"  TX Packet ({tx_type}): {bytes(single_command).hex()}")
-                    future = await client.perform(single_command)
-                    response = cast(bytes, await future)
-                    if len(response) > 0:
-                        print(f"  RX Packet: SlaveID={response[0]} Func={response[1]} Len={len(response)}")
-                    data = single_command.parse_response(response)
-                    process_and_publish(command_info, data, device_name, mqtt_client, cmd_encrypted, discovery_info)
+                        single_command = ReadHoldingRegisters(register, num_registers, slave_id=slave_id)
+                        tx_type = "Plaintext"
+                        print(f"  TX Packet ({tx_type}): {bytes(single_command).hex()}")
+                        future = await client.perform(single_command)
+                        response = cast(bytes, await future)
+                        if len(response) > 0:
+                            print(f"  RX Packet: SlaveID={response[0]} Func={response[1]} Len={len(response)}")
+                        data = single_command.parse_response(response)
+                        process_and_publish(cmd_info_copy, data, device_name, mqtt_client, False, discovery_info)
                 except (BadConnectionError, BleakError, ModbusError, ParseError) as e:
                     print(f"Error individual polling register {command_info['reg']}: {e}")
 
                     # Fallback 2: If encrypted failed, try plaintext
                     success_plaintext = False
-                    if cmd_encrypted and HAS_CRYPTO:
+                    if HAS_CRYPTO:
                         try:
                             print(f"Retrying register {command_info['reg']} with plaintext...")
                             single_command = ReadHoldingRegisters(register, num_registers, slave_id=slave_id)
@@ -1231,14 +1237,14 @@ async def poll_device_registers(
                             if len(response) > 0:
                                 print(f"  RX Packet: SlaveID={response[0]} Func={response[1]} Len={len(response)}")
                             data = single_command.parse_response(response)
-                            process_and_publish(command_info, data, device_name, mqtt_client, False, discovery_info)
+                            process_and_publish(cmd_info_copy, data, device_name, mqtt_client, False, discovery_info)
                             success_plaintext = True
                         except Exception as e2:
                             print(f"Error plaintext fallback register {command_info['reg']}: {e2}")
 
                     if success_plaintext:
                         continue
-                    publish_invalid(command_info, device_name, mqtt_client, cmd_encrypted)
+                    publish_invalid(command_info, device_name, mqtt_client, False)
 
     # Calculate duration
     end_time = time.perf_counter()
