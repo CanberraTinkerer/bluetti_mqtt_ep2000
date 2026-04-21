@@ -1222,29 +1222,29 @@ async def poll_device_registers(
                             print(f"  RX Packet: SlaveID={response[0]} Func={response[1]} Len={len(response)}")
                         data = single_command.parse_response(response)
                         process_and_publish(cmd_info_copy, data, device_name, mqtt_client, False, discovery_info)
-                except (BadConnectionError, BleakError, ModbusError, ParseError) as e:
-                    print(f"Error individual polling register {command_info['reg']}: {e}")
+                    except (BadConnectionError, BleakError, ModbusError, ParseError) as e:
+                        print(f"Error individual polling register {command_info['reg']}: {e}")
 
-                    # Fallback 2: If encrypted failed, try plaintext
-                    success_plaintext = False
-                    if HAS_CRYPTO:
-                        try:
-                            print(f"Retrying register {command_info['reg']} with plaintext...")
-                            single_command = ReadHoldingRegisters(register, num_registers, slave_id=slave_id)
-                            print(f"  TX Packet (Plaintext): {bytes(single_command).hex()}")
-                            future = await client.perform(single_command)
-                            response = cast(bytes, await future)
-                            if len(response) > 0:
-                                print(f"  RX Packet: SlaveID={response[0]} Func={response[1]} Len={len(response)}")
-                            data = single_command.parse_response(response)
-                            process_and_publish(cmd_info_copy, data, device_name, mqtt_client, False, discovery_info)
-                            success_plaintext = True
-                        except Exception as e2:
-                            print(f"Error plaintext fallback register {command_info['reg']}: {e2}")
+                        # Fallback 2: If encrypted failed, try plaintext
+                        success_plaintext = False
+                        if HAS_CRYPTO:
+                            try:
+                                print(f"Retrying register {command_info['reg']} with plaintext...")
+                                single_command = ReadHoldingRegisters(register, num_registers, slave_id=slave_id)
+                                print(f"  TX Packet (Plaintext): {bytes(single_command).hex()}")
+                                future = await client.perform(single_command)
+                                response = cast(bytes, await future)
+                                if len(response) > 0:
+                                    print(f"  RX Packet: SlaveID={response[0]} Func={response[1]} Len={len(response)}")
+                                data = single_command.parse_response(response)
+                                process_and_publish(cmd_info_copy, data, device_name, mqtt_client, False, discovery_info)
+                                success_plaintext = True
+                            except Exception as e2:
+                                print(f"Error plaintext fallback register {command_info['reg']}: {e2}")
 
-                    if success_plaintext:
-                        continue
-                    publish_invalid(command_info, device_name, mqtt_client, False)
+                        if success_plaintext:
+                            continue
+                        publish_invalid(command_info, device_name, mqtt_client, False)
 
     # Calculate duration
     end_time = time.perf_counter()
