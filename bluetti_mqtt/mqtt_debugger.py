@@ -1211,6 +1211,13 @@ async def poll_device_registers(
                         if total_pages > 1:
                             base_reg = cmd_info_copy['reg']
                             cmd_info_copy['reg'] = f"{base_reg}.p{page_idx}"
+                            
+                            # Handle dynamic discovery for paginated registers
+                            outputs = cmd_info_copy.get('outputs', [cmd_info_copy])
+                            is_split = 'outputs' in cmd_info_copy
+                            trigger_reg = cmd_info_copy.get('trigger_reg')
+                            trigger_val = cmd_info_copy.get('trigger_val')
+                            _handle_dynamic_discovery(discovery_info, device_name, cmd_info_copy['reg'], slave_id, trigger_val, trigger_reg, outputs, is_split, mqtt_client)
 
                         register = command_info['reg']
                         length = command_info.get('len', 1)
@@ -1233,6 +1240,13 @@ async def poll_device_registers(
                         if total_pages > 1:
                             base_reg = cmd_info_copy['reg']
                             cmd_info_copy['reg'] = f"{base_reg}.p{page_idx}"
+                            
+                            # Handle dynamic discovery for paginated registers
+                            outputs = cmd_info_copy.get('outputs', [cmd_info_copy])
+                            is_split = 'outputs' in cmd_info_copy
+                            trigger_reg = cmd_info_copy.get('trigger_reg')
+                            trigger_val = cmd_info_copy.get('trigger_val')
+                            _handle_dynamic_discovery(discovery_info, device_name, cmd_info_copy['reg'], slave_id, trigger_val, trigger_reg, outputs, is_split, mqtt_client)
 
                         register = command_info['reg']
                         length = command_info.get('len', 1)
@@ -1364,6 +1378,10 @@ async def async_main():  # noqa: C901
                     for command_info in commands_to_poll:
                         # Skip dynamic types that register themselves during the polling loop
                         if command_info.get('type') in ['dynamic_bmu_block', 'repeating_nonzero', 'repeating_count']:
+                            continue
+                        
+                        # Skip paginated registers - they will be discovered dynamically during polling
+                        if command_info.get('pagination_selector') is not None:
                             continue
 
                         register = command_info.get('reg')
