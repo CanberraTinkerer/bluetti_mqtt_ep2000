@@ -1027,46 +1027,48 @@
     {"reg":7010,"name":"BMS Communication Protocol Type","type":"enum"},
     {"reg":7011,"name":"BMS Hardware Interface Type","type":"enum"},
 
-    {
-      "bulk_read": {
-        "slave_id": 41,
-        "read_start_reg": 7200,
-        "read_count": 100,
-        "registers": [
-          {
-            "reg": 7200,
-            "name": "BMU Interleaved Metadata",
-            "type": "segmented_repeating",
-            "len": 800,
-            "count": 7,
-            "segments": [
-              {
-                "start_offset": 0, "stride": 4,
-                "outputs": [
-                  { "reg_offset": 0, "len": 32, "name": "BMU Unique ID" },
-                  { "reg_offset": 2, "name": "BMU Status Flags", "notes": "Expected 0250 (592)" }
-                ]
-              },
-              {
-                "start_offset": 28, "stride": 2,
-                "outputs": [
-                  { "reg_offset": 0, "name": "BMU Fault Bitmask" }
-                ]
-              },
-              {
-                "start_offset": 42, "stride": 1,
-                "outputs": [
-                  { "reg_offset": 0, "name": "NTC and Cell Counts", "outputs": [
-                    { "name": "Active Cells", "mask": 255 },
-                    { "name": "Active NTCs", "offset": 8, "mask": 255 }
-                  ]}
-                ]
-              }
-            ]
-          }
-        ]
-      }
+    { 
+      "reg": 21000, "name": "Node List Version", "slave_id": 41, "notes": "Required to populate Slave 41 Address Book" 
     },
+    { 
+      "reg": 21001, "name": "Total Node Count", "type": "repeating_count", "slave_id": 41,
+      "len": 4112, "count_offset": 0, "start_offset": 1, "block_regs": 8,
+      "outputs": [
+        { "reg_offset": 0, "name": "Node Group" },
+        { "reg_offset": 1, "name": "Node Slave ID" },
+        { "reg_offset": 4, "name": "Node Model ID" },
+        { "reg_offset": 5, "name": "Node SN", "len": 32, "ascii": true }
+      ]
+    },
+
+    {"trigger_write": [
+      { "trigger_metadata": { "trigger_reg": 2026, "trigger_value": 3, "delay": 0.2, "slave_id": 41 } },
+      { "trigger_metadata": { "trigger_reg": 2028, "trigger_value": 1, "delay": 0.8, "slave_id": 41 } },
+      { "bulk_read": {
+        "slave_id": 41,
+        "registers": [
+          { "reg": 7200, "name": "BMU_Header" },
+          {
+            "reg": 7201,
+            "name": "BMU Telemetry Block",
+            "type": "dynamic_bmu_block",
+            "len": 1120,
+            "cell_outputs": [
+              { "reg_offset": 0, "mask": 16383, "name": "Cell Voltage", "unit": "V", "scale": 3, "device_class": "voltage" },
+              { "reg_offset": 0, "offset": 14, "mask": 3, "name": "Balance Status", "type": "enum", "values": ["Idle", "Active"] }
+            ],
+            "ntc_outputs": [
+              { "name": "NTC Temperature", "unit": "°C", "device_class": "temperature" }
+            ]
+          },
+          { "reg": 7224, "name": "BMU_Fault" },
+          { "reg": 7225, "name": "BMU_Protect" },
+          { "reg": 7226, "name": "BMU_Status" },
+          { "reg": 7232, "name": "BMU_ModelID" },
+          { "reg": 7233, "len": 2, "name": "BMU_Software_Version" }
+        ]
+      }}
+    ]},
     {
       "bulk_read": {
         "slave_id": 41,
@@ -1079,33 +1081,6 @@
         ]
       }
     },
-    {"reg":7208,"name":"CELL_VOLT_01","unit":"mV","scale":1,"slave_id":41},
-    {"reg":7209,"name":"CELL_VOLT_02","unit":"mV","scale":1,"slave_id":41},
-    {"reg":7210,"name":"CELL_VOLT_03","unit":"mV","scale":1,"slave_id":41},
-    {"reg":7211,"name":"CELL_VOLT_04","unit":"mV","scale":1,"slave_id":41},
-    {"reg":7212,"name":"CELL_VOLT_05","unit":"mV","scale":1,"slave_id":41},
-    {"reg":7213,"name":"CELL_VOLT_06","unit":"mV","scale":1,"slave_id":41},
-    {"reg":7214,"name":"CELL_VOLT_07","unit":"mV","scale":1,"slave_id":41},
-    {"reg":7215,"name":"CELL_VOLT_08","unit":"mV","scale":1,"slave_id":41},
-    {"reg":7216,"name":"CELL_VOLT_09","unit":"mV","scale":1,"slave_id":41},
-    {"reg":7217,"name":"CELL_VOLT_10","unit":"mV","scale":1,"slave_id":41},
-    {"reg":7218,"name":"CELL_VOLT_11","unit":"mV","scale":1,"slave_id":41},
-    {"reg":7219,"name":"CELL_VOLT_12","unit":"mV","scale":1,"slave_id":41},
-    {"reg":7220,"name":"CELL_VOLT_13","unit":"mV","scale":1,"slave_id":41},
-    {"reg":7221,"name":"CELL_VOLT_14","unit":"mV","scale":1,"slave_id":41},
-    {"reg":7222,"name":"CELL_VOLT_15","unit":"mV","scale":1,"slave_id":41},
-    {"reg":7223,"name":"CELL_VOLT_16","unit":"mV","scale":1,"slave_id":41},
-    {"reg":7224,"name":"CELL_TEMP_01_02","unit":"°C","slave_id":41},
-    {"reg":7225,"name":"CELL_TEMP_03_04","unit":"°C","slave_id":41},
-    {"reg":7226,"name":"CELL_TEMP_05_06","unit":"°C","slave_id":41},
-    {"reg":7227,"name":"CELL_TEMP_07_08","unit":"°C","slave_id":41},
-    {"reg":7228,"name":"BMU_FAULT","len":16,"slave_id":41},
-    {"reg":7229,"name":"BMU_STATUS","len":16,"slave_id":41},
-    {"reg":7230,"name":"CELL_CNT","slave_id":41},
-    {"reg":7231,"name":"NTC_CNT","slave_id":41},
-    {"reg":7232,"name":"BMU_MODEL","slave_id":41},
-    {"reg":7233,"len":2,"name":"SOFT_VER","slave_id":41},
-
     {"reg":11000,"len":6,"ascii":true,"name":"IoT Model Name"},
     {"reg":11006,"len":64,"name":"IoT Serial Number"},
     {"reg":11014,"len":32,"name":"IoT Software Version","notes":"Major.Minor.Build"},

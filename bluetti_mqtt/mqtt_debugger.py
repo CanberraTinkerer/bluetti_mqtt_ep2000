@@ -829,9 +829,9 @@ def process_and_publish(command_info: Dict[str, Any], data: bytes, device_name: 
         base_value = None
         output_format = command_info.get('format')
 
-        if output_type == 'processed_block' or is_split:
-            # When processing a block or split registers, we don't calculate a single base_value
-            # Instead, the loop below will extract values from 'data' (which is the chunk/block)
+        if output_type == 'processed_block':
+            # When processing a block chunk, we don't calculate a single base_value.
+            # The loop below will extract individual fields using reg_offset.
             base_value = 0 
         elif output_type == 'float':
             swapped_data = data[2:4] + data[0:2]
@@ -872,7 +872,15 @@ def process_and_publish(command_info: Dict[str, Any], data: bytes, device_name: 
                 f_num_regs = f_len // 16 if not output.get('ascii') and f_len >= 16 else f_len
                 f_data = data[f_offset*2 : (f_offset + f_num_regs)*2]
                 
-                if output.get('ascii'):
+                # Support nested splitting (e.g. bitmasks inside a repeating block)
+                if 'outputs' in output:
+                    sub_info = output.copy()
+                    sub_info['type'] = 'processed_block'
+                    sub_info['reg'] = get_display_register(register, output)
+                    process_and_publish(sub_info, f_data, device_name, mqtt_client, encrypted, discovery_info)
+                    continue
+
+                if output.get('ascii'): 
                     value = bytes_to_ascii(f_data)
                 else:
                     value = int.from_bytes(f_data, 'little' if output.get('byte_swap') else 'big')

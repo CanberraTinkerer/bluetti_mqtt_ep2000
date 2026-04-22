@@ -126,6 +126,8 @@ A specialized hardware-specific handler for the `6300` register range.
 - It automatically calculates the Cell and NTC counts from the headers.
 - It handles the "shifting start address" where NTCs follow immediately after the last cell.
 - It handles the "two-values-per-register" format for temperatures.
+- **Voltage Masking**: Uses `mask: 16383` (0x3FFF) for 1mV resolution.
+- **Balance Bitmask**: Uses `offset: 14` and `mask: 3` to extract bits 14-15 for balancing status.
 
 ### 6.3 `segmented_repeating`
 Used for interleaved data tables (like `7200` BMU metadata).
