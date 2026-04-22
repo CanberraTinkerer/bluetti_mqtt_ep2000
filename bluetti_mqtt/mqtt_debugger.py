@@ -1056,8 +1056,14 @@ async def poll_device_registers(
             try:
                 cmd = WriteSingleRegister(reg, val, slave_id=sid)
                 if sid == 0:
-                    # Broadcast writes don't return a response; fire and forget
-                    await client.perform(cmd)
+                    # Broadcast writes often don't return a response.
+                    # We await the future with a short timeout to "retrieve" any potential
+                    # exception (like Modbus Error 2) to avoid asyncio warnings.
+                    future = await client.perform(cmd)
+                    try:
+                        await asyncio.wait_for(future, timeout=0.5)
+                    except (asyncio.TimeoutError, Exception):
+                        pass
                     await asyncio.sleep(0.1)
                 else:
                     future = await client.perform_with_fallback(cmd, device_protocol)
