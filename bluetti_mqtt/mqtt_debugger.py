@@ -699,90 +699,124 @@ def process_and_publish(command_info: Dict[str, Any], data: bytes, device_name: 
                     process_and_publish(seg_info, chunk, device_name, mqtt_client, encrypted, discovery_info)
             return
 
-        # Handle the BMU block (Cells followed by NTCs with shifting start)
-        if output_type == 'dynamic_bmu_block':
-            # 1. Parse counts from headers (low bytes)
-            cell_count = data[1] if len(data) > 1 else 0
-            ntc_count = data[3] if len(data) > 3 else 0
-
-            # Publish counts first
-            for i, name in enumerate(["Cell Count", "NTC Count"]):
-                count_info = {"reg": f"{calc_reg + i}{reg_suffix}", "name": name}
-                count_data = data[i*2 : (i+1)*2]
-                process_and_publish(count_info, count_data, device_name, mqtt_client, encrypted, discovery_info)
-
-            # 2. Process Cells (1 register each, starting at offset 2)
-            cell_outputs = command_info.get('cell_outputs', [])
-            for i in range(cell_count):
-                cell_idx = i + 1
-                cell_reg = f"{calc_reg + 2 + i}{reg_suffix}"
-                chunk = data[(2 + i)*2 : (3 + i)*2]
-                
-                # Create cell-specific outputs with cell number in the name
-                cell_specific_outputs = []
-                for output in cell_outputs:
-                    output_copy = output.copy()
-                    # Add cell number to the name (e.g., "Cell Voltage" -> "Cell 1 Voltage")
-                    if 'name' in output_copy:
-                        output_copy['name'] = output_copy['name'].replace('Cell', f'Cell {cell_idx}')
-                    cell_specific_outputs.append(output_copy)
-                
-                # Use the actual register number for each cell instead of a suffix
-                _handle_dynamic_discovery(discovery_info, device_name, cell_reg, slave_id, trigger_val, trigger_reg, cell_specific_outputs, True, mqtt_client)
-                
-                block_info = command_info.copy()
-                block_info.update({'type': 'processed_block', 'reg': cell_reg, 'outputs': cell_specific_outputs})
-                process_and_publish(block_info, chunk, device_name, mqtt_client, encrypted, discovery_info)
-
-            # 3. Process NTCs (2 values per register, starting after cells)
-            ntc_start_offset = 2 + cell_count
-            ntc_outputs = command_info.get('ntc_outputs', [])
+        # Handle dynamic packed arrays (e.g., BMU cells and NTCs, or any similar structure)
+        if output_type == 'dynamic_packed_array':
+            # Get configuration for the arrays
+            arrays_config = command_info.get('arrays', [])
             
-            for i in range(ntc_count):
-                ntc_idx = i + 1
-                reg_within_block = i // 2
-                is_high_byte = (i % 2) != 0
+            current_offset = 0  # Track position in the data
+            
+            for array_config in arrays_config:
+                array_name = array_config.get('name', 'Array')
+                count_reg_offset = array_config.get('count_reg_offset', 0)
+                count_byte = array_config.get('count_byte', 'low')  # 'low' or 'high'
+                items_per_register = array_config.get('items_per_register', 1)
+                array_outputs = array_config.get('outputs', [])
                 
-                # Get the register containing this NTC
-                chunk = data[(ntc_start_offset + reg_within_block)*2 : (ntc_start_offset + reg_within_block + 1)*2]
-                if len(chunk) < 2: break
+                # Read the count from the specified offset
+                count_data_offset = count_reg_offset * 2
+                if count_data_offset + 2 <= len(data):
+                    count_word = data[count_data_offset:count_data_offset + 2]
+                    # Extract count from the specified byte (low=byte 1, high=byte 0 in big-endian)
+                    item_count = count_word[1] if count_byte == 'low' else count_word[0]
+                else:
+                    item_count = 0
                 
-                # Extract the specific byte (Low byte first, then High byte)
-                # In Big Endian [High, Low], chunk[1] is Low, chunk[0] is High
-                val = chunk[0] if is_high_byte else chunk[1]
+                # Publish the count itself
+                count_info = {"reg": f"{calc_reg + count_reg_offset}{reg_suffix}", "name": f"{array_name} Count"}
+                process_and_publish(count_info, data[count_data_offset:count_data_offset + 2], device_name, mqtt_client, encrypted, discovery_info)
                 
-                # Use actual register number with byte offset suffix for NTCs (2 per register)
-                actual_ntc_reg = calc_reg + ntc_start_offset + reg_within_block
-                byte_suffix = ".1" if is_high_byte else ".0"
-                block_reg = f"{actual_ntc_reg}{reg_suffix}{byte_suffix}"
-                
-                # Create NTC-specific outputs with NTC number in the name
-                ntc_specific_outputs = []
-                for output in ntc_outputs:
-                    output_copy = output.copy()
-                    # Add NTC number to the name (e.g., "NTC Temperature" -> "NTC 1 Temperature")
-                    if 'name' in output_copy:
-                        output_copy['name'] = output_copy['name'].replace('NTC', f'NTC {ntc_idx}')
-                    ntc_specific_outputs.append(output_copy)
-                
-                # Handle Discovery
-                if discovery_info:
-                    unique_id = f"{device_name}_{block_reg.replace('.', '_')}_s{slave_id}"
-                    if unique_id not in DISCOVERED_DYNAMIC_REGS:
-                        _handle_dynamic_discovery(discovery_info, device_name, block_reg, slave_id, trigger_val, trigger_reg, ntc_specific_outputs, False, mqtt_client)
-                
-                # Publish the temperature value
-                state_topic = f"bluetti_debugger/{device_name}/{block_reg}/state"
-                processed_val = val - 40 # Standard NTC scaling
-                state_payload = {
-                    "value": processed_val,
-                    "PossibleName": f"NTC {ntc_idx} Temp",
-                    "modbus_register": block_reg,
-                    "valid": True,
-                    "unit": "°C"
-                }
-                mqtt_client.publish(state_topic, json.dumps(state_payload))
+                # Process items based on items_per_register
+                if items_per_register == 1:
+                    # One item per register (e.g., cell voltages)
+                    for i in range(item_count):
+                        item_idx = i + 1
+                        item_reg = f"{calc_reg + current_offset + i}{reg_suffix}"
+                        chunk = data[(current_offset + i)*2 : (current_offset + i + 1)*2]
+                        
+                        # Create item-specific outputs with item number in the name
+                        item_specific_outputs = []
+                        for output in array_outputs:
+                            output_copy = output.copy()
+                            if 'name' in output_copy:
+                                # Replace placeholder or append number
+                                if '{n}' in output_copy['name']:
+                                    output_copy['name'] = output_copy['name'].replace('{n}', str(item_idx))
+                                else:
+                                    output_copy['name'] = output_copy['name'].replace(array_name, f"{array_name} {item_idx}")
+                            item_specific_outputs.append(output_copy)
+                        
+                        _handle_dynamic_discovery(discovery_info, device_name, item_reg, slave_id, trigger_val, trigger_reg, item_specific_outputs, True, mqtt_client)
+                        
+                        block_info = command_info.copy()
+                        block_info.update({'type': 'processed_block', 'reg': item_reg, 'outputs': item_specific_outputs})
+                        process_and_publish(block_info, chunk, device_name, mqtt_client, encrypted, discovery_info)
+                    
+                    current_offset += item_count
+                    
+                else:
+                    # Multiple items per register (e.g., NTC temperatures packed in bytes)
+                    num_registers = (item_count + items_per_register - 1) // items_per_register
+                    
+                    for i in range(item_count):
+                        item_idx = i + 1
+                        reg_within_block = i // items_per_register
+                        item_within_reg = i % items_per_register
+                        
+                        # Get the register containing this item
+                        chunk = data[(current_offset + reg_within_block)*2 : (current_offset + reg_within_block + 1)*2]
+                        if len(chunk) < 2:
+                            break
+                        
+                        # For byte-packed items, extract the specific byte
+                        # Assuming big-endian: chunk[0] = high byte, chunk[1] = low byte
+                        # item 0 = low byte, item 1 = high byte
+                        if items_per_register == 2:
+                            val = chunk[1] if item_within_reg == 0 else chunk[0]
+                        else:
+                            val = chunk[item_within_reg] if item_within_reg < len(chunk) else 0
+                        
+                        # Use actual register number with item suffix
+                        actual_reg = calc_reg + current_offset + reg_within_block
+                        item_suffix = f".{item_within_reg}"
+                        block_reg = f"{actual_reg}{reg_suffix}{item_suffix}"
+                        
+                        # Create item-specific outputs
+                        item_specific_outputs = []
+                        for output in array_outputs:
+                            output_copy = output.copy()
+                            if 'name' in output_copy:
+                                if '{n}' in output_copy['name']:
+                                    output_copy['name'] = output_copy['name'].replace('{n}', str(item_idx))
+                                else:
+                                    output_copy['name'] = output_copy['name'].replace(array_name, f"{array_name} {item_idx}")
+                            item_specific_outputs.append(output_copy)
+                        
+                        # Handle Discovery
+                        if discovery_info:
+                            unique_id = f"{device_name}_{block_reg.replace('.', '_')}_s{slave_id}"
+                            if unique_id not in DISCOVERED_DYNAMIC_REGS:
+                                _handle_dynamic_discovery(discovery_info, device_name, block_reg, slave_id, trigger_val, trigger_reg, item_specific_outputs, False, mqtt_client)
+                        
+                        # Publish the value
+                        state_topic = f"bluetti_debugger/{device_name}/{block_reg}/state"
+                        # Apply subtract if specified
+                        subtract_val = array_outputs[0].get('subtract', 0) if array_outputs else 0
+                        processed_val = val - subtract_val
+                        state_payload = {
+                            "value": processed_val,
+                            "PossibleName": item_specific_outputs[0]['name'] if item_specific_outputs else f"{array_name} {item_idx}",
+                            "modbus_register": block_reg,
+                            "valid": True
+                        }
+                        if array_outputs and 'unit' in array_outputs[0]:
+                            state_payload['unit'] = array_outputs[0]['unit']
+                        mqtt_client.publish(state_topic, json.dumps(state_payload))
+                    
+                    current_offset += num_registers
+            
             return
+
 
         # Handle generic repeating patterns (e.g. Node Lists, Cell Data)
         if output_type == 'repeating_nonzero':

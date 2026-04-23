@@ -1066,15 +1066,16 @@
           },
           {
             "reg": 6526,
-            "name": "NTC Temperature Data",
+            "name": "NTC Temperature Registers",
             "type": "repeating_count",
             "len": 896,
             "count_offset": -225,
+            "count_divisor": 2,
             "start_offset": 0,
             "block_regs": 1,
             "outputs": [
-              { "name": "NTC Temp Low", "mask": 255, "offset": 8, "subtract": 40, "unit": "°C", "device_class": "temperature" },
-              { "name": "NTC Temp High", "mask": 255, "offset": 0, "subtract": 40, "unit": "°C", "device_class": "temperature" }
+              { "name": "NTC Temperature 1", "mask": 255, "offset": 8, "subtract": 40, "unit": "°C", "device_class": "temperature", "notes": "Low byte = first NTC in this register" },
+              { "name": "NTC Temperature 2", "mask": 255, "offset": 0, "subtract": 40, "unit": "°C", "device_class": "temperature", "notes": "High byte = second NTC in this register" }
             ]
           }
         ]
