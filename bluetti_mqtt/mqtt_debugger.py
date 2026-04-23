@@ -718,11 +718,11 @@ def process_and_publish(command_info: Dict[str, Any], data: bytes, device_name: 
                 cell_reg = f"{calc_reg + 2 + i}{reg_suffix}"
                 chunk = data[(2 + i)*2 : (3 + i)*2]
                 
-                block_reg = f"{calc_reg + 2}{reg_suffix}.c{cell_idx}"
-                _handle_dynamic_discovery(discovery_info, device_name, block_reg, slave_id, trigger_val, trigger_reg, cell_outputs, True, mqtt_client)
+                # Use the actual register number for each cell instead of a suffix
+                _handle_dynamic_discovery(discovery_info, device_name, cell_reg, slave_id, trigger_val, trigger_reg, cell_outputs, True, mqtt_client)
                 
                 block_info = command_info.copy()
-                block_info.update({'type': 'processed_block', 'reg': block_reg, 'outputs': cell_outputs})
+                block_info.update({'type': 'processed_block', 'reg': cell_reg, 'outputs': cell_outputs})
                 process_and_publish(block_info, chunk, device_name, mqtt_client, encrypted, discovery_info)
 
             # 3. Process NTCs (2 values per register, starting after cells)
@@ -742,7 +742,10 @@ def process_and_publish(command_info: Dict[str, Any], data: bytes, device_name: 
                 # In Big Endian [High, Low], chunk[1] is Low, chunk[0] is High
                 val = chunk[0] if is_high_byte else chunk[1]
                 
-                block_reg = f"{calc_reg + ntc_start_offset}{reg_suffix}.t{ntc_idx}"
+                # Use actual register number with byte offset suffix for NTCs (2 per register)
+                actual_ntc_reg = calc_reg + ntc_start_offset + reg_within_block
+                byte_suffix = ".1" if is_high_byte else ".0"
+                block_reg = f"{actual_ntc_reg}{reg_suffix}{byte_suffix}"
                 
                 # Handle Discovery
                 if discovery_info:
