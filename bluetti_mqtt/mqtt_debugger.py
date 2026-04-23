@@ -718,11 +718,20 @@ def process_and_publish(command_info: Dict[str, Any], data: bytes, device_name: 
                 cell_reg = f"{calc_reg + 2 + i}{reg_suffix}"
                 chunk = data[(2 + i)*2 : (3 + i)*2]
                 
+                # Create cell-specific outputs with cell number in the name
+                cell_specific_outputs = []
+                for output in cell_outputs:
+                    output_copy = output.copy()
+                    # Add cell number to the name (e.g., "Cell Voltage" -> "Cell 1 Voltage")
+                    if 'name' in output_copy:
+                        output_copy['name'] = output_copy['name'].replace('Cell', f'Cell {cell_idx}')
+                    cell_specific_outputs.append(output_copy)
+                
                 # Use the actual register number for each cell instead of a suffix
-                _handle_dynamic_discovery(discovery_info, device_name, cell_reg, slave_id, trigger_val, trigger_reg, cell_outputs, True, mqtt_client)
+                _handle_dynamic_discovery(discovery_info, device_name, cell_reg, slave_id, trigger_val, trigger_reg, cell_specific_outputs, True, mqtt_client)
                 
                 block_info = command_info.copy()
-                block_info.update({'type': 'processed_block', 'reg': cell_reg, 'outputs': cell_outputs})
+                block_info.update({'type': 'processed_block', 'reg': cell_reg, 'outputs': cell_specific_outputs})
                 process_and_publish(block_info, chunk, device_name, mqtt_client, encrypted, discovery_info)
 
             # 3. Process NTCs (2 values per register, starting after cells)
@@ -747,11 +756,20 @@ def process_and_publish(command_info: Dict[str, Any], data: bytes, device_name: 
                 byte_suffix = ".1" if is_high_byte else ".0"
                 block_reg = f"{actual_ntc_reg}{reg_suffix}{byte_suffix}"
                 
+                # Create NTC-specific outputs with NTC number in the name
+                ntc_specific_outputs = []
+                for output in ntc_outputs:
+                    output_copy = output.copy()
+                    # Add NTC number to the name (e.g., "NTC Temperature" -> "NTC 1 Temperature")
+                    if 'name' in output_copy:
+                        output_copy['name'] = output_copy['name'].replace('NTC', f'NTC {ntc_idx}')
+                    ntc_specific_outputs.append(output_copy)
+                
                 # Handle Discovery
                 if discovery_info:
                     unique_id = f"{device_name}_{block_reg.replace('.', '_')}_s{slave_id}"
                     if unique_id not in DISCOVERED_DYNAMIC_REGS:
-                        _handle_dynamic_discovery(discovery_info, device_name, block_reg, slave_id, trigger_val, trigger_reg, ntc_outputs, False, mqtt_client)
+                        _handle_dynamic_discovery(discovery_info, device_name, block_reg, slave_id, trigger_val, trigger_reg, ntc_specific_outputs, False, mqtt_client)
                 
                 # Publish the temperature value
                 state_topic = f"bluetti_debugger/{device_name}/{block_reg}/state"
