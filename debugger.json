@@ -233,9 +233,57 @@
              }
            ]
           }
-        }  
+        }
       ]
     },
+    {"trigger_write": [
+      { "trigger_metadata": { "trigger_reg": 4400, "trigger_value": 1, "delay": 0.8, "slave_id": 1 } },
+      { "bulk_read":
+        { "slave_id": 1, "delay": 0.8,
+          "registers":
+          [
+            { "reg": 3000, "name": "WT_SETTINGS: Enable Set", "len": 32, "notes": "Bitmask for enabled features", "no_word_swap": true },
+            { "reg": 3002, "name": "WT_SETTINGS: Device Start Voltage", "len": 32, "scale": 1, "unit": "V", "device_class": "voltage", "notes": "Minimum voltage to start device", "no_word_swap": true },
+            { "reg": 3004, "name": "WT_SETTINGS: Device Stop Voltage", "len": 32, "scale": 1, "unit": "V", "device_class": "voltage", "notes": "Voltage at which device stops", "no_word_swap": true },
+            { "reg": 3006, "name": "WT_SETTINGS: Motor Pole Pairs", "len": 32, "notes": "Number of motor pole pairs", "no_word_swap": true },
+            { "reg": 3008, "name": "WT_SETTINGS: Dq Axis Inductance", "len": 32, "notes": "Motor inductance parameter", "no_word_swap": true },
+            { "reg": 3010, "name": "WT_SETTINGS: Phase Resistance", "len": 32, "notes": "Motor phase resistance", "no_word_swap": true },
+            { "reg": 3012, "name": "WT_SETTINGS: Flux Constant", "len": 32, "notes": "Motor flux linkage constant", "no_word_swap": true },
+            { "reg": 3014, "name": "WT_SETTINGS: Mechanical Inertia", "len": 32, "notes": "Rotor mechanical inertia", "no_word_swap": true },
+            { "reg": 3016, "name": "WT_SETTINGS: Rated Speed", "len": 32, "unit": "RPM", "notes": "Motor rated speed", "no_word_swap": true },
+            { "reg": 3018, "name": "WT_SETTINGS: Rated Power", "len": 32, "unit": "W", "device_class": "power", "notes": "Motor rated power", "no_word_swap": true }
+          ]
+        }
+      }
+    ]},
+    {"trigger_write": [
+      { "trigger_metadata": { "trigger_reg": 4200, "trigger_value": 1, "delay": 0.8, "slave_id": 1 } },
+      { "bulk_read":
+        { "slave_id": 1, "delay": 0.8,
+          "registers":
+          [
+            { "reg": 3000, "name": "WT_INFO: HMI Model", "len": 96, "notes": "Model identifier for Motor/Load controller" },
+            { "reg": 3006, "name": "WT_INFO: HMI Serial Number", "len": 64, "notes": "Serial Number of load controller" },
+            { "reg": 3010, "name": "WT_INFO: Firmware Type 1", "len": 32, "notes": "Firmware type ID", "no_word_swap": true },
+            { "reg": 3012, "name": "WT_INFO: Firmware Version 1", "len": 32, "notes": "Firmware version for Motor module", "no_word_swap": true },
+            { "reg": 3014, "name": "WT_INFO: Firmware Type 2", "len": 32, "notes": "Firmware type ID (Secondary)", "no_word_swap": true },
+            { "reg": 3016, "name": "WT_INFO: Firmware Version 2", "len": 32, "notes": "Firmware version (Secondary)", "no_word_swap": true },
+            { "reg": 3018, "name": "WT_INFO: Wind Speed", "scale": 1, "unit": "m/s", "notes": "Wind sensor speed" },
+            { "reg": 3019, "name": "WT_INFO: Wind Direction", "notes": "Wind direction sensor" },
+            { "reg": 3020, "name": "WT_INFO: Anemometer Status", "notes": "Bitmask for wind sensor status" },
+            { "reg": 3021, "name": "WT_INFO: Motor Mode", "type": "enum", "notes": "Motor operating mode" },
+            { "reg": 3022, "name": "WT_INFO: Energy Flow", "notes": "Bitmask for energy flow indicators" },
+            { "reg": 3023, "name": "WT_INFO: Motor Speed", "unit": "RPM", "notes": "Current motor speed" },
+            { "reg": 3024, "name": "WT_INFO: Motor Fault", "len": 32, "notes": "Alarm bitmask for motor", "no_word_swap": true },
+            { "reg": 3026, "name": "WT_INFO: Communication Alarm", "len": 32, "notes": "Alarm bitmask for communication", "no_word_swap": true },
+            { "reg": 3028, "name": "WT_INFO: Input Energy", "len": 32, "scale": 1, "unit": "kWh", "device_class": "energy", "notes": "Cumulative input energy", "no_word_swap": true },
+            { "reg": 3030, "name": "WT_INFO: Input Power", "len": 32, "unit": "W", "device_class": "power", "notes": "Current input power", "no_word_swap": true },
+            { "reg": 3032, "name": "WT_INFO: Input Voltage", "scale": 1, "unit": "V", "device_class": "voltage", "notes": "Input voltage" },
+            { "reg": 3033, "name": "WT_INFO: Input Current", "scale": 1, "unit": "A", "device_class": "current", "notes": "Input current" }
+          ]
+        }
+      }
+    ]},
     {"trigger_write": [
       { "trigger_metadata": { "trigger_reg": 2027, "trigger_value": 2, "delay": 0.2, "slave_id": 0 } },
       { "trigger_metadata": { "trigger_reg": 2026, "trigger_value": 2, "delay": 0.2, "slave_id": 0 } },
@@ -997,6 +1045,9 @@
     },
     {
       "bulk_read": {
+        "slave_id": 41,
+        "read_start_reg": 6300,
+        "read_count": 282,
         "registers": [
           {
             "reg": 6300,
