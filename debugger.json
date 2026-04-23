@@ -1049,17 +1049,32 @@
         "read_start_reg": 6300,
         "read_count": 282,
         "registers": [
+          { "reg": 6300, "name": "Cell Count", "mask": 255, "notes": "Number of battery cells (low byte)" },
+          { "reg": 6301, "name": "NTC Count", "mask": 255, "notes": "Number of NTC temperature sensors (low byte)" },
           {
-            "reg": 6300,
-            "name": "Battery Pack Detailed Cell Info",
-            "type": "dynamic_bmu_block",
-            "len": 2720,
-            "cell_outputs": [
+            "reg": 6302,
+            "name": "Battery Cell Data",
+            "type": "repeating_count",
+            "len": 3584,
+            "count_offset": -2,
+            "start_offset": 0,
+            "block_regs": 1,
+            "outputs": [
               { "reg_offset": 0, "mask": 16383, "name": "Cell Voltage", "unit": "V", "scale": 3, "device_class": "voltage" },
               { "reg_offset": 0, "offset": 14, "mask": 3, "name": "Balance Status", "type": "enum", "values": ["Idle", "Active"] }
-            ],
-            "ntc_outputs": [
-              { "name": "NTC Temperature", "unit": "°C", "device_class": "temperature" }
+            ]
+          },
+          {
+            "reg": 6526,
+            "name": "NTC Temperature Data",
+            "type": "repeating_count",
+            "len": 896,
+            "count_offset": -225,
+            "start_offset": 0,
+            "block_regs": 1,
+            "outputs": [
+              { "name": "NTC Temp Low", "mask": 255, "offset": 8, "subtract": 40, "unit": "°C", "device_class": "temperature" },
+              { "name": "NTC Temp High", "mask": 255, "offset": 0, "subtract": 40, "unit": "°C", "device_class": "temperature" }
             ]
           }
         ]
