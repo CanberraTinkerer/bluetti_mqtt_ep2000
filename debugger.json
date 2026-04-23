@@ -1049,33 +1049,31 @@
         "read_start_reg": 6300,
         "read_count": 282,
         "registers": [
-          { "reg": 6300, "name": "Cell Count", "mask": 255, "notes": "Number of battery cells (low byte)" },
-          { "reg": 6301, "name": "NTC Count", "mask": 255, "notes": "Number of NTC temperature sensors (low byte)" },
           {
-            "reg": 6302,
-            "name": "Battery Cell Data",
-            "type": "repeating_count",
-            "len": 3584,
-            "count_offset": -2,
-            "start_offset": 0,
-            "block_regs": 1,
-            "outputs": [
-              { "reg_offset": 0, "mask": 16383, "name": "Cell Voltage", "unit": "V", "scale": 3, "device_class": "voltage" },
-              { "reg_offset": 0, "offset": 14, "mask": 3, "name": "Balance Status", "type": "enum", "values": ["Idle", "Active"] }
-            ]
-          },
-          {
-            "reg": 6526,
-            "name": "NTC Temperature Registers",
-            "type": "repeating_count",
-            "len": 896,
-            "count_offset": -225,
-            "count_divisor": 2,
-            "start_offset": 0,
-            "block_regs": 1,
-            "outputs": [
-              { "name": "NTC Temperature 1", "mask": 255, "offset": 8, "subtract": 40, "unit": "°C", "device_class": "temperature", "notes": "Low byte = first NTC in this register" },
-              { "name": "NTC Temperature 2", "mask": 255, "offset": 0, "subtract": 40, "unit": "°C", "device_class": "temperature", "notes": "High byte = second NTC in this register" }
+            "reg": 6300,
+            "name": "Battery Pack Cell and NTC Data",
+            "type": "dynamic_packed_array",
+            "len": 4512,
+            "arrays": [
+              {
+                "name": "Cell",
+                "count_reg_offset": 0,
+                "count_byte": "low",
+                "items_per_register": 1,
+                "outputs": [
+                  { "reg_offset": 0, "mask": 16383, "name": "Cell Voltage", "unit": "V", "scale": 3, "device_class": "voltage" },
+                  { "reg_offset": 0, "offset": 14, "mask": 3, "name": "Cell Balance Status", "type": "enum", "values": ["Idle", "Active"] }
+                ]
+              },
+              {
+                "name": "NTC",
+                "count_reg_offset": 1,
+                "count_byte": "low",
+                "items_per_register": 2,
+                "outputs": [
+                  { "name": "NTC Temperature", "subtract": 40, "unit": "°C", "device_class": "temperature" }
+                ]
+              }
             ]
           }
         ]
