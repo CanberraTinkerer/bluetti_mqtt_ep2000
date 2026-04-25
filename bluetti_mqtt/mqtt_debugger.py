@@ -811,7 +811,8 @@ def process_and_publish(command_info: Dict[str, Any], data: bytes, device_name: 
                         }
                         if array_outputs and 'unit' in array_outputs[0]:
                             state_payload['unit'] = array_outputs[0]['unit']
-                        mqtt_client.publish(state_topic, json.dumps(state_payload))
+                        if mqtt_client:
+                            mqtt_client.publish(state_topic, json.dumps(state_payload))
                     
                     current_offset += num_registers
             
@@ -868,7 +869,8 @@ def process_and_publish(command_info: Dict[str, Any], data: bytes, device_name: 
                             if 'unit' in output:
                                 payload['unit_of_measurement'] = output['unit']
 
-                            mqtt_client.publish(discovery_topic, json.dumps(payload), retain=True)
+                            if mqtt_client:
+                                mqtt_client.publish(discovery_topic, json.dumps(payload), retain=True)
                             DISCOVERED_DYNAMIC_REGS.add(unique_id)
                             print(f"Sent dynamic discovery for {block_reg} ({output['name']})")
 
@@ -970,7 +972,8 @@ def process_and_publish(command_info: Dict[str, Any], data: bytes, device_name: 
             }
             if 'notes' in output: state_payload["notes"] = output['notes']
 
-            mqtt_client.publish(state_topic, json.dumps(state_payload))
+            if mqtt_client:
+                mqtt_client.publish(state_topic, json.dumps(state_payload))
             # print(f"Published {register}{topic_suffix} (Slave {slave_id}) ({output['name']}): {value}")
 
     except Exception as e:
@@ -1011,7 +1014,8 @@ def _handle_dynamic_discovery(discovery_info, device_name, block_reg, slave_id, 
             if 'device_class' in output: payload['device_class'] = output['device_class']
             if 'unit' in output: payload['unit_of_measurement'] = output['unit']
 
-            mqtt_client.publish(discovery_topic, json.dumps(payload), retain=True)
+            if mqtt_client:
+                mqtt_client.publish(discovery_topic, json.dumps(payload), retain=True)
             DISCOVERED_DYNAMIC_REGS.add(unique_id)
             print(f"Sent dynamic discovery for {display_reg} ({output['name']})")
 
@@ -1038,7 +1042,8 @@ def publish_invalid(command_info: Dict[str, Any], device_name: str, mqtt_client:
         }
         if 'notes' in output:
             state_payload["notes"] = output['notes']
-        mqtt_client.publish(state_topic, json.dumps(state_payload))
+        if mqtt_client:
+            mqtt_client.publish(state_topic, json.dumps(state_payload))
 
 # Filter to suppress noisy tracebacks from the background Bluetooth client
 class BriefConnectionErrors(logging.Filter):
@@ -1368,6 +1373,8 @@ async def async_main():  # noqa: C901
     parser.add_argument("--force-protocol", choices=["v1", "v2"], help="Force specific protocol version (v1=plaintext, v2=legacy mode; encryption is ignored)")
     parser.add_argument("--plaintext-slaves", type=str, help="Comma-separated list of slave IDs to force plaintext protocol (e.g., '41,42,43')")
     parser.add_argument("--debug", action="store_true", help="Enable verbose debug logging")
+    parser.add_argument("--no-mqtt", action="store_true", help="Disable MQTT publishing (for testing)")
+    parser.add_argument("--run-once", action="store_true", help="Run polling once and exit (for testing)")
 
     args = parser.parse_args()
 
@@ -1376,11 +1383,13 @@ async def async_main():  # noqa: C901
     logging.basicConfig(level=log_level, format='%(asctime)s %(levelname)s: %(message)s', datefmt='%H:%M:%S')
     logging.getLogger().addFilter(BriefConnectionErrors())
 
-    mqtt_client = mqtt.Client()
-    if args.mqtt_username:
-        mqtt_client.username_pw_set(args.mqtt_username, args.mqtt_password)
-    mqtt_client.connect(args.mqtt_broker, args.mqtt_port, 60)
-    mqtt_client.loop_start()
+    mqtt_client = None
+    if not args.no_mqtt:
+        mqtt_client = mqtt.Client()
+        if args.mqtt_username:
+            mqtt_client.username_pw_set(args.mqtt_username, args.mqtt_password)
+        mqtt_client.connect(args.mqtt_broker, args.mqtt_port, 60)
+        mqtt_client.loop_start()
 
     try:
         device = None
@@ -1481,7 +1490,8 @@ async def async_main():  # noqa: C901
                             if 'unit' in output:
                                 payload['unit_of_measurement'] = output['unit']
 
-                            mqtt_client.publish(discovery_topic, json.dumps(payload), retain=True)
+                            if mqtt_client:
+                                mqtt_client.publish(discovery_topic, json.dumps(payload), retain=True)
 
             except Exception as e:
                 print(f"Error loading or processing config file: {e}")
@@ -1516,12 +1526,17 @@ async def async_main():  # noqa: C901
 
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             print(f"[{timestamp}] Polling complete in {duration:.2f} seconds. Waiting for {args.scan_interval} seconds...")
+            
+            if args.run_once:
+                break
+            
             await asyncio.sleep(args.scan_interval)
 
     finally:
-        mqtt_client.loop_stop()
-        mqtt_client.disconnect()
-        print("MQTT client disconnected.")
+        if mqtt_client:
+            mqtt_client.loop_stop()
+            mqtt_client.disconnect()
+            print("MQTT client disconnected.")
 
 
 def main():

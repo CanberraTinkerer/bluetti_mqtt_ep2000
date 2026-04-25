@@ -1,0 +1,18 @@
+[
+  {
+    "bulk_read": {
+      "slave_id": 1,
+      "delay": 0.2,
+      "registers": [
+        {"reg": 10, "name": "Device Type", "len": 16},
+        {"reg": 11, "name": "Serial Number", "len": 16},
+        {"reg": 12, "name": "ARM Version", "len": 16},
+        {"reg": 13, "name": "DSP Version", "len": 16},
+        {"reg": 14, "name": "DC Input Power", "len": 16, "unit": "W", "device_class": "power"},
+        {"reg": 15, "name": "AC Input Power", "len": 16, "unit": "W", "device_class": "power"},
+        {"reg": 16, "name": "AC Output Power", "len": 16, "unit": "W", "device_class": "power"},
+        {"reg": 17, "name": "DC Output Power", "len": 16, "unit": "W", "device_class": "power"}
+      ]
+    }
+  }
+]
