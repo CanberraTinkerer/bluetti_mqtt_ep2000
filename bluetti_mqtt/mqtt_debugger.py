@@ -1113,33 +1113,35 @@ async def poll_device_registers(
     # --- SESSION KEEP-ALIVE (App Mimicry) ---
     # Replicate the official app routine to prevent the device from entering low-power mode
     # and clearing the peripheral registers (Slave 41, Slave 0).
-    if device_protocol == "v2":
-        print("Refreshing Session Lock (Keep-Alive Heartbeat)...")
-        heartbeats = [
-            (190, 1, 1),     # 1. Master Session Lock (Slave 1)
-            (30001, 1, 0),   # 2. Global Mesh Refresh (Broadcast 0 - No Response)
-            (21000, 6, 1)    # 3. Peripheral Refresh (Slave 1)
-        ]
-        for reg, val, sid in heartbeats:
-            try:
-                cmd = WriteSingleRegister(reg, val, slave_id=sid)
-                if sid == 0:
-                    # Broadcast writes often don't return a response.
-                    # We await the future with a short timeout to "retrieve" any potential
-                    # exception (like Modbus Error 2) to avoid asyncio warnings.
-                    future = await client.perform(cmd)
-                    try:
-                        await asyncio.wait_for(future, timeout=0.5)
-                    except (asyncio.TimeoutError, Exception):
-                        pass
-                    await asyncio.sleep(0.1)
-                else:
-                    future = await client.perform_with_fallback(cmd, device_protocol)
-                    await future
-            except Exception as e:
-                logging.debug(f"Heartbeat write to {reg} ignored: {e}")
-        
-        await asyncio.sleep(0.5) # Wait for Inverter to bridge the refresh
+    # The following heartbeat writes are disabled to avoid extra register writes:
+    #  (190, 1, 1), (30001, 1, 0), (21000, 6, 1)
+    # if device_protocol == "v2":
+    #     print("Refreshing Session Lock (Keep-Alive Heartbeat)...")
+    #     heartbeats = [
+    #         (190, 1, 1),     # 1. Master Session Lock (Slave 1)
+    #         (30001, 1, 0),   # 2. Global Mesh Refresh (Broadcast 0 - No Response)
+    #         (21000, 6, 1)    # 3. Peripheral Refresh (Slave 1)
+    #     ]
+    #     for reg, val, sid in heartbeats:
+    #         try:
+    #             cmd = WriteSingleRegister(reg, val, slave_id=sid)
+    #             if sid == 0:
+    #                 # Broadcast writes often don't return a response.
+    #                 # We await the future with a short timeout to "retrieve" any potential
+    #                 # exception (like Modbus Error 2) to avoid asyncio warnings.
+    #                 future = await client.perform(cmd)
+    #                 try:
+    #                     await asyncio.wait_for(future, timeout=0.5)
+    #                 except (asyncio.TimeoutError, Exception):
+    #                     pass
+    #                 await asyncio.sleep(0.1)
+    #             else:
+    #                 future = await client.perform_with_fallback(cmd, device_protocol)
+    #                 await future
+    #         except Exception as e:
+    #             logging.debug(f"Heartbeat write to {reg} ignored: {e}")
+    #     
+    #     await asyncio.sleep(0.5) # Wait for Inverter to bridge the refresh
 
     # Group commands for polling
     grouped_commands = group_commands(commands_to_poll, max_group_size=max_group_size)
