@@ -617,9 +617,9 @@
       
       {"reg": 1226, "name": "INV_PV_INFO: String 3 Status", "len": 16, "mask": 255, "type": "enum", "values": ["Standby", "Normal", "Fault"], "notes": "CORRECT - 0=Standby, 1=Normal, 2=Fault", "slave_id": 41 },
       {"reg": 1227, "name": "INV_PV_INFO: String 3 Type", "len": 16, "notes": "CORRECT: 100=DC Input, 101=AC-Coupled", "slave_id": 41 },
-      {"reg": 1228, "name": "INV_PV_INFO: String 3 Power", "len": 16, "unit": "W", "device_class": "power", "notes": "CORRECT"  },
-      {"reg": 1229, "name": "INV_PV_INFO: String 3 Voltage", "len": 16, "scale": 1, "unit": "V", "device_class": "voltage", "notes": "CORRECT" },
-      {"reg": 1230, "name": "INV_PV_INFO: String 3 Current", "len": 16, "scale": 1, "unit": "A", "device_class": "current", "notes": "CORRECT" },
+      {"reg": 1228, "name": "INV_PV_INFO: String 3 Power", "len": 16, "unit": "W", "device_class": "power", "notes": "CORRECT", "slave_id": 41  },
+      {"reg": 1229, "name": "INV_PV_INFO: String 3 Voltage", "len": 16, "scale": 1, "unit": "V", "device_class": "voltage", "notes": "CORRECT", "slave_id": 41 },
+      {"reg": 1230, "name": "INV_PV_INFO: String 3 Current", "len": 16, "scale": 1, "unit": "A", "device_class": "current", "notes": "CORRECT", "slave_id": 41 },
 
       {"reg": 1234, "name": "INV_PV_INFO: String 4 Status", "len": 16, "mask": 255, "type": "enum", "values": ["Standby", "Normal", "Fault"], "notes": "CORRECT - 0=Standby, 1=Normal, 2=Fault" },
       {"reg": 1235, "name": "INV_PV_INFO: String 4 Type", "len": 16, "notes": "CORRECT: 100=DC Input, 101=AC-Coupled" },
@@ -718,8 +718,21 @@
     },
     {
       "bulk_read": {
+        "read_start_reg": 1500,
+        "read_count": 31,
         "registers": [
-          { "reg": 1502, "name": "Lifetime Inverter Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" }
+          { "reg": 1500, "name": "INV_INV_INFO: AC Output Frequency", "unit": "Hz", "scale": 1, "device_class": "frequency" },
+          { "reg": 1501, "name": "INV_INV_INFO: Total AC Output Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" },
+          {
+            "reg": 1508, "name": "INV_INV_INFO: Inverter Phase Count", "type": "repeating_count",
+            "len": 304, "count_offset": 0, "start_offset": 1, "block_regs": 6,
+            "outputs": [
+              { "reg_offset": 0, "name": "Phase Work Status", "notes": "e.g., 3 = active/normal" },
+              { "reg_offset": 1, "name": "Phase Output Power", "unit": "W", "device_class": "power", "signed": true },
+              { "reg_offset": 2, "name": "Phase Output Voltage", "unit": "V", "scale": 1, "device_class": "voltage" },
+              { "reg_offset": 3, "name": "Phase Output Current", "unit": "A", "scale": 1, "device_class": "current", "signed": true }
+            ]
+          }
         ]
       }
     },
@@ -1219,16 +1232,6 @@
     {"reg": 1132, "name": "Unknown Reg 1132", "notes": "non-zero"},
     {"reg": 1148, "name": "Unknown Reg 1148", "notes": "non-zero"},
     {"reg": 1290, "name": "INV_PV_INFO: Unknown Reg 1290", "notes": "non-zero"},
-    {"reg": 1508, "name": "Unknown Reg 1508", "notes": "non-zero"},
-    {"reg": 1509, "name": "Unknown Reg 1509", "notes": "non-zero"},
-    {"reg": 1510, "name": "Unknown Reg 1510", "notes": "non-zero"},
-    {"reg": 1511, "name": "Unknown Reg 1511", "notes": "non-zero"},
-    {"reg": 1512, "name": "Unknown Reg 1512", "notes": "non-zero"},
-    {"reg": 1516, "name": "Unknown Reg 1516", "notes": "non-zero"},
-    {"reg": 1523, "name": "Unknown Reg 1523", "notes": "non-zero"},
-    {"reg": 1524, "name": "Unknown Reg 1524", "notes": "non-zero"},
-    {"reg": 1525, "name": "Unknown Reg 1525", "notes": "non-zero"},
-    {"reg": 1526, "name": "Unknown Reg 1526", "notes": "non-zero"},
     {"reg": 2003, "name": "Unknown Reg 2003", "notes": "non-zero"},
     {"reg": 2004, "name": "Unknown Reg 2004", "notes": "non-zero"},
     {"reg": 2410, "name": "Unknown Reg 2410", "notes": "non-zero"},
