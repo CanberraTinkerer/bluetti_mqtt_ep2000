@@ -807,7 +807,8 @@ def process_and_publish(command_info: Dict[str, Any], data: bytes, device_name: 
                             "value": processed_val,
                             "PossibleName": item_specific_outputs[0]['name'] if item_specific_outputs else f"{array_name} {item_idx}",
                             "modbus_register": block_reg,
-                            "valid": True
+                            "valid": True,
+                            "fieldDef": "dynamic"
                         }
                         if array_outputs and 'unit' in array_outputs[0]:
                             state_payload['unit'] = array_outputs[0]['unit']
@@ -962,13 +963,17 @@ def process_and_publish(command_info: Dict[str, Any], data: bytes, device_name: 
             display_reg = get_display_register(register, output)
             topic_suffix = get_topic_suffix(output, is_split)
             state_topic = f"bluetti_debugger/{device_name}/{display_reg}{topic_suffix}{slave_suffix}{trigger_suffix}/state"
+            
+            field_def = "dynamic" if (command_info.get('type') == 'processed_block' or command_info.get('is_dynamic')) else "static"
+            
             state_payload = {
                 "value": value, 
                 "PossibleName": output['name'], 
                 "modbus_register": f"{display_reg}{topic_suffix}",
                 "slave_id": slave_id,
                 "encrypted": encrypted,
-                "valid": True
+                "valid": True,
+                "fieldDef": field_def
             }
             if 'notes' in output: state_payload["notes"] = output['notes']
 
@@ -1038,7 +1043,8 @@ def publish_invalid(command_info: Dict[str, Any], device_name: str, mqtt_client:
             "modbus_register": f"{register}{topic_suffix}",
             "slave_id": slave_id,
             "encrypted": encrypted,
-            "valid": False
+            "valid": False,
+            "fieldDef": "static"
         }
         if 'notes' in output:
             state_payload["notes"] = output['notes']
@@ -1273,6 +1279,7 @@ async def poll_device_registers(
                         if total_pages > 1:
                             base_reg = cmd_info_copy['reg']
                             cmd_info_copy['reg'] = f"{base_reg}.p{page_idx}"
+                            cmd_info_copy['is_dynamic'] = True
                             
                             # Handle dynamic discovery for paginated registers
                             outputs = cmd_info_copy.get('outputs', [cmd_info_copy])
@@ -1302,6 +1309,7 @@ async def poll_device_registers(
                         if total_pages > 1:
                             base_reg = cmd_info_copy['reg']
                             cmd_info_copy['reg'] = f"{base_reg}.p{page_idx}"
+                            cmd_info_copy['is_dynamic'] = True
                             
                             # Handle dynamic discovery for paginated registers
                             outputs = cmd_info_copy.get('outputs', [cmd_info_copy])

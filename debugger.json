@@ -723,9 +723,10 @@
         "registers": [
           { "reg": 1500, "name": "INV_INV_INFO: AC Output Frequency", "unit": "Hz", "scale": 1, "device_class": "frequency" },
           { "reg": 1501, "name": "INV_INV_INFO: Total AC Output Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" },
+          {"reg": 1508, "name": "INV_INV_INFO: Inverter Phase Count"},
           {
-            "reg": 1508, "name": "INV_INV_INFO: Inverter Phase Count", "type": "repeating_count",
-            "len": 304, "count_offset": 0, "start_offset": 1, "block_regs": 6,
+            "reg": 1508, "name": "INV_INV_INFO: Inverter Phase Count Block", "type": "repeating_count",
+            "len": 304, "count_offset": 0, "start_offset": 1, "block_regs": 7,
             "outputs": [
               { "reg_offset": 0, "name": "Phase Work Status", "notes": "e.g., 3 = active/normal" },
               { "reg_offset": 1, "name": "Phase Output Power", "unit": "W", "device_class": "power", "signed": true },
