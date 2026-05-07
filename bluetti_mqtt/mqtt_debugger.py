@@ -945,6 +945,10 @@ def process_and_publish(command_info: Dict[str, Any], data: bytes, device_name: 
                 if output.get('signed', False) and not is_split:
                     if length == 32: value = to_32bit_signed(value)
                     elif length == 16: value = to_signed(value)
+                if output.get('signed', False):
+                    item_len = output.get('len', 16 if (output_type == 'processed_block' or 'reg_offset' in output) else length)
+                    if item_len == 32: value = to_32bit_signed(value)
+                    elif item_len == 16: value = to_signed(value)
                 if 'subtract' in output: value -= output['subtract']
                 if output.get('absolute', False): value = abs(value)
                 if 'scale' in output: value = apply_scale(value, output['scale'])

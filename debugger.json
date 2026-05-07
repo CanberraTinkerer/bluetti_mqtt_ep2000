@@ -179,7 +179,7 @@
 
     { "reg": 144, "name": "APP_HOME_DATA: PV Input Power All", "len": 32, "signed": true, "device_class": "power", "unit": "W", "notes": "CORRECT - This is the new DC coupled solar PV production" },
     { "reg": 146, "name": "APP_HOME_DATA: Grid Power All", "len": 32, "signed": true, "device_class": "power", "unit": "W", "notes": "probably is AC coupled inverter production (old PV)" },
-    { "reg": 148, "name": "APP_HOME_DATA: Total Inverter Power", "len": 32, "signed": true, "device_class": "power", "unit": "W", "notes": "negative when sunny, battery is charging and solar is covering consumption" },
+    { "reg": 148, "name": "APP_HOME_DATA: Total Inverter Power", "len": 32, "signed": true, "device_class": "power", "unit": "W", "notes": "CORRECT: negative when charging, positive when discharging" },
 
     {"trigger_write":
       [
@@ -673,18 +673,20 @@
           { "reg": 1301, "len": 32, "name": "INV_GRID_INFO: Total Grid Power", "unit": "W", "device_class": "power", "signed": true },
           { "reg": 1303, "len": 32, "name": "INV_GRID_INFO: Total Grid Energy", "unit": "kWh", "scale": 1, "device_class": "energy" },
           { "reg": 1305, "len": 32, "name": "INV_GRID_INFO: Total Feedback Energy", "unit": "kWh", "scale": 1, "device_class": "energy" },
+          { "reg": 1312, "name": "INV_GRID_INFO: System Phase Count" },
           { 
             "reg": 1312, 
             "name": "INV_GRID_INFO: System Phase Count",
+            "name": "INV_GRID_INFO: System Phase Count Block",
             "type": "repeating_count",
             "len": 304,
             "count_offset": 0,
             "start_offset": 1,
             "block_regs": 6,
             "outputs": [
-              { "reg_offset": 0, "name": "INV_GRID_INFO: Phase Grid Power", "unit": "W", "device_class": "power", "signed": true, "absolute": true },
+              { "reg_offset": 0, "name": "INV_GRID_INFO: Phase Grid Power", "unit": "W", "device_class": "power", "signed": true },
               { "reg_offset": 1, "name": "INV_GRID_INFO: Phase Grid Voltage", "unit": "V", "scale": 1, "device_class": "voltage" },
-              { "reg_offset": 2, "name": "INV_GRID_INFO: Phase Grid Current", "unit": "A", "scale": 1, "device_class": "current", "signed": true, "absolute": true },
+              { "reg_offset": 2, "name": "INV_GRID_INFO: Phase Grid Current", "unit": "A", "scale": 1, "device_class": "current", "signed": true },
               { "reg_offset": 3, "name": "INV_GRID_INFO: Phase Apparent Power", "unit": "VA", "device_class": "apparent_power" }
             ]
           }
@@ -703,8 +705,11 @@
           { "reg": 1412, "name": "INV_INV_INFO: Total DC Voltage", "unit": "V", "scale": 1, "device_class": "voltage" },
           { "reg": 1420, "name": "INV_INV_INFO: Total AC Load Power", "len": 32, "unit": "W", "device_class": "power" },
           { "reg": 1422, "name": "INV_INV_INFO: Total AC Load Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" },
+          { "reg": 1429, "name": "INV_INV_INFO: Load Phase Count" },
           { 
             "reg": 1429, "name": "INV_INV_INFO: Load Phase Count", "type": "repeating_count",
+            "reg": 1429, "name": "INV_INV_INFO: Load Phase Count Block", "type": "repeating_count",
+            "len": 304,
             "count_offset": 0, "start_offset": 1, "block_regs": 6,
             "outputs": [
               { "reg_offset": 0, "name": "INV_INV_INFO: Phase Load Power", "unit": "W", "device_class": "power" },
@@ -724,9 +729,11 @@
           { "reg": 1500, "name": "INV_INV_INFO: AC Output Frequency", "unit": "Hz", "scale": 1, "device_class": "frequency" },
           { "reg": 1501, "name": "INV_INV_INFO: Total AC Output Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" },
           {"reg": 1508, "name": "INV_INV_INFO: Inverter Phase Count"},
+          { "reg": 1508, "name": "INV_INV_INFO: Inverter Phase Count" },
           {
             "reg": 1508, "name": "INV_INV_INFO: Inverter Phase Count Block", "type": "repeating_count",
             "len": 304, "count_offset": 0, "start_offset": 1, "block_regs": 7,
+            "len": 352, "count_offset": 0, "start_offset": 1, "block_regs": 7,
             "outputs": [
               { "reg_offset": 0, "name": "Phase Work Status", "notes": "e.g., 3 = active/normal" },
               { "reg_offset": 1, "name": "Phase Output Power", "unit": "W", "device_class": "power", "signed": true },
@@ -951,8 +958,10 @@
           { "reg": 6153, "name": "Active Cell Count", "notes": "Source of Truth for cell loops (112)" },
           { "reg": 6154, "name": "Physical BMU Count", "notes": "Source of Truth for pack count (7)" },
           { "reg": 6156, "name": "BMU Hardware Profile ID" },
+          { "reg": 6173, "name": "Firmware Module Count" },
           { 
             "reg": 6173, "name": "Firmware Module Count", "type": "repeating_count",
+            "reg": 6173, "name": "Firmware Module Count Block", "type": "repeating_count",
             "len": 400,
             "count_offset": 0, "start_offset": 1, "block_regs": 3,
             "outputs": [
