@@ -631,6 +631,7 @@ def process_and_publish(command_info: Dict[str, Any], data: bytes, device_name: 
             # Publish the count register itself first
             count_info = command_info.copy()
             count_info['type'] = 'numeric' # Prevent recursion
+            count_info.pop('outputs', None)
             process_and_publish(count_info, count_data, device_name, mqtt_client, encrypted, discovery_info)
 
             # Process each block
