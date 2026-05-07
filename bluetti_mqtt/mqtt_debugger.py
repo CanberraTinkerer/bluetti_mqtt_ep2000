@@ -628,13 +628,6 @@ def process_and_publish(command_info: Dict[str, Any], data: bytes, device_name: 
             if count == 0:
                 count = (len(data) // 2 - start_offset) // block_regs
 
-            # Publish the count register itself first
-            count_info = command_info.copy()
-            count_info['type'] = 'numeric' # Prevent recursion
-            count_info.pop('outputs', None)
-            process_and_publish(count_info, count_data, device_name, mqtt_client, encrypted, discovery_info)
-
-            # Process each block
             for i in range(count):
                 current_byte_start = (start_offset * 2) + (i * block_size)
                 chunk = data[current_byte_start : current_byte_start + block_size]
