@@ -1270,7 +1270,8 @@ async def poll_device_registers(
     #     await asyncio.sleep(0.5) # Wait for Inverter to bridge the refresh
 
     # Group commands for polling
-    grouped_commands = group_commands(commands_to_poll, max_group_size=max_group_size)
+    commands_for_grouping = [c for c in commands_to_poll if 'reg' in c]
+    grouped_commands = group_commands(commands_for_grouping, max_group_size=max_group_size)
 
     # Start the timer
     start_time = time.perf_counter()
