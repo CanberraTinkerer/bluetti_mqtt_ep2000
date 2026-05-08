@@ -16,6 +16,7 @@ import os
 import time
 import logging
 import hashlib
+import re
 from datetime import datetime
 from argparse import ArgumentParser, Namespace
 from typing import Any, Dict, List, Optional, Set, cast
@@ -586,7 +587,7 @@ def group_commands(commands_to_poll: List[Dict[str, Any]], max_gap: int = 5, max
     return final_groups
 
 
-def process_and_publish(command_info: Dict[str, Any], data: bytes, device_name: str, mqtt_client: mqtt.Client, encrypted: bool, discovery_info: Dict[str, Any] = None):
+def process_and_publish(command_info: Dict[str, Any], data: bytes, device_name: str, mqtt_client: mqtt.Client, encrypted: bool, discovery_info: Dict[str, Any] = None, polled_data: Dict[str, Any] = None):
     try:
         register = command_info['reg']
 
@@ -645,7 +646,7 @@ def process_and_publish(command_info: Dict[str, Any], data: bytes, device_name: 
                 block_info = command_info.copy()
                 block_info['type'] = 'processed_block' # Prevent infinite loop
                 block_info['reg'] = block_reg
-                process_and_publish(block_info, chunk, device_name, mqtt_client, encrypted, discovery_info)
+                process_and_publish(block_info, chunk, device_name, mqtt_client, encrypted, discovery_info, polled_data)
             return
 
         # Handle interleaved/segmented tables (e.g. 7200 BMU block)
@@ -690,7 +691,7 @@ def process_and_publish(command_info: Dict[str, Any], data: bytes, device_name: 
                     # Process the chunk as a standalone block
                     seg_info = command_info.copy()
                     seg_info.update({'type': 'processed_block', 'reg': pack_reg_base, 'outputs': s_outputs})
-                    process_and_publish(seg_info, chunk, device_name, mqtt_client, encrypted, discovery_info)
+                    process_and_publish(seg_info, chunk, device_name, mqtt_client, encrypted, discovery_info, polled_data)
             return
 
         # Handle dynamic packed arrays (e.g., BMU cells and NTCs, or any similar structure)
@@ -718,7 +719,7 @@ def process_and_publish(command_info: Dict[str, Any], data: bytes, device_name: 
                 
                 # Publish the count itself
                 count_info = {"reg": f"{calc_reg + count_reg_offset}{reg_suffix}", "name": f"{array_name} Count"}
-                process_and_publish(count_info, data[count_data_offset:count_data_offset + 2], device_name, mqtt_client, encrypted, discovery_info)
+                process_and_publish(count_info, data[count_data_offset:count_data_offset + 2], device_name, mqtt_client, encrypted, discovery_info, polled_data)
                 
                 # Process items based on items_per_register
                 if items_per_register == 1:
@@ -744,7 +745,7 @@ def process_and_publish(command_info: Dict[str, Any], data: bytes, device_name: 
                         
                         block_info = command_info.copy()
                         block_info.update({'type': 'processed_block', 'reg': item_reg, 'outputs': item_specific_outputs})
-                        process_and_publish(block_info, chunk, device_name, mqtt_client, encrypted, discovery_info)
+                        process_and_publish(block_info, chunk, device_name, mqtt_client, encrypted, discovery_info, polled_data)
                     
                     current_offset += item_count
                     
@@ -874,7 +875,7 @@ def process_and_publish(command_info: Dict[str, Any], data: bytes, device_name: 
                 block_info = command_info.copy()
                 block_info['type'] = 'processed_block' # Prevent infinite loop
                 block_info['reg'] = block_reg
-                process_and_publish(block_info, chunk, device_name, mqtt_client, encrypted, discovery_info)
+                process_and_publish(block_info, chunk, device_name, mqtt_client, encrypted, discovery_info, polled_data)
             return
 
         # Parse the sliced data
@@ -929,7 +930,7 @@ def process_and_publish(command_info: Dict[str, Any], data: bytes, device_name: 
                     sub_info = output.copy()
                     sub_info['type'] = 'processed_block'
                     sub_info['reg'] = get_display_register(register, output)
-                    process_and_publish(sub_info, f_data, device_name, mqtt_client, encrypted, discovery_info)
+                    process_and_publish(sub_info, f_data, device_name, mqtt_client, encrypted, discovery_info, polled_data)
                     continue
 
                 if output.get('ascii'): 
@@ -960,6 +961,10 @@ def process_and_publish(command_info: Dict[str, Any], data: bytes, device_name: 
             trigger_suffix = f"_t{trigger_val}" if trigger_reg is not None else ""
             display_reg = get_display_register(register, output)
             topic_suffix = get_topic_suffix(output, is_split)
+            
+            if polled_data is not None:
+                polled_data[display_reg] = value
+
             state_topic = f"bluetti_debugger/{device_name}/{display_reg}{topic_suffix}{slave_suffix}{trigger_suffix}/state"
             
             field_def = "dynamic" if (command_info.get('type') == 'processed_block' or command_info.get('is_dynamic')) else "static"
@@ -981,6 +986,121 @@ def process_and_publish(command_info: Dict[str, Any], data: bytes, device_name: 
 
     except Exception as e:
         print(f"An error occurred while processing register {command_info.get('reg')}: {e}")
+
+
+def eval_expr(expr: str, polled_data: Dict[str, Any]) -> Any:
+    # Helper to resolve register values
+    def get_reg_val(reg_str):
+        reg = int(reg_str)
+        # Find a key that starts with the register number.
+        for k, v in polled_data.items():
+            if k.startswith(str(reg) + '.') or k == str(reg):
+                if isinstance(v, (int, float)):
+                    return v
+        print(f"Warning: Register {reg} not found in polled data or not a number.")
+        return 0  # Default to 0 if not found
+
+    # Replace regs(...) with a list of values
+    def replace_regs(match):
+        regs_str = match.group(1)
+        reg_numbers = [int(r.strip()) for r in regs_str.split(',')]
+        values = [get_reg_val(r) for r in reg_numbers]
+        numeric_values = [v for v in values if isinstance(v, (int, float))]
+        return str(numeric_values)
+
+    # Very basic and unsafe expression evaluation
+    # A safer implementation would use a dedicated parsing library
+    expr = re.sub(r'regs\((.*?)\)', replace_regs, expr)
+    expr = expr.replace('sum(', 'sum_list(').replace('abs(', 'abs_val(')
+
+    # Define safe functions
+    safe_globals = {
+        'sum_list': sum,
+        'abs_val': abs,
+    }
+
+    try:
+        # WARNING: Using eval is a security risk if the config is not trusted
+        return eval(expr, {"__builtins__": {}}, safe_globals)
+    except Exception as e:
+        print(f"Error evaluating expression '{expr}': {e}")
+        return None
+
+
+def process_calculated_fields(
+    commands: List[Dict[str, Any]],
+    polled_data: Dict[str, Any],
+    device_name: str,
+    mqtt_client: mqtt.Client,
+    discovery_info: Dict[str, Any] = None
+):
+    calculated_commands = [c for c in commands if c.get('type') == 'calculated']
+
+    for command in calculated_commands:
+        name = command.get('name')
+        calculation = command.get('calculation')
+        if not name or not calculation:
+            continue
+
+        final_value = "unknown"  # Default value
+
+        if 'if' in calculation:
+            conditions = calculation['if']
+            value_found = False
+            for condition_block in conditions:
+                condition_expr = list(condition_block.keys())[0]
+
+                if condition_expr == 'else':
+                    final_value = condition_block[condition_expr]
+                    value_found = True
+                    break
+
+                result = eval_expr(condition_expr, polled_data)
+
+                if result:
+                    final_value = condition_block[condition_expr]
+                    value_found = True
+                    break
+                elif 'else' in condition_block:
+                    final_value = condition_block['else']
+                    value_found = True
+                    break
+            
+            if not value_found:
+                final_value = "no_condition_met"
+
+        # Publish the calculated value
+        if discovery_info and mqtt_client:
+            unique_id = f"{device_name}_{name.replace(' ', '_').lower()}"
+            if unique_id not in DISCOVERED_DYNAMIC_REGS:
+                discovery_topic = f"homeassistant/sensor/{unique_id}/config"
+                state_topic = f"bluetti_debugger/{device_name}/calculated/{name.replace(' ', '_').lower()}/state"
+                payload = {
+                    "name": name,
+                    "state_topic": state_topic,
+                    "unique_id": unique_id,
+                    "json_attributes_topic": state_topic,
+                    "value_template": "{{ value_json.value }}",
+                    "device": {
+                        "identifiers": [discovery_info['address']],
+                        "name": discovery_info['display_name'],
+                        "model": discovery_info['type'],
+                        "manufacturer": "Bluetti"
+                    }
+                }
+                mqtt_client.publish(discovery_topic, json.dumps(payload), retain=True)
+                DISCOVERED_DYNAMIC_REGS.add(unique_id)
+                print(f"Sent discovery for calculated field {name}")
+
+        state_topic = f"bluetti_debugger/{device_name}/calculated/{name.replace(' ', '_').lower()}/state"
+        state_payload = {
+            "value": final_value,
+            "name": name,
+            "valid": True,
+        }
+        if mqtt_client:
+            mqtt_client.publish(state_topic, json.dumps(state_payload))
+            print(f"Published calculated field {name}: {final_value}")
 
 
 def _handle_dynamic_discovery(discovery_info, device_name, block_reg, slave_id, trigger_val, trigger_reg, outputs, is_split, mqtt_client):
@@ -1096,6 +1216,8 @@ async def poll_device_registers(
     Returns:
         Duration of the polling operation in seconds
     """
+    polled_data = {}
+
     # Detect device protocol
     if force_protocol:
         device_protocol = force_protocol
@@ -1294,7 +1416,7 @@ async def poll_device_registers(
                         start_byte = (register - group['start_reg']) * 2
                         end_byte = start_byte + (num_registers * 2)
                         data = group_data[start_byte:end_byte]
-                        process_and_publish(cmd_info_copy, data, device_name, mqtt_client, False, discovery_info)
+                        process_and_publish(cmd_info_copy, data, device_name, mqtt_client, False, discovery_info, polled_data)
                     except Exception as e:
                         print(f"An error occurred while processing register {command_info.get('reg')}: {e}")
 
@@ -1330,7 +1452,7 @@ async def poll_device_registers(
                         if len(response) > 0:
                             print(f"  RX Packet: SlaveID={response[0]} Func={response[1]} Len={len(response)}")
                         data = single_command.parse_response(response)
-                        process_and_publish(cmd_info_copy, data, device_name, mqtt_client, False, discovery_info)
+                        process_and_publish(cmd_info_copy, data, device_name, mqtt_client, False, discovery_info, polled_data)
                     except (BadConnectionError, BleakError, ModbusError, ParseError) as e:
                         print(f"Error individual polling register {command_info['reg']}: {e}")
 
@@ -1346,7 +1468,7 @@ async def poll_device_registers(
                                 if len(response) > 0:
                                     print(f"  RX Packet: SlaveID={response[0]} Func={response[1]} Len={len(response)}")
                                 data = single_command.parse_response(response)
-                                process_and_publish(cmd_info_copy, data, device_name, mqtt_client, False, discovery_info)
+                                process_and_publish(cmd_info_copy, data, device_name, mqtt_client, False, discovery_info, polled_data)
                                 success_plaintext = True
                             except Exception as e2:
                                 print(f"Error plaintext fallback register {command_info['reg']}: {e2}")
@@ -1354,6 +1476,9 @@ async def poll_device_registers(
                         if success_plaintext:
                             continue
                         publish_invalid(command_info, device_name, mqtt_client, False)
+
+    # --- PROCESS CALCULATED FIELDS ---
+    process_calculated_fields(commands_to_poll, polled_data, device_name, mqtt_client, discovery_info)
 
     # Calculate duration
     end_time = time.perf_counter()

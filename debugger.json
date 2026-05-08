@@ -1833,5 +1833,20 @@
           { "reg": 3510, "name": "INV_TOTAL_ENERGY_INFO: Total Load Year 3 Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy"}
         ]
       }	  
-    ]}
+    ]},
+    {
+        "type": "calculated",
+        "name": "Grid Mode",
+        "calculation": {
+            "if": [
+                {
+                    "abs(sum(regs(1313, 1319, 1325))) < 240": "idle"
+                },
+                {
+                    "sum(regs(1313, 1319, 1325)) > 0": "exporting",
+                    "else": "importing"
+                }
+            ]
+        }
+    }
 ]
