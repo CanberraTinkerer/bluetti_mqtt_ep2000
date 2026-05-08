@@ -1100,6 +1100,8 @@ def process_calculated_fields(
             "name": name,
             "valid": True,
         }
+        if 'notes' in command:
+            state_payload['notes'] = command['notes']
         if mqtt_client:
             mqtt_client.publish(state_topic, json.dumps(state_payload))
             print(f"Published calculated field {name}: {final_value}")

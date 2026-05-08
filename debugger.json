@@ -703,7 +703,7 @@
           { "reg": 1406, "name": "INV_INV_INFO: DC 12V Power", "unit": "W", "device_class": "power" },
           { "reg": 1408, "name": "INV_INV_INFO: DC 24V Power", "unit": "W", "device_class": "power" },
           { "reg": 1412, "name": "INV_INV_INFO: Total DC Voltage", "unit": "V", "scale": 1, "device_class": "voltage" },
-          { "reg": 1420, "name": "INV_INV_INFO: Total AC Load Power", "len": 32, "unit": "W", "device_class": "power" },
+          { "reg": 1420, "name": "INV_INV_INFO: Total AC Load Power", "len": 32, "unit": "W", "device_class": "power", "notes": "zero always - no change since first poll" },
           { "reg": 1422, "name": "INV_INV_INFO: Total AC Load Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" },
           { "reg": 1429, "name": "INV_INV_INFO: Load Phase Count" },
           { 
@@ -1843,7 +1843,9 @@
                     "abs(sum(regs(1313, 1319, 1325))) < 240": "idle"
                 },
                 {
-                    "sum(regs(1313, 1319, 1325)) > 0": "exporting",
+                    "sum(regs(1313, 1319, 1325)) > 0": "exporting"
+                },
+                {
                     "else": "importing"
                 }
             ]
