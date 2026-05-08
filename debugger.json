@@ -1848,5 +1848,10 @@
                 }
             ]
         }
+    },
+    {
+        "type": "calculated",
+        "name": "total_grid",
+        "calculation": "sum(regs(1313, 1319, 1325))"
     }
 ]

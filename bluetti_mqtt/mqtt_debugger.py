@@ -1044,7 +1044,9 @@ def process_calculated_fields(
 
         final_value = "unknown"  # Default value
 
-        if 'if' in calculation:
+        if isinstance(calculation, str):
+            final_value = eval_expr(calculation, polled_data)
+        elif 'if' in calculation:
             conditions = calculation['if']
             value_found = False
             for condition_block in conditions:
