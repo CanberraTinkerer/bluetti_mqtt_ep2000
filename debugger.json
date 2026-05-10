@@ -196,14 +196,11 @@
     },
     {"trigger_write": 
       [
-        { "trigger_metadata": { "pagination_selector": 2028, "pagination_count_reg": 3000, "slave_id": 1 } },
         { "trigger_metadata": { "pagination_selector": 2028, "pagination_count_reg": 3000, "pagination_items_per_page": 19, "slave_id": 1 } },
         { "bulk_read": 
-          { "slave_id": 41, "delay": 0.8, 
           { "slave_id": 1, "delay": 0.8, 
             "registers": 
             [
-              { "reg": 3002, "name": "Category Fault Log", "type": "repeating_count", "len": 400, "count_offset": -2, "start_offset": 0, "block_regs": 5,
               { "reg": 3000, "name": "LOG_HISTORY_INFO: Total Log Count" },
               { "reg": 3001, "name": "LOG_HISTORY_INFO: Current Page Index" },
               { "reg": 3000, "name": "Category Fault Log", "type": "repeating_count", "len": 1600, "count_offset": 0, "start_offset": 2, "block_regs": 5,
@@ -211,28 +208,18 @@
                 [
                   { "reg_offset": 0, "name": "Fault Timestamp Y/M", "outputs": 
                     [
-                      {"name": "Month", "mask": 255
-                      }, 
-                      {"name": "Year", "mask": 255, "offset": 8, "subtract": -2000
-                      }
                       {"name": "Month", "mask": 255, "offset": 8 }, 
                       {"name": "Year", "mask": 255, "subtract": -2000 }
                     ] 
                   },
                   { "reg_offset": 1, "name": "Fault Timestamp D/H", "outputs": 
                     [
-                      {"name": "Hour", "mask": 255
-                      }, 
-                      {"name": "Day", "mask": 255, "offset": 8
-                      }
                       {"name": "Hour", "mask": 255, "offset": 8 }, 
                       {"name": "Day", "mask": 255 }
                     ] 
                   },
                   { "reg_offset": 3, "name": "Fault Category and Index", "outputs": 
                     [
-                      {"name": "Fault Index", "mask": 255 }, 
-                      {"name": "Fault Category ID", "mask": 255, "offset": 8 }
                       {"name": "Fault Category ID", "mask": 255, "offset": 8 },
                       {"name": "Fault Index", "mask": 255 } 
                     ] 
