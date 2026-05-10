@@ -8,11 +8,10 @@
     { "reg": 100, "name": "APP_HOME_DATA: Pack Total Voltage", "len": 16, "device_class": "voltage", "unit": "V", "scale": 1, "notes": "CORRECT", "signed": true },
     { "reg": 101, "name": "APP_HOME_DATA: Pack Total Current", "len": 16, "device_class": "current", "unit": "A", "scale": 1, "notes": "CORRECT", "signed": true },
     { "reg": 102, "name": "APP_HOME_DATA: Total Battery Percent", "len": 16, "device_class": "battery", "unit": "%", "notes": "CORRECT" },
-
-    {"reg": 103, "name": "APP_HOME_DATA: Pack Charging Status", "type": "enum", "values": ["Standby/Idle", "Charging", "Discharging"], "notes": "CORRECT - 0-Standby/Idle, 1-Charging, 2-Discharging"},
-    {"reg": 104, "name": "APP_HOME_DATA: Pack Charge Time to Full", "unit": "min", "notes": "CORRECT" },
-    {"reg": 105, "name": "APP_HOME_DATA: Pack Discharge Remaining Time", "unit": "min", "notes": "CORRECT" },
-    {"reg": 106, "name": "APP_HOME_DATA: Pack Aging Info",
+    { "reg": 103, "name": "APP_HOME_DATA: Pack Charging Status", "type": "enum", "values": ["Standby/Idle", "Charging", "Discharging"], "notes": "CORRECT - 0-Standby/Idle, 1-Charging, 2-Discharging"},
+    { "reg": 104, "name": "APP_HOME_DATA: Pack Charge Time to Full", "unit": "min", "notes": "CORRECT" },
+    { "reg": 105, "name": "APP_HOME_DATA: Pack Discharge Remaining Time", "unit": "min", "notes": "CORRECT" },
+    { "reg": 106, "name": "APP_HOME_DATA: Pack Aging Info",
       "outputs": [
         {
           "name": "APP_HOME_DATA: Aging Status", 
@@ -176,7 +175,6 @@
    
     { "reg": 140, "name": "APP_HOME_DATA: Total DC Power", "len": 32, "unit": "W", "device_class": "power", "notes": "CORRECT - used for portable batteries that have DC output ports (cigarette lighter socket etc.  Not useful for EP2000"},
     { "reg": 142, "name": "APP_HOME_DATA: Consumption Power All", "len": 32, "signed": true, "device_class": "power", "unit": "W", "notes": "CORRECT - diff between this and 148 may be inverter self-consumption" },
-
     { "reg": 144, "name": "APP_HOME_DATA: PV Input Power All", "len": 32, "signed": true, "device_class": "power", "unit": "W", "notes": "CORRECT - This is the new DC coupled solar PV production" },
     { "reg": 146, "name": "APP_HOME_DATA: Grid Power All", "len": 32, "signed": true, "device_class": "power", "unit": "W", "notes": "probably is AC coupled inverter production (old PV)" },
     { "reg": 148, "name": "APP_HOME_DATA: Total Inverter Power", "len": 32, "signed": true, "device_class": "power", "unit": "W", "notes": "CORRECT: negative when charging, positive when discharging" },
@@ -199,11 +197,16 @@
     {"trigger_write": 
       [
         { "trigger_metadata": { "pagination_selector": 2028, "pagination_count_reg": 3000, "slave_id": 1 } },
+        { "trigger_metadata": { "pagination_selector": 2028, "pagination_count_reg": 3000, "pagination_items_per_page": 19, "slave_id": 1 } },
         { "bulk_read": 
           { "slave_id": 41, "delay": 0.8, 
+          { "slave_id": 1, "delay": 0.8, 
             "registers": 
             [
               { "reg": 3002, "name": "Category Fault Log", "type": "repeating_count", "len": 400, "count_offset": -2, "start_offset": 0, "block_regs": 5,
+              { "reg": 3000, "name": "LOG_HISTORY_INFO: Total Log Count" },
+              { "reg": 3001, "name": "LOG_HISTORY_INFO: Current Page Index" },
+              { "reg": 3000, "name": "Category Fault Log", "type": "repeating_count", "len": 1600, "count_offset": 0, "start_offset": 2, "block_regs": 5,
                 "outputs": 
                 [
                   { "reg_offset": 0, "name": "Fault Timestamp Y/M", "outputs": 
@@ -212,6 +215,8 @@
                       }, 
                       {"name": "Year", "mask": 255, "offset": 8, "subtract": -2000
                       }
+                      {"name": "Month", "mask": 255, "offset": 8 }, 
+                      {"name": "Year", "mask": 255, "subtract": -2000 }
                     ] 
                   },
                   { "reg_offset": 1, "name": "Fault Timestamp D/H", "outputs": 
@@ -220,12 +225,16 @@
                       }, 
                       {"name": "Day", "mask": 255, "offset": 8
                       }
+                      {"name": "Hour", "mask": 255, "offset": 8 }, 
+                      {"name": "Day", "mask": 255 }
                     ] 
                   },
                   { "reg_offset": 3, "name": "Fault Category and Index", "outputs": 
                     [
                       {"name": "Fault Index", "mask": 255 }, 
                       {"name": "Fault Category ID", "mask": 255, "offset": 8 }
+                      {"name": "Fault Category ID", "mask": 255, "offset": 8 },
+                      {"name": "Fault Index", "mask": 255 } 
                     ] 
                   },
                   { "reg_offset": 4, "name": "Raw Diagnostic Code" }
@@ -664,13 +673,13 @@
       {"reg": 1286, "name": "INV_PV_INFO: String 10 Current", "len": 16, "scale": 1, "unit": "A", "device_class": "current", "notes": "CORRECT" },
 
 
-    {
+	{
       "bulk_read": {
         "read_start_reg": 1300,
         "read_count": 31,
         "registers": [
           { "reg": 1300, "name": "INV_GRID_INFO: Grid Frequency", "unit": "Hz", "scale": 1, "device_class": "frequency" },
-          { "reg": 1301, "len": 32, "name": "INV_GRID_INFO: Total Grid Power", "unit": "W", "device_class": "power", "signed": true },
+          { "reg": 1301, "len": 32, "name": "INV_GRID_INFO: Total AC Power - GRID + AC-PV", "unit": "W", "device_class": "power", "signed": true, "notes": "CORRECT: GRID consumption + PV-AC generation" },
           { "reg": 1303, "len": 32, "name": "INV_GRID_INFO: Total Grid Energy", "unit": "kWh", "scale": 1, "device_class": "energy" },
           { "reg": 1305, "len": 32, "name": "INV_GRID_INFO: Total Feedback Energy", "unit": "kWh", "scale": 1, "device_class": "energy" },
           { "reg": 1312, "name": "INV_GRID_INFO: System Phase Count" },
@@ -721,18 +730,17 @@
         ]
       }
     },
-    {
+
+   {
       "bulk_read": {
         "read_start_reg": 1500,
         "read_count": 31,
         "registers": [
           { "reg": 1500, "name": "INV_INV_INFO: AC Output Frequency", "unit": "Hz", "scale": 1, "device_class": "frequency" },
-          { "reg": 1501, "name": "INV_INV_INFO: Total AC Output Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" },
-          {"reg": 1508, "name": "INV_INV_INFO: Inverter Phase Count"},
-          { "reg": 1508, "name": "INV_INV_INFO: Inverter Phase Count" },
+          { "reg": 1501, "name": "INV_INV_INFO: Total AC Output Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy", "signed": true },
+          { "reg": 1508, "name": "INV_INV_INFO: Inverter Phase Count", "notes": "CORRECT - number of phases of AC connected PV"},
           {
             "reg": 1508, "name": "INV_INV_INFO: Inverter Phase Count Block", "type": "repeating_count",
-            "len": 304, "count_offset": 0, "start_offset": 1, "block_regs": 7,
             "len": 352, "count_offset": 0, "start_offset": 1, "block_regs": 7,
             "outputs": [
               { "reg_offset": 0, "name": "Phase Work Status", "notes": "e.g., 3 = active/normal" },
@@ -983,6 +991,7 @@
             "name": "Battery Pack Cell and NTC Data",
             "type": "dynamic_packed_array",
             "len": 4512,
+            "start_offset": 2,
             "arrays": [
               {
                 "name": "Cell",
@@ -1836,6 +1845,27 @@
     ]},
     {
         "type": "calculated",
+        "name": "total_grid",
+        "calculation": "sum(regs(1313, 1319, 1325))"
+    },
+	{
+        "type": "calculated",
+        "name": "total_grid_abs",
+        "calculation": "abs(sum(regs(1313, 1319, 1325)))"
+    },
+	{
+        "type": "calculated",
+        "name": "total_DC_PV",
+        "calculation": "abs(sum(regs(1212, 1220)))"
+    },
+	{
+        "type": "calculated",
+        "name": "total_1500s",
+        "calculation": "sum(regs(1510, 1517, 1524))",
+		"notes": "inverter to battery to inverter - positive means discharging, negative means charging.  DC<->AC conversion"
+    },
+    {
+        "type": "calculated",
         "name": "Grid Mode",
         "calculation": {
             "if": [
@@ -1850,10 +1880,6 @@
                 }
             ]
         }
-    },
-    {
-        "type": "calculated",
-        "name": "total_grid",
-        "calculation": "sum(regs(1313, 1319, 1325))"
     }
+
 ]

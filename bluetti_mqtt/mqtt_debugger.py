@@ -386,7 +386,8 @@ def get_command_fields(args: Namespace) -> List[Dict[str, Any]]:
                             p_info = {
                                 "selector": m["pagination_selector"], 
                                 "count_reg": m["pagination_count_reg"],
-                                "slave_id": m.get("slave_id", m.get("slave", item_slave))
+                                "slave_id": m.get("slave_id", m.get("slave", item_slave)),
+                                "items_per_page": m.get("pagination_items_per_page")
                             }
                         
                         reg = m.get("trigger_reg")
@@ -417,7 +418,8 @@ def get_command_fields(args: Namespace) -> List[Dict[str, Any]]:
                                     r.update({
                                         "pagination_selector": p_info["selector"], 
                                         "pagination_count_reg": p_info["count_reg"],
-                                        "pagination_slave": p_info["slave_id"]
+                                        "pagination_slave": p_info["slave_id"],
+                                        "pagination_items_per_page": p_info["items_per_page"]
                                     })
                             regs.extend(extracted)
                 flat_config.extend(regs)
@@ -563,6 +565,7 @@ def group_commands(commands_to_poll: List[Dict[str, Any]], max_gap: int = 5, max
         trigger_delay = group[0].get('trigger_delay', 0.2)
         p_selector = group[0].get('pagination_selector')
         p_count_reg = group[0].get('pagination_count_reg')
+        p_items_per_page = group[0].get('pagination_items_per_page')
         
         # Find the end register of the group
         end_reg = 0
@@ -581,6 +584,7 @@ def group_commands(commands_to_poll: List[Dict[str, Any]], max_gap: int = 5, max
             'trigger_delay': trigger_delay,
             'pagination_selector': p_selector,
             'pagination_count_reg': p_count_reg,
+            'pagination_items_per_page': p_items_per_page,
             'pagination_slave': group[0].get('pagination_slave')
         })
 
@@ -699,7 +703,7 @@ def process_and_publish(command_info: Dict[str, Any], data: bytes, device_name: 
             # Get configuration for the arrays
             arrays_config = command_info.get('arrays', [])
             
-            current_offset = 0  # Track position in the data
+            current_offset = command_info.get('start_offset', 0)  # Track position in the data
             
             for array_config in arrays_config:
                 array_name = array_config.get('name', 'Array')
@@ -765,9 +769,9 @@ def process_and_publish(command_info: Dict[str, Any], data: bytes, device_name: 
                         
                         # For byte-packed items, extract the specific byte
                         # Assuming big-endian: chunk[0] = high byte, chunk[1] = low byte
-                        # item 0 = low byte, item 1 = high byte
+                        # item 0 = high byte, item 1 = low byte
                         if items_per_register == 2:
-                            val = chunk[1] if item_within_reg == 0 else chunk[0]
+                            val = chunk[0] if item_within_reg == 0 else chunk[1]
                         else:
                             val = chunk[item_within_reg] if item_within_reg < len(chunk) else 0
                         
@@ -794,7 +798,10 @@ def process_and_publish(command_info: Dict[str, Any], data: bytes, device_name: 
                                 _handle_dynamic_discovery(discovery_info, device_name, block_reg, slave_id, trigger_val, trigger_reg, item_specific_outputs, False, mqtt_client)
                         
                         # Publish the value
-                        state_topic = f"bluetti_debugger/{device_name}/{block_reg}/state"
+                        slave_suffix = f"_s{slave_id}" if slave_id != 1 else ""
+                        trigger_suffix = f"_t{trigger_val}" if trigger_reg is not None else ""
+                        state_topic = f"bluetti_debugger/{device_name}/{block_reg}{slave_suffix}{trigger_suffix}/state"
+                        
                         # Apply subtract if specified
                         subtract_val = array_outputs[0].get('subtract', 0) if array_outputs else 0
                         processed_val = val - subtract_val
@@ -1335,6 +1342,7 @@ async def poll_device_registers(
         p_selector = group.get('pagination_selector')
         p_count_reg = group.get('pagination_count_reg')
         p_slave = group.get('pagination_slave', slave_id)
+        p_items_per_page = group.get('pagination_items_per_page')
         total_pages = 1
 
         if p_selector and p_count_reg:
@@ -1350,6 +1358,14 @@ async def poll_device_registers(
                 count_res = cast(bytes, await (await client.perform_with_fallback(read_count_cmd, device_protocol)))
                 total_pages = int.from_bytes(read_count_cmd.parse_response(count_res), 'big')
                 print(f"    Found {total_pages} pages in register {p_count_reg} (Slave {p_slave})")
+                raw_count = int.from_bytes(read_count_cmd.parse_response(count_res), 'big')
+                
+                if p_items_per_page:
+                    total_pages = max(1, (raw_count + p_items_per_page - 1) // p_items_per_page)
+                    print(f"    Found {raw_count} items ({total_pages} pages) in register {p_count_reg} (Slave {p_slave})")
+                else:
+                    total_pages = raw_count
+                    print(f"    Found {total_pages} pages in register {p_count_reg} (Slave {p_slave})")
             except Exception as e:
                 print(f"    Pagination discovery failed: {e}")
                 total_pages = 1
