@@ -678,12 +678,14 @@ def process_and_publish(command_info: Dict[str, Any], data: bytes, device_name: 
                     if not chunk:
                         continue
 
+                    seg_reg_base = f"{calc_reg + node_offset}{reg_suffix}.n{pack_idx}"
+
                     # Handle discovery for this segment's outputs
                     if discovery_info:
                         _handle_dynamic_discovery(
                             discovery_info, 
                             device_name, 
-                            pack_reg_base, 
+                            seg_reg_base, 
                             slave_id, 
                             trigger_val, 
                             trigger_reg, 
@@ -694,7 +696,7 @@ def process_and_publish(command_info: Dict[str, Any], data: bytes, device_name: 
 
                     # Process the chunk as a standalone block
                     seg_info = command_info.copy()
-                    seg_info.update({'type': 'processed_block', 'reg': pack_reg_base, 'outputs': s_outputs})
+                    seg_info.update({'type': 'processed_block', 'reg': seg_reg_base, 'outputs': s_outputs})
                     process_and_publish(seg_info, chunk, device_name, mqtt_client, encrypted, discovery_info, polled_data)
             return
 
