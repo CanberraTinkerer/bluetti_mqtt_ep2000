@@ -1,12 +1,12 @@
 {
   "servers": {
-    "jadx-remote": {
-      "type": "http",
-      "url": "http://192.168.1.186:8651/mcp"
-    },
     "home-assistant": {
       "type": "http",
       "url": "http://192.168.1.102:9583/private_1BCazWORRDTCql1IS9WXoA"
+  	},
+    "mqtt-mcp": {
+      "type": "http",
+      "url": "http://192.168.1.103:8099/mcp/"
   	},
     "jadx": {
       "command": "uv",
