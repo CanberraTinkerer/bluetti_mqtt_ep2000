@@ -1394,9 +1394,11 @@
                 "outputs": [
                   { "reg_offset": 0, "name": "NODE_INFO: Node Group", "mask": 255, "offset": 8 },
                   { "reg_offset": 0, "name": "NODE_INFO: Node Slave ID", "mask": 255 },
-                  { "reg_offset": 1, "name": "NODE_INFO: Node Status", "notes": "Bitflags: meshOnline, upgradeStatus, warnings, errors" },
-                  { "reg_offset": 2, "name": "NODE_INFO: Node SN", "len": 64, "ascii": true },
-                  { "reg_offset": 6, "name": "NODE_INFO: Node Model ID" }
+                  { "reg_offset": 1, "name": "NODE_INFO: Node Slave Addr Group", "mask": 255, "offset": 8 },
+                  { "reg_offset": 1, "name": "NODE_INFO: Node Parent ID", "mask": 255 },
+                  { "reg_offset": 2, "name": "NODE_INFO: Node Status", "notes": "Bitflags: meshOnline, upgradeStatus, warnings, errors" },
+                  { "reg_offset": 3, "name": "NODE_INFO: Node SN", "len": 64, "no_word_swap": true },
+                  { "reg_offset": 7, "name": "NODE_INFO: Node Model ID" }
                 ]
               }
             ]
