@@ -1101,6 +1101,10 @@ def process_calculated_fields(
                         "manufacturer": "Bluetti"
                     }
                 }
+                if 'device_class' in command:
+                    payload['device_class'] = command['device_class']
+                if 'unit' in command:
+                    payload['unit_of_measurement'] = command['unit']
                 if 'state_class' in command:
                     payload['state_class'] = command['state_class']
                 mqtt_client.publish(discovery_topic, json.dumps(payload), retain=True)
