@@ -1,0 +1,88 @@
+[
+    {"trigger_write": [
+      { "trigger_metadata": { "trigger_reg": 2027, "trigger_value": 2, "delay": 0.2, "slave_id": 0 } },
+      { "trigger_metadata": { "trigger_reg": 2026, "trigger_value": 2, "delay": 0.2, "slave_id": 0 } },
+      { "trigger_metadata": { "trigger_reg": 2028, "trigger_value": 1, "delay": 0.2, "slave_id": 0 } },
+      { "post_trigger_read": { "read_start_reg": 150, "read_count": 8, "delay": 0.2, "slave_id": 41 },
+        "registers": [
+          { "reg": 150, "name": "APP_HOME_DATA: Grid Input Total Energy Low", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy", "slave_id": 41 },
+          { "reg": 152, "name": "APP_HOME_DATA: Grid Input Total Energy High", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy", "slave_id": 41 },
+          { "reg": 154, "name": "APP_HOME_DATA: Grid Input Today Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy", "slave_id": 41 },
+          { "reg": 156, "name": "APP_HOME_DATA: Grid Input Month Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy", "slave_id": 41 }
+        ]
+      }
+    ]},
+    {"trigger_write": [
+      { "trigger_metadata": { "trigger_reg": 2027, "trigger_value": 3, "delay": 0.2 , "slave_id": 0} },
+      { "trigger_metadata": { "trigger_reg": 2026, "trigger_value": 3, "delay": 0.2, "slave_id": 0 } },
+      { "trigger_metadata": { "trigger_reg": 2028, "trigger_value": 1, "delay": 0.2, "slave_id": 0 } },
+      { "post_trigger_read": { "read_start_reg": 150, "read_count": 8, "delay": 0.2, "slave_id": 41 },
+        "registers": [
+          { "reg": 150, "name": "APP_HOME_DATA: Grid Feed Total Energy Low", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy", "slave_id": 41 },
+          { "reg": 152, "name": "APP_HOME_DATA: Grid Feed Total Energy High", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy", "slave_id": 41 },
+          { "reg": 154, "name": "APP_HOME_DATA: Grid Feed Today Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy", "slave_id": 41 },
+          { "reg": 156, "name": "APP_HOME_DATA: Grid Feed Month Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy", "slave_id": 41 }
+        ]
+      }
+    ]},
+    {"trigger_write": [
+      { "trigger_metadata": { "trigger_reg": 2027, "trigger_value": 4, "delay": 0.2, "slave_id": 41 } },
+      { "trigger_metadata": { "trigger_reg": 2026, "trigger_value": 4, "delay": 0.2, "slave_id": 41 } },
+      { "post_trigger_read": { "read_start_reg": 150, "read_count": 8, "delay": 0.2, "slave_id": 41 },
+        "registers": [
+          { "reg": 150, "name": "APP_HOME_DATA: Load AC Total Energy Low", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy", "slave_id": 41 },
+          { "reg": 152, "name": "APP_HOME_DATA: Load AC Total Energy High", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy", "slave_id": 41 },
+          { "reg": 154, "name": "APP_HOME_DATA: Load AC Today Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy", "slave_id": 41 },
+          { "reg": 156, "name": "APP_HOME_DATA: Load AC Month Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy", "slave_id": 41 }
+        ]
+      }
+    ]},
+    {"trigger_write": [
+      { "trigger_metadata": { "trigger_reg": 2027, "trigger_value": 5, "delay": 0.2, "slave_id": 41 } },
+      { "trigger_metadata": { "trigger_reg": 2026, "trigger_value": 5, "delay": 0.2, "slave_id": 41 } },
+      { "post_trigger_read": { "read_start_reg": 150, "read_count": 8, "delay": 0.2, "slave_id": 41 },
+        "registers": [
+          { "reg": 150, "name": "APP_HOME_DATA: Load DC Total Energy Low", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy", "slave_id": 41 },
+          { "reg": 152, "name": "APP_HOME_DATA: Load DC Total Energy High", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy", "slave_id": 41 },
+          { "reg": 154, "name": "APP_HOME_DATA: Load DC Today Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy", "slave_id": 41 },
+          { "reg": 156, "name": "APP_HOME_DATA: Load DC Month Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy", "slave_id": 41 }
+        ]
+      }
+    ]},
+    {"trigger_write": [
+      { "trigger_metadata": { "trigger_reg": 2027, "trigger_value": 9, "delay": 0.2, "slave_id": 41 } },
+      { "trigger_metadata": { "trigger_reg": 2026, "trigger_value": 9, "delay": 0.2, "slave_id": 41 } },
+      { "post_trigger_read": { "read_start_reg": 150, "read_count": 8, "delay": 0.2, "slave_id": 41 },
+        "registers": [
+          { "reg": 150, "name": "APP_HOME_DATA: Pack Charge Total Energy Low", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy", "slave_id": 41 },
+          { "reg": 152, "name": "APP_HOME_DATA: Pack Charge Total Energy High", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy", "slave_id": 41 },
+          { "reg": 154, "name": "APP_HOME_DATA: Pack Charge Today Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy", "slave_id": 41 },
+          { "reg": 156, "name": "APP_HOME_DATA: Pack Charge Month Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy", "slave_id": 41 }
+        ]
+      }
+    ]},
+    {"trigger_write": [
+      { "trigger_metadata": { "trigger_reg": 2027, "trigger_value": 17, "delay": 0.2, "slave_id": 41 } },
+      { "trigger_metadata": { "trigger_reg": 2026, "trigger_value": 17, "delay": 0.2, "slave_id": 41 } },
+      { "post_trigger_read": { "read_start_reg": 150, "read_count": 8, "delay": 0.2, "slave_id": 41 },
+        "registers": [
+          { "reg": 150, "name": "APP_HOME_DATA: Pack Discharge Total Energy Low", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy", "slave_id": 41 },
+          { "reg": 152, "name": "APP_HOME_DATA: Pack Discharge Total Energy High", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy", "slave_id": 41 },
+          { "reg": 154, "name": "APP_HOME_DATA: Pack Discharge Today Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy", "slave_id": 41 },
+          { "reg": 156, "name": "APP_HOME_DATA: Pack Discharge Month Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy", "slave_id": 41 }
+        ]
+      }
+    ]},
+    {"trigger_write": [
+      { "trigger_metadata": { "trigger_reg": 2027, "trigger_value": 18, "delay": 0.2, "slave_id": 41 } },
+      { "trigger_metadata": { "trigger_reg": 2026, "trigger_value": 18, "delay": 0.2, "slave_id": 41 } },
+      { "post_trigger_read": { "read_start_reg": 150, "read_count": 8, "delay": 0.2, "slave_id": 41 },
+        "registers": [
+          { "reg": 150, "name": "APP_HOME_DATA: Total Load Total Energy Low", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy", "slave_id": 41 },
+          { "reg": 152, "name": "APP_HOME_DATA: Total Load Total Energy High", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy", "slave_id": 41 },
+          { "reg": 154, "name": "APP_HOME_DATA: Total Load Today Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy", "slave_id": 41 },
+          { "reg": 156, "name": "APP_HOME_DATA: Total Load Month Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy", "slave_id": 41 }
+        ]
+      }
+    ]}
+]

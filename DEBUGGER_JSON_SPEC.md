@@ -53,7 +53,8 @@ These fields control how the raw bytes from the device are converted into human-
 ## 4. Home Assistant Discovery
 
 - `"device_class"`: String. Tells HA what kind of sensor it is (e.g., `"voltage"`, `"power"`, `"energy"`, `"temperature"`, `"current"`, `"battery"`).
-- `"unit"`: String. The unit of measurement (e.g., `"V"`, `"W"`, `"kWh"`, `"°C"`, `"A"`, `"%"`).
+- `state_class`: String. Home Assistant state class (e.g., `"measurement"`, `"total_increasing"`, `"measurement"`).
+- `unit`: String. The unit of measurement (e.g., `"V"`, `"W"`, `"kWh"`, `"°C"`, `"A"`, `"%"`).
 
 ---
 

@@ -873,6 +873,8 @@ def process_and_publish(command_info: Dict[str, Any], data: bytes, device_name: 
                                 payload['device_class'] = output['device_class']
                             if 'unit' in output:
                                 payload['unit_of_measurement'] = output['unit']
+                            if 'state_class' in output:
+                                payload['state_class'] = output['state_class']
 
                             if mqtt_client:
                                 mqtt_client.publish(discovery_topic, json.dumps(payload), retain=True)
@@ -1099,6 +1101,8 @@ def process_calculated_fields(
                         "manufacturer": "Bluetti"
                     }
                 }
+                if 'state_class' in command:
+                    payload['state_class'] = command['state_class']
                 mqtt_client.publish(discovery_topic, json.dumps(payload), retain=True)
                 DISCOVERED_DYNAMIC_REGS.add(unique_id)
                 print(f"Sent discovery for calculated field {name}")
@@ -1113,7 +1117,6 @@ def process_calculated_fields(
             state_payload['notes'] = command['notes']
         if mqtt_client:
             mqtt_client.publish(state_topic, json.dumps(state_payload))
-            print(f"Published calculated field {name}: {final_value}")
 
 
 def _handle_dynamic_discovery(discovery_info, device_name, block_reg, slave_id, trigger_val, trigger_reg, outputs, is_split, mqtt_client):
@@ -1147,8 +1150,12 @@ def _handle_dynamic_discovery(discovery_info, device_name, block_reg, slave_id, 
                     "manufacturer": "Bluetti"
                 }
             }
-            if 'device_class' in output: payload['device_class'] = output['device_class']
-            if 'unit' in output: payload['unit_of_measurement'] = output['unit']
+            if 'device_class' in output:
+                payload['device_class'] = output['device_class']
+            if 'unit' in output:
+                payload['unit_of_measurement'] = output['unit']
+            if 'state_class' in output:
+                payload['state_class'] = output['state_class']
 
             if mqtt_client:
                 mqtt_client.publish(discovery_topic, json.dumps(payload), retain=True)
@@ -1645,6 +1652,8 @@ async def async_main():  # noqa: C901
                                 payload['device_class'] = output['device_class']
                             if 'unit' in output:
                                 payload['unit_of_measurement'] = output['unit']
+                            if 'state_class' in output:
+                                payload['state_class'] = output['state_class']
 
                             if mqtt_client:
                                 mqtt_client.publish(discovery_topic, json.dumps(payload), retain=True)
