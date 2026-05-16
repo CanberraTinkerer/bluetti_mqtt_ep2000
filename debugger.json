@@ -612,7 +612,7 @@
           {"reg": 1291, "name": "INV_PV_INFO: ADL400 meter fault code", "len": 16, "notes": "ADL400 meter fault code" }
         ]
       }
-    },
+    }
   ]
   },
 
