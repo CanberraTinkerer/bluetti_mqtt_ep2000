@@ -340,7 +340,7 @@ def get_command_fields(args: Namespace) -> List[Dict[str, Any]]:
 
         flat_config = []
 
-        def process_bulk_read(bulk_item: Dict[str, Any], parent_slave: int, triggers: List = None, trigger_val: Any = None, default_delay: float = 0.2):
+        def process_bulk_read(bulk_item: Dict[str, Any], parent_slave: int, triggers: List = None, trigger_reads: List = None, trigger_val: Any = None, default_delay: float = 0.2):
             """Helper to extract registers from a bulk/grouped read container."""
             regs = []
             b_slave = bulk_item.get("slave_id", bulk_item.get("slave", parent_slave))
@@ -353,6 +353,7 @@ def get_command_fields(args: Namespace) -> List[Dict[str, Any]]:
                 # Apply metadata from trigger/bulk context
                 r_copy.update({
                     "triggers": triggers or [],
+                    "trigger_reads": trigger_reads or [],
                     "trigger_val": trigger_val,
                     "trigger_delay": b_delay
                 })
@@ -372,10 +373,10 @@ def get_command_fields(args: Namespace) -> List[Dict[str, Any]]:
                 bulk_data = item.get("bulk_read", item.get("grouped_read"))
                 flat_config.extend(process_bulk_read(bulk_data, item.get("slave_id", item.get("slave", 1))))
             
-            # Handle Trigger Writes (which can now contain bulk_reads)
-            elif "trigger_write" in item:
-                trigger_data = item.get("trigger_write", [])
-                triggers, delay, regs, p_info = [], 0.2, [], None 
+            # Handle Trigger Writes/Actions (which can now contain bulk_reads)
+            elif "trigger_write" in item or "trigger_action" in item:
+                trigger_data = item.get("trigger_write", item.get("trigger_action", []))
+                triggers, trigger_reads, delay, regs, p_info = [], [], 0.2, [], None 
                 item_slave = item.get("slave_id", item.get("slave", 1))
                 
                 for component in trigger_data:
@@ -393,11 +394,19 @@ def get_command_fields(args: Namespace) -> List[Dict[str, Any]]:
                         reg = m.get("trigger_reg")
                         val = m.get("trigger_value", m.get("trigger_val"))
                         t_slave = m.get("slave_id", m.get("slave", item_slave))
-                        if reg is not None:
+                        if reg is not None and val is not None:
                             triggers.append({"reg": reg, "val": val, "slave_id": t_slave})
 
+                    if "trigger_read_metadata" in component:
+                        m = component["trigger_read_metadata"]
+                        reg = m.get("trigger_reg")
+                        count = m.get("trigger_count", 1)
+                        t_slave = m.get("slave_id", m.get("slave", item_slave))
+                        if reg is not None:
+                            trigger_reads.append({"reg": reg, "count": count, "slave_id": t_slave})
+
                     # Support both the old post_trigger_read and the new bulk_read keyword
-                    for k in ["bulk_read", "grouped_read", "post_trigger_read"]:
+                    for k in ["bulk_read", "grouped_read", "post_trigger_read", "post_action_read"]:
                         if k in component:
                             primary_val = triggers[0]["val"] if triggers else None
                             # Category 2026 is often the primary selector for unique topics
@@ -412,7 +421,7 @@ def get_command_fields(args: Namespace) -> List[Dict[str, Any]]:
                                 bulk_data = bulk_data.copy()
                                 bulk_data["registers"] = component["registers"]
                             
-                            extracted = process_bulk_read(bulk_data, item_slave, triggers, primary_val)
+                            extracted = process_bulk_read(bulk_data, item_slave, triggers, trigger_reads, primary_val)
                             if p_info:
                                 for r in extracted:
                                     r.update({
@@ -493,10 +502,14 @@ def group_commands(commands_to_poll: List[Dict[str, Any]], max_gap: int = 5, max
     def get_trigger_key(cmd):
         return tuple((t['reg'], t['val']) for t in cmd.get('triggers', []))
 
+    def get_trigger_read_key(cmd):
+        return tuple((t['reg'], t['count'], t['slave_id']) for t in cmd.get('trigger_reads', []))
+
     # Sort commands by register to enable grouping
     sorted_commands = sorted(commands_to_poll, key=lambda x: (
         get_target_slave_id(x), 
         get_trigger_key(x),
+        get_trigger_read_key(x),
         x['reg']
     ))
     
@@ -505,6 +518,7 @@ def group_commands(commands_to_poll: List[Dict[str, Any]], max_gap: int = 5, max
     current_group_encrypted = False
     current_group_slave_id = 1
     current_group_triggers = None
+    current_group_trigger_reads = None
 
     def get_num_regs(cmd):
         length = cmd.get('len', 1)
@@ -521,6 +535,7 @@ def group_commands(commands_to_poll: List[Dict[str, Any]], max_gap: int = 5, max
         cmd_encrypted = is_encrypted(cmd)
         cmd_slave_id = get_target_slave_id(cmd)
         cmd_triggers = get_trigger_key(cmd)
+            cmd_trigger_reads = get_trigger_read_key(cmd)
         cmd_pag_selector = cmd.get('pagination_selector')
 
         if not current_group:
@@ -528,6 +543,7 @@ def group_commands(commands_to_poll: List[Dict[str, Any]], max_gap: int = 5, max
             current_group_encrypted = cmd_encrypted
             current_group_slave_id = cmd_slave_id
             current_group_triggers = cmd_triggers
+                current_group_trigger_reads = cmd_trigger_reads
             continue
 
         group_start_reg = current_group[0]['reg']
@@ -543,6 +559,7 @@ def group_commands(commands_to_poll: List[Dict[str, Any]], max_gap: int = 5, max
             cmd_encrypted == current_group_encrypted and
             cmd_slave_id == current_group_slave_id and
             cmd_triggers == current_group_triggers and
+                cmd_trigger_reads == current_group_trigger_reads and
             cmd_pag_selector == current_group[0].get('pagination_selector')):
             current_group.append(cmd)
         else:
@@ -551,6 +568,7 @@ def group_commands(commands_to_poll: List[Dict[str, Any]], max_gap: int = 5, max
             current_group_encrypted = cmd_encrypted
             current_group_slave_id = cmd_slave_id
             current_group_triggers = cmd_triggers
+                current_group_trigger_reads = cmd_trigger_reads
 
     if current_group:
         groups.append(current_group)
@@ -581,6 +599,7 @@ def group_commands(commands_to_poll: List[Dict[str, Any]], max_gap: int = 5, max
             'encrypted': encrypted,
             'slave_id': slave_id,
             'triggers': triggers,
+            'trigger_reads': group[0].get('trigger_reads', []),
             'trigger_delay': trigger_delay,
             'pagination_selector': p_selector,
             'pagination_count_reg': p_count_reg,
@@ -1394,10 +1413,10 @@ async def poll_device_registers(
                 except Exception as e:
                     print(f"    Page switch failed: {e}")
 
-            # Handle Static Trigger Register Write if defined for this group
-            if group.get('triggers'):
+            # Handle Static Trigger Register Write or Read if defined for this group
+            if group.get('triggers') or group.get('trigger_reads'):
                 print(f"  --- TRIGGER START ---")
-                for t in group['triggers']:
+                for t in group.get('triggers', []):
                     t_reg, t_val = t['reg'], t['val']
                     t_slave = t.get('slave_id', slave_id)
                     print(f"  Action: Write {t_val} to {t_reg} (Slave {t_slave})")
@@ -1408,9 +1427,21 @@ async def poll_device_registers(
                         print("    Result: Success (Write accepted)")
                     except Exception as e:
                         print(f"    Result: Failed - {e}")
+
+                for t in group.get('trigger_reads', []):
+                    t_reg, t_count = t['reg'], t['count']
+                    t_slave = t.get('slave_id', slave_id)
+                    print(f"  Action: Read {t_count} from {t_reg} (Slave {t_slave})")
+                    trigger_cmd = ReadHoldingRegisters(t_reg, t_count, slave_id=t_slave)
+                    try:
+                        t_future = await client.perform_with_fallback(trigger_cmd, device_protocol)
+                        await t_future
+                        print("    Result: Success (Read accepted, data discarded)")
+                    except Exception as e:
+                        print(f"    Result: Failed - {e}")
                 
                 delay = group.get('trigger_delay', 0.8)
-                print(f"  Waiting {delay}s for Commit/Paging...")
+                print(f"  Waiting {delay}s for Commit/Paging/Reads...")
                 await asyncio.sleep(delay)
                 print(f"  --- TRIGGER END ---")
 

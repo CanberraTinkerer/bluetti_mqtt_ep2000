@@ -1,33 +1,12 @@
 [
   {
-    "bulk_read": {
-      "slave_id": 0,
-      "delay": 0.2,
-      "registers": [
-        { "reg": 21000, "name": "NODE_INFO: Block Header Version", "notes": "Returns discovery process status/version" },
-        { "reg": 21001, "name": "NODE_INFO: Total Node Count", "notes": "node count" },
-        { 
-          "reg": 21001, "name": "NODE_INFO: Total Node Count_block", "type": "repeating_count",
-          "len": 4112, "count_offset": 0, "start_offset": 1, "block_regs": 8,
-          "outputs": [
-            { "reg_offset": 0, "name": "NODE_INFO: Node Group", "mask": 255, "offset": 8 },
-            { "reg_offset": 0, "name": "NODE_INFO: Node Slave ID", "mask": 255 },
-            { "reg_offset": 1, "name": "NODE_INFO: Node Slave Addr Group", "mask": 255, "offset": 8 },
-            { "reg_offset": 1, "name": "NODE_INFO: Node Parent ID", "mask": 255 },
-            { "reg_offset": 2, "name": "NODE_INFO: Node Status", "notes": "Bitflags: meshOnline, upgradeStatus, warnings, errors" },
-            { "reg_offset": 3, "name": "NODE_INFO: Node SN", "len": 64, "no_word_swap": true },
-            { "reg_offset": 7, "name": "NODE_INFO: Node Model ID" }
-          ]
-        }
-      ]
-    }
-  },
-  {
-    "bulk_read": {
-      "slave_id": 41,
-      "delay": 0.0,
-      "registers": [
-        {"reg": 1200, "len": 32, "name": "INV_PV_INFO: Total PV Power", "unit": "W", "device_class": "power", "notes": "CORRECT - new solar PV production, not including Solaredge", "no_word_swap": true },
+    "trigger_action": [
+      { "trigger_read_metadata": { "trigger_reg": 21000, "trigger_count": 1, "delay": 0.2, "slave_id": 0 } },
+      { "bulk_read": {
+          "slave_id": 41,
+          "delay": 0.0,
+          "registers": [
+            {"reg": 1200, "len": 32, "name": "INV_PV_INFO: Total PV Power", "unit": "W", "device_class": "power", "notes": "CORRECT - new solar PV production, not including Solaredge", "no_word_swap": true },
         {"reg": 1202, "len": 32, "name": "INV_PV_INFO: Total PV Energy", "scale": 1, "unit": "kWh", "device_class": "energy", "notes": "CORRECT - check in daytime - should be a sum", "no_word_swap": true },
         { "reg": 1209,
           "outputs": [
@@ -91,6 +70,7 @@
         {"reg": 1290, "name": "INV_PV_INFO: Total System Self-Consumption (W)", "len": 16, "notes": "tare bluetti consumption?" },
         {"reg": 1291, "name": "INV_PV_INFO: ADL400 meter fault code", "len": 16, "notes": "ADL400 meter fault code" }
       ]
-    }
+  }
+  ]
   }
 ]
