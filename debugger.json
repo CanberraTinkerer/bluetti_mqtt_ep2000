@@ -794,6 +794,78 @@
       }
     },
 	
+    {
+      "bulk_read": {
+        "slave_id": 0,
+        "read_start_reg": 2200,
+        "read_count": 81,
+        "registers": [
+          { "reg": 2200, "len": 64, "ascii": true, "name": "SLAVE0_AdvLoginPassword" },
+          { "reg": 2206, "name": "SLAVE0_FactoryReset" },
+          { "reg": 2207, "name": "SLAVE0_CtrlGrid" },
+          { "reg": 2208, "name": "SLAVE0_CtrlFeedback" },
+          { "reg": 2209, "name": "SLAVE0_InvVoltage", "unit": "V" },
+          { "reg": 2210, "name": "SLAVE0_InvFreq", "unit": "Hz" },
+          { "reg": 2211, "name": "SLAVE0_ChgMaxVoltage", "unit": "V" },
+          { "reg": 2212, "name": "SLAVE0_PvChgMaxCurrent", "unit": "A" },
+          { "reg": 2213, "name": "SLAVE0_GridMaxPower", "unit": "W" },
+          { "reg": 2214, "name": "SLAVE0_GridMaxCurrent", "unit": "A" },
+          { "reg": 2215, "name": "SLAVE0_FeedbackMaxPower", "unit": "W" },
+          { "reg": 2216, "name": "SLAVE0_FeedbackMaxCurrent", "unit": "A" },
+          { "reg": 2217, "name": "SLAVE0_GridOffAcRatePower", "unit": "W" },
+          { "reg": 2218, "name": "SLAVE0_UserArea" },
+          { "reg": 2219, "len": 96, "name": "SLAVE0_PVParallelCtrl" },
+          { "reg": 2225, "name": "SLAVE0_CtrlGridEnhanced" },
+          { "reg": 2226, "name": "SLAVE0_SysSwitchRecovery" },
+          { "reg": 2227, "name": "SLAVE0_MeterCtrl" },
+          { "reg": 2228, "name": "SLAVE0_MeterType" },
+          { "reg": 2229, "name": "SLAVE0_CtrlMultiInv" },
+          { "reg": 2230, "name": "SLAVE0_InvAddr" },
+          { "reg": 2231, "name": "SLAVE0_CT_Test", "outputs": [
+              { "name": "SLAVE0_CtTestResult", "mask": 255 },
+              { "name": "SLAVE0_CtTestTrigger", "mask": 255, "offset": 8 }
+          ]},
+          { "reg": 2232, "name": "SLAVE0_LogicBitmask1", "outputs": [
+              { "name": "SLAVE0_AtsEnable", "mask": 1, "offset": 0 },
+              { "name": "SLAVE0_MultiInvOffGrid", "mask": 1, "offset": 2 },
+              { "name": "SLAVE0_AuxiliaryWifiEnable", "mask": 1, "offset": 6 },
+              { "name": "SLAVE0_GeneratorEnable", "mask": 1, "offset": 8 },
+              { "name": "SLAVE0_MicroInvEnable", "mask": 1, "offset": 10 },
+              { "name": "SLAVE0_PowerOptimizerEnable", "mask": 1, "offset": 12 },
+              { "name": "SLAVE0_GridConnectionEnable", "mask": 1, "offset": 14 }
+          ]},
+          { "reg": 2241, "name": "SLAVE0_EmsCtrlMode" },
+          { "reg": 2242, "name": "SLAVE0_LogicBitmask2", "outputs": [
+              { "name": "SLAVE0_EvEnable", "mask": 1, "offset": 0 },
+              { "name": "SLAVE0_SocLowerLimitKeepEnable", "mask": 1, "offset": 1 },
+              { "name": "SLAVE0_HardwareLimitOutput", "mask": 1, "offset": 2 },
+              { "name": "SLAVE0_GeneratorInverterPower", "mask": 1, "offset": 3 },
+              { "name": "SLAVE0_BalanceEnable", "mask": 1, "offset": 4 },
+              { "name": "SLAVE0_WinterModeEnable", "mask": 1, "offset": 5 },
+              { "name": "SLAVE0_GridMaxInputCurrentEnable", "mask": 1, "offset": 6 },
+              { "name": "SLAVE0_DrmsEnable", "mask": 1, "offset": 7 }
+          ]},
+          { "reg": 2243, "name": "SLAVE0_ChargingPileVolt", "unit": "V" },
+          { "reg": 2244, "name": "SLAVE0_CtRatio", "outputs": [
+              { "name": "SLAVE0_CtRatioAcPv", "mask": 255 },
+              { "name": "SLAVE0_CtRatioGrid", "mask": 255, "offset": 8 }
+          ]},
+          { "reg": 2245, "name": "SLAVE0_AcCtTest", "outputs": [
+              { "name": "SLAVE0_AcCtTestResult", "mask": 255 },
+              { "name": "SLAVE0_AcCtTestEnable", "mask": 255, "offset": 8 }
+          ]},
+          { "reg": 2246, "name": "SLAVE0_GenSettings" },
+          { "reg": 2247, "name": "SLAVE0_GenSocStart", "unit": "%" },
+          { "reg": 2248, "name": "SLAVE0_GenSocStop", "unit": "%" },
+          { "reg": 2249, "len": 144, "name": "SLAVE0_GenWorkingTime" },
+          { "reg": 2258, "len": 128, "name": "SLAVE0_GridProtection" },
+          { "reg": 2277, "len": 32, "name": "SLAVE0_BatteryCapacity", "unit": "Wh" },
+          { "reg": 2279, "name": "SLAVE0_BatteryType", "mask": 255 },
+          { "reg": 2280, "name": "SLAVE0_HeatPumpEnable" }
+        ]
+      }
+    },
+
     {"reg": 2401, "name": "Grid Certification Country Code", "notes": "Enum: UK, AU, DE, etc."},
     {"reg": 2402, "name": "Grid Under-Voltage Level 1", "scale": 1, "unit": "V", "device_class": "voltage"},
     {"reg": 2403, "name": "Grid Under-Voltage Level 1 Time", "scale": 2, "unit": "s"},
