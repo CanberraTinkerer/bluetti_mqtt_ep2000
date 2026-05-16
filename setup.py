@@ -8,6 +8,7 @@ setup(
     license="MIT",
     packages=find_packages(),
     python_requires=">=3.7",
+    include_package_data=True,
     install_requires=[
         "paho-mqtt<2.0",
         "bleak>=0.20.0",
