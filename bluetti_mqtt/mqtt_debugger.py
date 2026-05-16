@@ -743,7 +743,7 @@ def process_and_publish(command_info: Dict[str, Any], data: bytes, device_name: 
                     item_count = 0
                 
                 # Publish the count itself
-                count_info = {"reg": f"{calc_reg + count_reg_offset}{reg_suffix}", "name": f"{array_name} Count"}
+                count_info = {"reg": f"{calc_reg + count_reg_offset}{reg_suffix}", "name": f"{array_name} Count", "slave_id": slave_id}
                 process_and_publish(count_info, data[count_data_offset:count_data_offset + 2], device_name, mqtt_client, encrypted, discovery_info, polled_data)
                 
                 # Process items based on items_per_register
@@ -830,6 +830,8 @@ def process_and_publish(command_info: Dict[str, Any], data: bytes, device_name: 
                             "value": processed_val,
                             "PossibleName": item_specific_outputs[0]['name'] if item_specific_outputs else f"{array_name} {item_idx}",
                             "modbus_register": block_reg,
+                            "slave_id": slave_id,
+                            "encrypted": encrypted,
                             "valid": True,
                             "fieldDef": "dynamic"
                         }

@@ -190,21 +190,23 @@
     { "reg": 146, "name": "APP_HOME_DATA: Grid Power All", "len": 32, "signed": true, "device_class": "power", "unit": "W", "notes": "probably is AC coupled inverter production (old PV)" },
     { "reg": 148, "name": "APP_HOME_DATA: Total Inverter Power", "len": 32, "signed": true, "device_class": "power", "unit": "W", "notes": "CORRECT: negative when charging, positive when discharging" },
 
-    {"trigger_write":
-      [
-        { "trigger_metadata": { "trigger_reg": 2027, "trigger_value": 1, "delay": 0.2, "slave_id": 1 } },
-        { "bulk_read":
-          { "slave_id": 41, "delay": 0.2,
-            "registers":
-            [
-              { "reg": 150, "name": "APP_HOME_DATA: PV Total Energy Low", "len": 32, "unit": "kWh", "scale": 1, "slave_id": 41, "device_class": "energy" },
-              { "reg": 154, "name": "APP_HOME_DATA: PV Today Energy", "len": 32, "unit": "kWh", "scale": 1, "slave_id": 41, "device_class": "energy - day" },
-              { "reg": 156, "name": "APP_HOME_DATA: PV Month Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy - month" },
-              { "reg": 158, "name": "APP_HOME_DATA: PV Year Energy",  "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy - year" }
-            ]
-          }
-        }
-      ]
+	{
+	  "trigger_action": [
+		  {"trigger_read_metadata": { "trigger_reg": 21000, "trigger_count": 1, "delay": 0.2, "slave_id": 0 } },
+		  {
+			"bulk_read": {
+			  "slave_id": 41,
+			  "delay": 0.2,
+			  "registers": [
+				  { "reg": 150, "name": "Total Energy DC Consumption", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" },
+				  { "reg": 152, "name": "Total Energy AC House Consumption", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" },
+				  { "reg": 154, "name": "Lifetime PV Generation", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" },
+				  { "reg": 156, "name": "Lifetime Grid Charging", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" },
+				  { "reg": 158, "name": "Lifetime Grid Export",  "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" }
+			  ]
+			}
+		  }
+		]
     },
     {"reg": 160, "name": "APP_HOME_DATA: Charging Mode", "mask": 255, "type": "enum", "values": ["Standard", "Silent", "Turbo"], "notes": "CORRECT - 0=Standard, 1=Silent, 2=Fast/Turbo" },
     {"reg": 161, "name": "APP_HOME_DATA: Inverter Working Status", "mask": 255, "type": "enum", "values": ["Standby", "Self-Test", "Grid-Tied", "Off-Grid", "Bypass", "Charging", "Unknown", "Fault/Alarm"], "notes": "CORRECT - 0=Standby, 1=Self-Test, 2=Grid-Tied (Normal), 3=Off-Grid (Normal), 4=Bypass, 5=Charging, 7=Fault/Alarm"},
