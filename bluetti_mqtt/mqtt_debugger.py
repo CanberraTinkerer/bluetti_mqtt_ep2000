@@ -535,7 +535,7 @@ def group_commands(commands_to_poll: List[Dict[str, Any]], max_gap: int = 5, max
         cmd_encrypted = is_encrypted(cmd)
         cmd_slave_id = get_target_slave_id(cmd)
         cmd_triggers = get_trigger_key(cmd)
-            cmd_trigger_reads = get_trigger_read_key(cmd)
+        cmd_trigger_reads = get_trigger_read_key(cmd)
         cmd_pag_selector = cmd.get('pagination_selector')
 
         if not current_group:
@@ -543,7 +543,7 @@ def group_commands(commands_to_poll: List[Dict[str, Any]], max_gap: int = 5, max
             current_group_encrypted = cmd_encrypted
             current_group_slave_id = cmd_slave_id
             current_group_triggers = cmd_triggers
-                current_group_trigger_reads = cmd_trigger_reads
+            current_group_trigger_reads = cmd_trigger_reads
             continue
 
         group_start_reg = current_group[0]['reg']
@@ -559,7 +559,7 @@ def group_commands(commands_to_poll: List[Dict[str, Any]], max_gap: int = 5, max
             cmd_encrypted == current_group_encrypted and
             cmd_slave_id == current_group_slave_id and
             cmd_triggers == current_group_triggers and
-                cmd_trigger_reads == current_group_trigger_reads and
+            cmd_trigger_reads == current_group_trigger_reads and
             cmd_pag_selector == current_group[0].get('pagination_selector')):
             current_group.append(cmd)
         else:
@@ -568,7 +568,7 @@ def group_commands(commands_to_poll: List[Dict[str, Any]], max_gap: int = 5, max
             current_group_encrypted = cmd_encrypted
             current_group_slave_id = cmd_slave_id
             current_group_triggers = cmd_triggers
-                current_group_trigger_reads = cmd_trigger_reads
+            current_group_trigger_reads = cmd_trigger_reads
 
     if current_group:
         groups.append(current_group)
