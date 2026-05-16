@@ -767,7 +767,17 @@
           { "reg": 2228, "name": "INV_ADVANCED_SETTINGS: Meter Model Type", "type": "enum", "values": ["ADL400", "AGF", "ADL200N", "ADL400N", "ADL400M"] },
           { "reg": 2230, "name": "INV_ADVANCED_SETTINGS: Parallel Inverter Address" },
           { "reg": 2231, "name": "INV_ADVANCED_SETTINGS: Last CT Test Result" },
-          { "reg": 2242, "name": "INV_ADVANCED_SETTINGS: EMS Optimization Mode" },
+          { "reg": 2241, "name": "INV_ADVANCED_SETTINGS: EmsCtrlMode", "mask": 15, "notes": "The 'Brain' Mode (bits 0-3)" },
+          { "reg": 2242, "name": "INV_ADVANCED_SETTINGS: Performance Mask", "outputs": [
+              { "name": "INV_ADVANCED_SETTINGS: EvEnable", "mask": 1, "offset": 0, "notes": "EV Charging" },
+              { "name": "INV_ADVANCED_SETTINGS: SocLowerLimitKeepEnable", "mask": 1, "offset": 1 },
+              { "name": "INV_ADVANCED_SETTINGS: HardwareLimitOutput", "mask": 1, "offset": 2 },
+              { "name": "INV_ADVANCED_SETTINGS: GeneratorInverterPower", "mask": 1, "offset": 3 },
+              { "name": "INV_ADVANCED_SETTINGS: BalanceEnable", "mask": 1, "offset": 4, "notes": "Phase Balancing" },
+              { "name": "INV_ADVANCED_SETTINGS: WinterModeEnable", "mask": 1, "offset": 5 },
+              { "name": "INV_ADVANCED_SETTINGS: GridMaxInputCurrentEnable", "mask": 1, "offset": 6 },
+              { "name": "INV_ADVANCED_SETTINGS: DrmsEnable", "mask": 1, "offset": 7, "notes": "Demand Response" }
+          ]},
           { "reg": 2248, "name": "INV_ADVANCED_SETTINGS: Generator Auto-Start SOC", "unit": "%" },
           { "reg": 2249, "name": "INV_ADVANCED_SETTINGS: Generator Auto-Stop SOC", "unit": "%" },
           { "reg": 2267, "name": "INV_ADVANCED_SETTINGS: LCD Screen Dim Timeout", "unit": "s" },
@@ -852,34 +862,50 @@
               { "name": "SLAVE0_PowerOptimizerEnable", "mask": 1, "offset": 12 },
               { "name": "SLAVE0_GridConnectionEnable", "mask": 1, "offset": 14 }
           ]},
-          { "reg": 2241, "name": "SLAVE0_EMS_Mode", "mask": 32767, "notes": "Toggles UPS vs. PV Priority" },
-          { "reg": 2242, "name": "SLAVE0_LogicBitmask2", "outputs": [
-              { "name": "SLAVE0_EvEnable", "mask": 1, "offset": 0 },
-              { "name": "SLAVE0_SocLowerLimitKeepEnable", "mask": 1, "offset": 1 },
-              { "name": "SLAVE0_HardwareLimitOutput", "mask": 1, "offset": 2 },
-              { "name": "SLAVE0_GeneratorInverterPower", "mask": 1, "offset": 3 },
-              { "name": "SLAVE0_BalanceEnable", "mask": 1, "offset": 4 },
-              { "name": "SLAVE0_WinterModeEnable", "mask": 1, "offset": 5 },
-              { "name": "SLAVE0_GridMaxInputCurrentEnable", "mask": 1, "offset": 6 },
-              { "name": "SLAVE0_DrmsEnable", "mask": 1, "offset": 7 }
-          ]},
-          { "reg": 2243, "name": "SLAVE0_EVPortVoltage", "unit": "V" },
+          { "reg": 2243, "name": "SLAVE0_ChargingPileVolt", "unit": "V" },
           { "reg": 2244, "name": "SLAVE0_CtRatio", "outputs": [
-              { "name": "SLAVE0_CtRatioAcPv", "mask": 255 },
+              { "name": "SLAVE0_CtRatioPv", "mask": 255 },
               { "name": "SLAVE0_CtRatioGrid", "mask": 255, "offset": 8 }
           ]},
           { "reg": 2245, "name": "SLAVE0_AcCtTest", "outputs": [
               { "name": "SLAVE0_AcCtTestResult", "mask": 255 },
-              { "name": "SLAVE0_AcCtTestEnable", "mask": 255, "offset": 8 }
+              { "name": "SLAVE0_AcCtTestTrigger", "mask": 255, "offset": 8 }
           ]},
           { "reg": 2246, "name": "SLAVE0_GenSettings" },
           { "reg": 2247, "name": "SLAVE0_GenSocStart", "unit": "%" },
           { "reg": 2248, "name": "SLAVE0_GenSocStop", "unit": "%" },
           { "reg": 2249, "len": 144, "name": "SLAVE0_GenWorkingTime", "notes": "18-byte schedule for external generators" },
-          { "reg": 2258, "len": 128, "name": "SLAVE0_GridProtection" },
-          { "reg": 2277, "len": 32, "name": "SLAVE0_TotalSystemCapacity", "unit": "Wh" },
-          { "reg": 2279, "name": "SLAVE0_BatteryType", "mask": 255 },
-          { "reg": 2280, "name": "SLAVE0_HeatPumpEnable" }
+          { "reg": 2258, "name": "SLAVE0_GridUVValue", "unit": "V", "device_class": "voltage" },
+          { "reg": 2259, "name": "SLAVE0_GridUVTime", "unit": "s" },
+          { "reg": 2260, "name": "SLAVE0_GridOVValue", "unit": "V", "device_class": "voltage" },
+          { "reg": 2261, "name": "SLAVE0_GridOVTime", "unit": "s" },
+          { "reg": 2267, "name": "SLAVE0_GridMeterConfig", "outputs": [
+              { "name": "SLAVE0_MeterType", "mask": 255 },
+              { "name": "SLAVE0_MeterCtrl", "mask": 255, "offset": 8 }
+          ]},
+          { "reg": 2269, "name": "SLAVE0_PvAdvConfig", "outputs": [
+              { "name": "SLAVE0_PvAdvEnable", "mask": 255 },
+              { "name": "SLAVE0_PvCtrl", "mask": 255, "offset": 8 }
+          ]},
+          { "reg": 2270, "name": "SLAVE0_PhaseConfig", "outputs": [
+              { "name": "SLAVE0_PhaseVoltage", "mask": 255 },
+              { "name": "SLAVE0_PhaseMode", "mask": 255, "offset": 8 }
+          ]},
+          { "reg": 2271, "name": "SLAVE0_DcVoltSet", "outputs": [
+              { "name": "SLAVE0_DcVoltValue", "mask": 255 },
+              { "name": "SLAVE0_DcVoltEnable", "mask": 255, "offset": 8 }
+          ]},
+          { "reg": 2272, "name": "SLAVE0_GridMaxCurr2", "unit": "A" },
+          { "reg": 2274, "name": "SLAVE0_SceneConfig", "outputs": [
+              { "name": "SLAVE0_SceneSub", "mask": 255 },
+              { "name": "SLAVE0_SceneUse", "mask": 255, "offset": 8 }
+          ]},
+          { "reg": 2277, "len": 32, "name": "SLAVE0_BatteryCapacity", "unit": "Wh", "device_class": "energy" },
+          { "reg": 2279, "name": "SLAVE0_BatterySpec", "outputs": [
+              { "name": "SLAVE0_BatteryType", "mask": 255 },
+              { "name": "SLAVE0_ModelType", "mask": 255, "offset": 8 }
+          ]},
+          { "reg": 2280, "name": "SLAVE0_HeatPumpMask", "len": 64 }
         ]
       }
     },
