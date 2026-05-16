@@ -1,4 +1,15 @@
 [
+  {
+    "bulk_read": {
+      "slave_id": 0,
+      "delay": 0.2,
+      "registers": [
+        { "reg": 21000, "name": "NODE_INFO: Block Header Version", "notes": "Returns discovery process status/version" },
+        { "reg": 21001, "name": "NODE_INFO: Total Node Count", "notes": "node count" }
+      ]
+    }
+  },
+
     { "reg": 1, "name": "Base Config Hardware Family ID", "len": 16, "notes": "V1/Legacy Protocol" },
     { "reg": 6, "name": "Product Model", "len": 16, "scale": 1, "notes": "V1/Legacy Protocol" },
     { "reg": 15, "name": "Protocol Major Version", "len": 16, "notes": "V1/Legacy Protocol" },
@@ -187,8 +198,9 @@
             "registers":
             [
               { "reg": 150, "name": "APP_HOME_DATA: PV Total Energy Low", "len": 32, "unit": "kWh", "scale": 1, "slave_id": 41, "device_class": "energy" },
-              { "reg": 154, "name": "APP_HOME_DATA: PV Today Energy", "len": 32, "unit": "kWh", "scale": 1, "slave_id": 41, "device_class": "energy" },
-              { "reg": 156, "name": "APP_HOME_DATA: PV Month Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" }
+              { "reg": 154, "name": "APP_HOME_DATA: PV Today Energy", "len": 32, "unit": "kWh", "scale": 1, "slave_id": 41, "device_class": "energy - day" },
+              { "reg": 156, "name": "APP_HOME_DATA: PV Month Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy - month" },
+              { "reg": 158, "name": "APP_HOME_DATA: PV Year Energy",  "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy - year" }
             ]
           }
         }
@@ -526,13 +538,15 @@
           {"reg": 1290, "name": "INV_PV_INFO: Total System Self-Consumption (W)", "len": 16, "notes": "tare bluetti consumption?" },
           {"reg": 1291, "name": "INV_PV_INFO: ADL400 meter fault code", "len": 16, "notes": "ADL400 meter fault code" }
         ]
-      }
+       }
     },
     {
-      "bulk_read": {
-        "slave_id": 41,
-        "delay": 0.0,
-        "registers": [
+      "trigger_action": [
+        { "trigger_read_metadata": { "trigger_reg": 21000, "trigger_count": 1, "delay": 0.2, "slave_id": 0 } },
+        { "bulk_read": {
+          "slave_id": 41,
+          "delay": 0.0,
+          "registers": [
           {"reg": 1200, "len": 32, "name": "INV_PV_INFO: Total PV Power", "unit": "W", "device_class": "power", "notes": "CORRECT - new solar PV production, not including Solaredge", "no_word_swap": true },
           {"reg": 1202, "len": 32, "name": "INV_PV_INFO: Total PV Energy", "scale": 1, "unit": "kWh", "device_class": "energy", "notes": "CORRECT - check in daytime - should be a sum", "no_word_swap": true },
           { "reg": 1209,
@@ -599,6 +613,8 @@
         ]
       }
     },
+  ]
+  },
 
 	{
       "bulk_read": {
