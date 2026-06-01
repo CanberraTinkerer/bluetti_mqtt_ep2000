@@ -10,8 +10,54 @@
     }
   },
 
-    { "reg": 1, "name": "Base Config Hardware Family ID", "len": 16, "notes": "V1/Legacy Protocol" },
-    { "reg": 6, "name": "Product Model", "len": 16, "scale": 1, "notes": "V1/Legacy Protocol" },
+    {
+      "reg": 1,
+      "name": "Device Base Configuration: Region Spec & Voltage Type",
+      "outputs": [
+        {
+          "name": "Region Spec",
+          "mask": 255,
+          "offset": 8,
+          "type": "enum",
+          "values": ["Unknown", "US", "JP", "EU/UK_HES", "AU/ANZ", "CN", "AF", "DE", "TW", "UK"],
+          "notes": "DeviceSpec enum: 1=US, 2=JP, 3=EU/UK_HES, 4=AU/ANZ, 5=CN, 6=AF, 7=DE, 8=TW, 9=UK"
+        },
+        {
+          "name": "Voltage Type",
+          "mask": 255,
+          "type": "enum",
+          "values": ["Low Volt 100-120V", "High Volt 220-240V"],
+          "notes": "0=Low Volt 100-120V, 1=High Volt 220-240V"
+        }
+      ]
+    },
+    { "reg": 5, "name": "WinterMode", "type": "enum", "values": ["Disabled", "Enabled"], "notes": "Low-temp heater/protection logic" },
+    {
+      "reg": 6,
+      "name": "Device Base Configuration: Bluetooth Settings",
+      "outputs": [
+        {
+          "name": "Bluetooth Password Enable",
+          "mask": 3,
+          "offset": 0,
+          "type": "enum",
+          "values": ["Disabled", "Enabled"],
+          "notes": "0=Disabled, 1=Enabled - triggers reading regs 7-9 for password"
+        },
+        {
+          "name": "Guest Mode Enable",
+          "mask": 3,
+          "offset": 2,
+          "type": "enum",
+          "values": ["Disabled", "Enabled"],
+          "notes": "0=Disabled, 1=Enabled"
+        }
+      ]
+    },
+    { "reg": 7, "name": "Device Base Configuration: Bluetooth Password Char 1-2", "ascii": true, "byte_swap": true, "notes": "Only present/read if BtPswEnable == 1" },
+    { "reg": 8, "name": "Device Base Configuration: Bluetooth Password Char 3-4", "ascii": true, "byte_swap": true },
+    { "reg": 9, "name": "Device Base Configuration: Bluetooth Password Char 5-6", "ascii": true, "byte_swap": true },
+    { "reg": 10, "name": "MicroInvEnable", "type": "enum", "values": ["Disabled", "Enabled"], "notes": "AC-coupled solar support" },
     { "reg": 15, "name": "Protocol Major Version", "len": 16, "notes": "V1/Legacy Protocol" },
     { "reg": 16, "name": "Protocol Firmware Version", "len": 16, "notes": "V1/Legacy Protocol" },
 
