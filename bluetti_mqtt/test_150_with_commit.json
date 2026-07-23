@@ -1,0 +1,125 @@
+[
+  {
+    "trigger_write": [
+      {
+        "trigger_metadata": {
+          "trigger_reg": 2027,
+          "trigger_value": 1,
+          "delay": 0.2,
+          "slave_id": 0
+        }
+      },
+      {"trigger_read_metadata": { "trigger_reg": 21000, "trigger_count": 1, "delay": 0.2, "slave_id": 0 } },
+
+      {
+        "bulk_read": {
+          "slave_id": 41,
+          "delay": 0.2,
+          "registers": [
+            {"reg": 150, "name": "Energy Stat 150", "len": 16},
+            {"reg": 151, "name": "Energy Stat 151", "len": 16},
+            {"reg": 152, "name": "Energy Stat 152", "len": 16},
+            {"reg": 153, "name": "Energy Stat 153", "len": 16},
+            {"reg": 154, "name": "Energy Stat 154", "len": 16},
+            {"reg": 155, "name": "Energy Stat 155", "len": 16},
+            {"reg": 156, "name": "Energy Stat 156", "len": 16},
+            {"reg": 157, "name": "Energy Stat 157", "len": 16},
+            {"reg": 158, "name": "Energy Stat 158", "len": 16},
+            {"reg": 159, "name": "Energy Stat 159", "len": 16}
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "trigger_write": [
+      {
+        "trigger_metadata": {
+          "trigger_reg": 2027,
+          "trigger_value": 10,
+          "delay": 0.2,
+          "slave_id": 1
+        }
+      },
+      {
+        "bulk_read": {
+          "slave_id": 41,
+          "delay": 0.2,
+          "registers": [
+            {"reg": 150, "name": "10Energy Stat 150", "len": 16},
+            {"reg": 151, "name": "10Energy Stat 151", "len": 16},
+            {"reg": 152, "name": "10Energy Stat 152", "len": 16},
+            {"reg": 153, "name": "10Energy Stat 153", "len": 16},
+            {"reg": 154, "name": "10Energy Stat 154", "len": 16},
+            {"reg": 155, "name": "10Energy Stat 155", "len": 16},
+            {"reg": 156, "name": "10Energy Stat 156", "len": 16},
+            {"reg": 157, "name": "10Energy Stat 157", "len": 16},
+            {"reg": 158, "name": "10Energy Stat 158", "len": 16},
+            {"reg": 159, "name": "10Energy Stat 159", "len": 16}
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "trigger_write": [
+      {
+        "trigger_metadata": {
+          "trigger_reg": 2027,
+          "trigger_value": 18,
+          "delay": 0.2,
+          "slave_id": 1
+        }
+      },
+      {
+        "bulk_read": {
+          "slave_id": 41,
+          "delay": 0.2,
+          "registers": [
+            {"reg": 150, "name": "18Energy Stat 150", "len": 16},
+            {"reg": 151, "name": "18Energy Stat 151", "len": 16},
+            {"reg": 152, "name": "18Energy Stat 152", "len": 16},
+            {"reg": 153, "name": "18Energy Stat 153", "len": 16},
+            {"reg": 154, "name": "18Energy Stat 154", "len": 16},
+            {"reg": 155, "name": "18Energy Stat 155", "len": 16},
+            {"reg": 156, "name": "18Energy Stat 156", "len": 16},
+            {"reg": 157, "name": "18Energy Stat 157", "len": 16},
+            {"reg": 158, "name": "18Energy Stat 158", "len": 16},
+            {"reg": 159, "name": "18Energy Stat 159", "len": 16}
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "trigger_write": [
+      {
+        "trigger_metadata": {
+          "trigger_reg": 2027,
+          "trigger_value": 4,
+          "delay": 0.2,
+          "slave_id": 1
+        }
+      },
+      {
+        "bulk_read": {
+          "slave_id": 41,
+          "delay": 0.2,
+          "registers": [
+            {"reg": 150, "name": "4Energy Stat 150", "len": 16},
+            {"reg": 151, "name": "4Energy Stat 151", "len": 16},
+            {"reg": 152, "name": "4Energy Stat 152", "len": 16},
+            {"reg": 153, "name": "4Energy Stat 153", "len": 16},
+            {"reg": 154, "name": "4Energy Stat 154", "len": 16},
+            {"reg": 155, "name": "4Energy Stat 155", "len": 16},
+            {"reg": 156, "name": "4Energy Stat 156", "len": 16},
+            {"reg": 157, "name": "4Energy Stat 157", "len": 16},
+            {"reg": 158, "name": "4Energy Stat 158", "len": 16},
+            {"reg": 159, "name": "4Energy Stat 159", "len": 16}
+          ]
+        }
+      }
+    ]
+  }
+  
+]

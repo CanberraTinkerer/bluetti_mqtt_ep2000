@@ -1,0 +1,494 @@
+[
+    {"trigger_write": [
+      { "trigger_metadata": { "trigger_reg": 2027, "trigger_value": 1, "delay": 0.2 } },
+      { "trigger_metadata": { "trigger_reg": 2026, "trigger_value": 1, "delay": 0.2 } },
+      { "post_trigger_read": { "read_start_reg": 3500, "read_count": 12, "delay": 0.2 },
+        "registers": [
+          { "reg": 3500, "name": "INV_TOTAL_ENERGY_INFO: PV Statistics Type Conf", "notes": "Should return 1" },
+          { "reg": 3501, "name": "INV_TOTAL_ENERGY_INFO: PV Lifetime Total Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" },
+          { "reg": 3503, "name": "INV_TOTAL_ENERGY_INFO: PV Year 1 Label"},
+          { "reg": 3504, "name": "INV_TOTAL_ENERGY_INFO: PV Year 1 Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy"},
+          { "reg": 3506, "name": "INV_TOTAL_ENERGY_INFO: PV Year 2 Label"},
+          { "reg": 3507, "name": "INV_TOTAL_ENERGY_INFO: PV Year 2 Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy"},
+          { "reg": 3509, "name": "INV_TOTAL_ENERGY_INFO: PV Year 3 Label"},
+          { "reg": 3510, "name": "INV_TOTAL_ENERGY_INFO: PV Year 3 Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy"}
+        ]
+      },
+      { "post_trigger_read": { "read_start_reg": 3600, "read_count": 58, "delay": 0.2 },
+        "registers": [
+			{"reg":3600,"name":"INV_CURR_YEAR_ENERGY_INFO: PV Energy Category","notes":"1:PV, 2:Grid-In, 3:Grid-Out, 4:Load"},
+			{"reg":3601,"name":"INV_CURR_YEAR_ENERGY_INFO: PV Selected Year","notes":"Year being queried"},
+			{"reg":3602,"name":"INV_CURR_YEAR_ENERGY_INFO: PV Annual Total Energy","len":32,"unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3604,"name":"INV_CURR_YEAR_ENERGY_INFO: PV Jan Energy","len":32,"unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3606,"name":"INV_CURR_YEAR_ENERGY_INFO: PV Feb Energy","len":32,"unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3608,"name":"INV_CURR_YEAR_ENERGY_INFO: PV Mar Energy","len":32,"unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3610,"name":"INV_CURR_YEAR_ENERGY_INFO: PV Apr Energy","len":32,"unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3612,"name":"INV_CURR_YEAR_ENERGY_INFO: PV May Energy","len":32,"unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3614,"name":"INV_CURR_YEAR_ENERGY_INFO: PV Jun Energy","len":32,"unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3616,"name":"INV_CURR_YEAR_ENERGY_INFO: PV Jul Energy","len":32,"unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3618,"name":"INV_CURR_YEAR_ENERGY_INFO: PV Aug Energy","len":32,"unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3620,"name":"INV_CURR_YEAR_ENERGY_INFO: PV Sep Energy","len":32,"unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3622,"name":"INV_CURR_YEAR_ENERGY_INFO: PV Oct Energy","len":32,"unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3624,"name":"INV_CURR_YEAR_ENERGY_INFO: PV Nov Energy","len":32,"unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3626,"name":"INV_CURR_YEAR_ENERGY_INFO: PV Dec Energy","len":32,"unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3628,"name":"INV_CURR_YEAR_ENERGY_INFO: PV Day 1 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3629,"name":"INV_CURR_YEAR_ENERGY_INFO: PV Day 2 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3630,"name":"INV_CURR_YEAR_ENERGY_INFO: PV Day 3 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3631,"name":"INV_CURR_YEAR_ENERGY_INFO: PV Day 4 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3632,"name":"INV_CURR_YEAR_ENERGY_INFO: PV Day 5 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3633,"name":"INV_CURR_YEAR_ENERGY_INFO: PV Day 6 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3634,"name":"INV_CURR_YEAR_ENERGY_INFO: PV Day 7 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3635,"name":"INV_CURR_YEAR_ENERGY_INFO: PV Day 8 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3636,"name":"INV_CURR_YEAR_ENERGY_INFO: PV Day 9 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3637,"name":"INV_CURR_YEAR_ENERGY_INFO: PV Day 10 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3638,"name":"INV_CURR_YEAR_ENERGY_INFO: PV Day 11 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3639,"name":"INV_CURR_YEAR_ENERGY_INFO: PV Day 12 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3640,"name":"INV_CURR_YEAR_ENERGY_INFO: PV Day 13 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3641,"name":"INV_CURR_YEAR_ENERGY_INFO: PV Day 14 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3642,"name":"INV_CURR_YEAR_ENERGY_INFO: PV Day 15 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3643,"name":"INV_CURR_YEAR_ENERGY_INFO: PV Day 16 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3644,"name":"INV_CURR_YEAR_ENERGY_INFO: PV Day 17 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3645,"name":"INV_CURR_YEAR_ENERGY_INFO: PV Day 18 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3646,"name":"INV_CURR_YEAR_ENERGY_INFO: PV Day 19 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3647,"name":"INV_CURR_YEAR_ENERGY_INFO: PV Day 20 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3648,"name":"INV_CURR_YEAR_ENERGY_INFO: PV Day 21 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3649,"name":"INV_CURR_YEAR_ENERGY_INFO: PV Day 22 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3650,"name":"INV_CURR_YEAR_ENERGY_INFO: PV Day 23 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3651,"name":"INV_CURR_YEAR_ENERGY_INFO: PV Day 24 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3652,"name":"INV_CURR_YEAR_ENERGY_INFO: PV Day 25 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3653,"name":"INV_CURR_YEAR_ENERGY_INFO: PV Day 26 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3654,"name":"INV_CURR_YEAR_ENERGY_INFO: PV Day 27 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3655,"name":"INV_CURR_YEAR_ENERGY_INFO: PV Day 28 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3656,"name":"INV_CURR_YEAR_ENERGY_INFO: PV Day 29 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3657,"name":"INV_CURR_YEAR_ENERGY_INFO: PV Day 30 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3658,"name":"INV_CURR_YEAR_ENERGY_INFO: PV Day 31 Energy","unit":"kWh","scale":1,"device_class":"energy"}
+        ]
+      }
+    ]},
+    {"trigger_write": [
+      { "trigger_metadata": { "trigger_reg": 2027, "trigger_value": 2, "delay": 0.2 } },
+      { "trigger_metadata": { "trigger_reg": 2026, "trigger_value": 2, "delay": 0.2 } },
+      { "post_trigger_read": { "read_start_reg": 3500, "read_count": 12, "delay": 0.2 },
+        "registers": [
+          { "reg": 3500, "name": "INV_TOTAL_ENERGY_INFO: Grid Input Statistics Type Conf", "notes": "Should return 1" },
+          { "reg": 3501, "name": "INV_TOTAL_ENERGY_INFO: Grid Input Lifetime Total Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" },
+          { "reg": 3503, "name": "INV_TOTAL_ENERGY_INFO: Grid Input Year 1 Label"},
+          { "reg": 3504, "name": "INV_TOTAL_ENERGY_INFO: Grid Input Year 1 Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy"},
+          { "reg": 3506, "name": "INV_TOTAL_ENERGY_INFO: Grid Input Year 2 Label"},
+          { "reg": 3507, "name": "INV_TOTAL_ENERGY_INFO: Grid Input Year 2 Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy"},
+          { "reg": 3509, "name": "INV_TOTAL_ENERGY_INFO: Grid Input Year 3 Label"},
+          { "reg": 3510, "name": "INV_TOTAL_ENERGY_INFO: Grid Input Year 3 Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy"}
+        ]
+      },
+      { "post_trigger_read": { "read_start_reg": 3600, "read_count": 58, "delay": 0.2 },
+        "registers": [
+			{"reg":3600,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid Import Energy Category","notes":"1:PV, 2:Grid-In, 3:Grid-Out, 4:Load"},
+			{"reg":3601,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid Import Selected Year","notes":"Year being queried"},
+			{"reg":3602,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid Import Annual Total Energy","len":32,"unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3604,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid Import Jan Energy","len":32,"unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3606,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid Import Feb Energy","len":32,"unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3608,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid Import Mar Energy","len":32,"unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3610,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid Import Apr Energy","len":32,"unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3612,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid Import May Energy","len":32,"unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3614,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid Import Jun Energy","len":32,"unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3616,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid Import Jul Energy","len":32,"unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3618,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid Import Aug Energy","len":32,"unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3620,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid Import Sep Energy","len":32,"unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3622,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid Import Oct Energy","len":32,"unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3624,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid Import Nov Energy","len":32,"unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3626,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid Import Dec Energy","len":32,"unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3628,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid Import Day 1 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3629,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid Import Day 2 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3630,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid Import Day 3 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3631,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid Import Day 4 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3632,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid Import Day 5 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3633,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid Import Day 6 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3634,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid Import Day 7 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3635,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid Import Day 8 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3636,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid Import Day 9 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3637,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid Import Day 10 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3638,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid Import Day 11 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3639,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid Import Day 12 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3640,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid Import Day 13 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3641,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid Import Day 14 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3642,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid Import Day 15 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3643,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid Import Day 16 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3644,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid Import Day 17 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3645,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid Import Day 18 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3646,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid Import Day 19 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3647,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid Import Day 20 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3648,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid Import Day 21 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3649,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid Import Day 22 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3650,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid Import Day 23 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3651,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid Import Day 24 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3652,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid Import Day 25 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3653,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid Import Day 26 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3654,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid Import Day 27 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3655,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid Import Day 28 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3656,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid Import Day 29 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3657,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid Import Day 30 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3658,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid Import Day 31 Energy","unit":"kWh","scale":1,"device_class":"energy"}
+        ]
+      }
+	  
+    ]},
+    {"trigger_write": [
+      { "trigger_metadata": { "trigger_reg": 2027, "trigger_value": 3, "delay": 0.2 } },
+      { "trigger_metadata": { "trigger_reg": 2026, "trigger_value": 3, "delay": 0.2 } },
+      { "post_trigger_read": { "read_start_reg": 3500, "read_count": 12, "delay": 0.2 },
+        "registers": [
+          { "reg": 3500, "name": "INV_TOTAL_ENERGY_INFO: Grid feed Statistics Type Conf", "notes": "Should return 1" },
+          { "reg": 3501, "name": "INV_TOTAL_ENERGY_INFO: Grid feed Lifetime Total Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" },
+          { "reg": 3503, "name": "INV_TOTAL_ENERGY_INFO: Grid feed Year 1 Label"},
+          { "reg": 3504, "name": "INV_TOTAL_ENERGY_INFO: Grid feed Year 1 Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy"},
+          { "reg": 3506, "name": "INV_TOTAL_ENERGY_INFO: Grid feed Year 2 Label"},
+          { "reg": 3507, "name": "INV_TOTAL_ENERGY_INFO: Grid feed Year 2 Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy"},
+          { "reg": 3509, "name": "INV_TOTAL_ENERGY_INFO: Grid feed Year 3 Label"},
+          { "reg": 3510, "name": "INV_TOTAL_ENERGY_INFO: Grid feed Year 3 Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy"}
+        ]
+      },
+      { "post_trigger_read": { "read_start_reg": 3600, "read_count": 58, "delay": 0.2 },
+        "registers": [
+			{"reg":3600,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid feed Energy Category","notes":"1:PV, 2:Grid-In, 3:Grid-Out, 4:Load"},
+			{"reg":3601,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid feed Selected Year","notes":"Year being queried"},
+			{"reg":3602,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid feed Annual Total Energy","len":32,"unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3604,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid feed Jan Energy","len":32,"unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3606,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid feed Feb Energy","len":32,"unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3608,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid feed Mar Energy","len":32,"unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3610,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid feed Apr Energy","len":32,"unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3612,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid feed May Energy","len":32,"unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3614,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid feed Jun Energy","len":32,"unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3616,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid feed Jul Energy","len":32,"unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3618,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid feed Aug Energy","len":32,"unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3620,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid feed Sep Energy","len":32,"unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3622,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid feed Oct Energy","len":32,"unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3624,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid feed Nov Energy","len":32,"unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3626,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid feed Dec Energy","len":32,"unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3628,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid feed Day 1 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3629,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid feed Day 2 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3630,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid feed Day 3 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3631,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid feed Day 4 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3632,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid feed Day 5 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3633,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid feed Day 6 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3634,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid feed Day 7 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3635,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid feed Day 8 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3636,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid feed Day 9 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3637,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid feed Day 10 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3638,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid feed Day 11 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3639,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid feed Day 12 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3640,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid feed Day 13 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3641,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid feed Day 14 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3642,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid feed Day 15 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3643,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid feed Day 16 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3644,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid feed Day 17 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3645,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid feed Day 18 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3646,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid feed Day 19 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3647,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid feed Day 20 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3648,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid feed Day 21 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3649,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid feed Day 22 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3650,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid feed Day 23 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3651,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid feed Day 24 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3652,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid feed Day 25 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3653,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid feed Day 26 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3654,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid feed Day 27 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3655,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid feed Day 28 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3656,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid feed Day 29 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3657,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid feed Day 30 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3658,"name":"INV_CURR_YEAR_ENERGY_INFO: Grid feed Day 31 Energy","unit":"kWh","scale":1,"device_class":"energy"}
+        ]
+      }
+	  
+    ]},
+    {"trigger_write": [
+      { "trigger_metadata": { "trigger_reg": 2027, "trigger_value": 4, "delay": 0.2 } },
+      { "trigger_metadata": { "trigger_reg": 2026, "trigger_value": 4, "delay": 0.2 } },
+      { "post_trigger_read": { "read_start_reg": 3500, "read_count": 12, "delay": 0.2 },
+        "registers": [
+          { "reg": 3500, "name": "INV_TOTAL_ENERGY_INFO: Load AC Statistics Type Conf", "notes": "Should return 1" },
+          { "reg": 3501, "name": "INV_TOTAL_ENERGY_INFO: Load AC Lifetime Total Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" },
+          { "reg": 3503, "name": "INV_TOTAL_ENERGY_INFO: Load AC Year 1 Label"},
+          { "reg": 3504, "name": "INV_TOTAL_ENERGY_INFO: Load AC Year 1 Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy"},
+          { "reg": 3506, "name": "INV_TOTAL_ENERGY_INFO: Load AC Year 2 Label"},
+          { "reg": 3507, "name": "INV_TOTAL_ENERGY_INFO: Load AC Year 2 Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy"},
+          { "reg": 3509, "name": "INV_TOTAL_ENERGY_INFO: Load AC Year 3 Label"},
+          { "reg": 3510, "name": "INV_TOTAL_ENERGY_INFO: Load AC Year 3 Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy"}
+        ]
+      },
+      { "post_trigger_read": { "read_start_reg": 3600, "read_count": 58, "delay": 0.2 },
+        "registers": [
+			{"reg":3600,"name":"INV_CURR_YEAR_ENERGY_INFO: Load AC Energy Category","notes":"1:PV, 2:Grid-In, 3:Grid-Out, 4:Load"},
+			{"reg":3601,"name":"INV_CURR_YEAR_ENERGY_INFO: Load AC Selected Year","notes":"Year being queried"},
+			{"reg":3602,"name":"INV_CURR_YEAR_ENERGY_INFO: Load AC Annual Total Energy","len":32,"unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3604,"name":"INV_CURR_YEAR_ENERGY_INFO: Load AC Jan Energy","len":32,"unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3606,"name":"INV_CURR_YEAR_ENERGY_INFO: Load AC Feb Energy","len":32,"unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3608,"name":"INV_CURR_YEAR_ENERGY_INFO: Load AC Mar Energy","len":32,"unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3610,"name":"INV_CURR_YEAR_ENERGY_INFO: Load AC Apr Energy","len":32,"unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3612,"name":"INV_CURR_YEAR_ENERGY_INFO: Load AC May Energy","len":32,"unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3614,"name":"INV_CURR_YEAR_ENERGY_INFO: Load AC Jun Energy","len":32,"unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3616,"name":"INV_CURR_YEAR_ENERGY_INFO: Load AC Jul Energy","len":32,"unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3618,"name":"INV_CURR_YEAR_ENERGY_INFO: Load AC Aug Energy","len":32,"unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3620,"name":"INV_CURR_YEAR_ENERGY_INFO: Load AC Sep Energy","len":32,"unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3622,"name":"INV_CURR_YEAR_ENERGY_INFO: Load AC Oct Energy","len":32,"unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3624,"name":"INV_CURR_YEAR_ENERGY_INFO: Load AC Nov Energy","len":32,"unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3626,"name":"INV_CURR_YEAR_ENERGY_INFO: Load AC Dec Energy","len":32,"unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3628,"name":"INV_CURR_YEAR_ENERGY_INFO: Load AC Day 1 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3629,"name":"INV_CURR_YEAR_ENERGY_INFO: Load AC Day 2 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3630,"name":"INV_CURR_YEAR_ENERGY_INFO: Load AC Day 3 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3631,"name":"INV_CURR_YEAR_ENERGY_INFO: Load AC Day 4 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3632,"name":"INV_CURR_YEAR_ENERGY_INFO: Load AC Day 5 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3633,"name":"INV_CURR_YEAR_ENERGY_INFO: Load AC Day 6 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3634,"name":"INV_CURR_YEAR_ENERGY_INFO: Load AC Day 7 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3635,"name":"INV_CURR_YEAR_ENERGY_INFO: Load AC Day 8 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3636,"name":"INV_CURR_YEAR_ENERGY_INFO: Load AC Day 9 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3637,"name":"INV_CURR_YEAR_ENERGY_INFO: Load AC Day 10 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3638,"name":"INV_CURR_YEAR_ENERGY_INFO: Load AC Day 11 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3639,"name":"INV_CURR_YEAR_ENERGY_INFO: Load AC Day 12 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3640,"name":"INV_CURR_YEAR_ENERGY_INFO: Load AC Day 13 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3641,"name":"INV_CURR_YEAR_ENERGY_INFO: Load AC Day 14 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3642,"name":"INV_CURR_YEAR_ENERGY_INFO: Load AC Day 15 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3643,"name":"INV_CURR_YEAR_ENERGY_INFO: Load AC Day 16 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3644,"name":"INV_CURR_YEAR_ENERGY_INFO: Load AC Day 17 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3645,"name":"INV_CURR_YEAR_ENERGY_INFO: Load AC Day 18 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3646,"name":"INV_CURR_YEAR_ENERGY_INFO: Load AC Day 19 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3647,"name":"INV_CURR_YEAR_ENERGY_INFO: Load AC Day 20 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3648,"name":"INV_CURR_YEAR_ENERGY_INFO: Load AC Day 21 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3649,"name":"INV_CURR_YEAR_ENERGY_INFO: Load AC Day 22 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3650,"name":"INV_CURR_YEAR_ENERGY_INFO: Load AC Day 23 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3651,"name":"INV_CURR_YEAR_ENERGY_INFO: Load AC Day 24 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3652,"name":"INV_CURR_YEAR_ENERGY_INFO: Load AC Day 25 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3653,"name":"INV_CURR_YEAR_ENERGY_INFO: Load AC Day 26 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3654,"name":"INV_CURR_YEAR_ENERGY_INFO: Load AC Day 27 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3655,"name":"INV_CURR_YEAR_ENERGY_INFO: Load AC Day 28 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3656,"name":"INV_CURR_YEAR_ENERGY_INFO: Load AC Day 29 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3657,"name":"INV_CURR_YEAR_ENERGY_INFO: Load AC Day 30 Energy","unit":"kWh","scale":1,"device_class":"energy"},
+			{"reg":3658,"name":"INV_CURR_YEAR_ENERGY_INFO: Load AC Day 31 Energy","unit":"kWh","scale":1,"device_class":"energy"}
+        ]
+      }
+	  
+    ]},
+    {"trigger_write": [
+      { "trigger_metadata": { "trigger_reg": 2027, "trigger_value": 5, "delay": 0.2 } },
+      { "trigger_metadata": { "trigger_reg": 2026, "trigger_value": 5, "delay": 0.2 } },
+      { "post_trigger_read": { "read_start_reg": 3500, "read_count": 12, "delay": 0.2 },
+        "registers": [
+          { "reg": 3500, "name": "INV_TOTAL_ENERGY_INFO: Load DC Statistics Type Conf", "notes": "Should return 1" },
+          { "reg": 3501, "name": "INV_TOTAL_ENERGY_INFO: Load DC Lifetime Total Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" },
+          { "reg": 3503, "name": "INV_TOTAL_ENERGY_INFO: Load DC Year 1 Label"},
+          { "reg": 3504, "name": "INV_TOTAL_ENERGY_INFO: Load DC Year 1 Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy"},
+          { "reg": 3506, "name": "INV_TOTAL_ENERGY_INFO: Load DC Year 2 Label"},
+          { "reg": 3507, "name": "INV_TOTAL_ENERGY_INFO: Load DC Year 2 Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy"},
+          { "reg": 3509, "name": "INV_TOTAL_ENERGY_INFO: Load DC Year 3 Label"},
+          { "reg": 3510, "name": "INV_TOTAL_ENERGY_INFO: Load DC Year 3 Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy"}
+        ]
+      }
+    ]},
+    {"trigger_write": [
+      { "trigger_metadata": { "trigger_reg": 2027, "trigger_value": 6, "delay": 0.2 } },
+      { "trigger_metadata": { "trigger_reg": 2026, "trigger_value": 6, "delay": 0.2 } },
+      { "post_trigger_read": { "read_start_reg": 3500, "read_count": 12, "delay": 0.2 },
+        "registers": [
+          { "reg": 3500, "name": "INV_TOTAL_ENERGY_INFO: SOC Statistics Type Conf", "notes": "Should return 1" },
+          { "reg": 3501, "name": "INV_TOTAL_ENERGY_INFO: SOC Lifetime Total Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" },
+          { "reg": 3503, "name": "INV_TOTAL_ENERGY_INFO: SOC Year 1 Label"},
+          { "reg": 3504, "name": "INV_TOTAL_ENERGY_INFO: SOC Year 1 Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy"},
+          { "reg": 3506, "name": "INV_TOTAL_ENERGY_INFO: SOC Year 2 Label"},
+          { "reg": 3507, "name": "INV_TOTAL_ENERGY_INFO: SOC Year 2 Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy"},
+          { "reg": 3509, "name": "INV_TOTAL_ENERGY_INFO: SOC Year 3 Label"},
+          { "reg": 3510, "name": "INV_TOTAL_ENERGY_INFO: SOC Year 3 Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy"}
+        ]
+      }
+    ]},
+    {"trigger_write": [
+      { "trigger_metadata": { "trigger_reg": 2027, "trigger_value": 7, "delay": 0.2 } },
+      { "trigger_metadata": { "trigger_reg": 2026, "trigger_value": 7, "delay": 0.2 } },
+      { "post_trigger_read": { "read_start_reg": 3500, "read_count": 12, "delay": 0.2 },
+        "registers": [
+          { "reg": 3500, "name": "INV_TOTAL_ENERGY_INFO: Driving In Statistics Type Conf", "notes": "Should return 1" },
+          { "reg": 3501, "name": "INV_TOTAL_ENERGY_INFO: Driving In Lifetime Total Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" },
+          { "reg": 3503, "name": "INV_TOTAL_ENERGY_INFO: Driving In Year 1 Label"},
+          { "reg": 3504, "name": "INV_TOTAL_ENERGY_INFO: Driving In Year 1 Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy"},
+          { "reg": 3506, "name": "INV_TOTAL_ENERGY_INFO: Driving In Year 2 Label"},
+          { "reg": 3507, "name": "INV_TOTAL_ENERGY_INFO: Driving In Year 2 Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy"},
+          { "reg": 3509, "name": "INV_TOTAL_ENERGY_INFO: Driving In Year 3 Label"},
+          { "reg": 3510, "name": "INV_TOTAL_ENERGY_INFO: Driving In Year 3 Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy"}
+        ]
+      }
+    ]},
+    {"trigger_write": [
+      { "trigger_metadata": { "trigger_reg": 2027, "trigger_value": 8, "delay": 0.2 } },
+      { "trigger_metadata": { "trigger_reg": 2026, "trigger_value": 8, "delay": 0.2 } },
+      { "post_trigger_read": { "read_start_reg": 3500, "read_count": 12, "delay": 0.2 },
+        "registers": [
+          { "reg": 3500, "name": "INV_TOTAL_ENERGY_INFO: Power Inv Statistics Type Conf", "notes": "Should return 1" },
+          { "reg": 3501, "name": "INV_TOTAL_ENERGY_INFO: Power Inv Lifetime Total Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" },
+          { "reg": 3503, "name": "INV_TOTAL_ENERGY_INFO: Power Inv Year 1 Label"},
+          { "reg": 3504, "name": "INV_TOTAL_ENERGY_INFO: Power Inv Year 1 Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy"},
+          { "reg": 3506, "name": "INV_TOTAL_ENERGY_INFO: Power Inv Year 2 Label"},
+          { "reg": 3507, "name": "INV_TOTAL_ENERGY_INFO: Power Inv Year 2 Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy"},
+          { "reg": 3509, "name": "INV_TOTAL_ENERGY_INFO: Power Inv Year 3 Label"},
+          { "reg": 3510, "name": "INV_TOTAL_ENERGY_INFO: Power Inv Year 3 Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy"}
+        ]
+      }
+    ]},
+    {"trigger_write": [
+      { "trigger_metadata": { "trigger_reg": 2027, "trigger_value": 9, "delay": 0.2 } },
+      { "trigger_metadata": { "trigger_reg": 2026, "trigger_value": 9, "delay": 0.2 } },
+      { "post_trigger_read": { "read_start_reg": 3500, "read_count": 12, "delay": 0.2 },
+        "registers": [
+          { "reg": 3500, "name": "INV_TOTAL_ENERGY_INFO: Pack Charge Statistics Type Conf", "notes": "Should return 1" },
+          { "reg": 3501, "name": "INV_TOTAL_ENERGY_INFO: Pack Charge Lifetime Total Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" },
+          { "reg": 3503, "name": "INV_TOTAL_ENERGY_INFO: Pack Charge Year 1 Label"},
+          { "reg": 3504, "name": "INV_TOTAL_ENERGY_INFO: Pack Charge Year 1 Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy"},
+          { "reg": 3506, "name": "INV_TOTAL_ENERGY_INFO: Pack Charge Year 2 Label"},
+          { "reg": 3507, "name": "INV_TOTAL_ENERGY_INFO: Pack Charge Year 2 Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy"},
+          { "reg": 3509, "name": "INV_TOTAL_ENERGY_INFO: Pack Charge Year 3 Label"},
+          { "reg": 3510, "name": "INV_TOTAL_ENERGY_INFO: Pack Charge Year 3 Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy"}
+       ]
+      }
+    ]},
+    {"trigger_write": [
+      { "trigger_metadata": { "trigger_reg": 2027, "trigger_value": 10, "delay": 0.2 } },
+      { "trigger_metadata": { "trigger_reg": 2026, "trigger_value": 10, "delay": 0.2 } },
+      { "post_trigger_read": { "read_start_reg": 3500, "read_count": 12, "delay": 0.2 },
+        "registers": [
+          { "reg": 3500, "name": "INV_TOTAL_ENERGY_INFO: Inv In Statistics Type Conf", "notes": "Should return 1" },
+          { "reg": 3501, "name": "INV_TOTAL_ENERGY_INFO: Inv In Lifetime Total Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" },
+          { "reg": 3503, "name": "INV_TOTAL_ENERGY_INFO: Inv In Year 1 Label"},
+          { "reg": 3504, "name": "INV_TOTAL_ENERGY_INFO: Inv In Year 1 Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy"},
+          { "reg": 3506, "name": "INV_TOTAL_ENERGY_INFO: Inv In Year 2 Label"},
+          { "reg": 3507, "name": "INV_TOTAL_ENERGY_INFO: Inv In Year 2 Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy"},
+          { "reg": 3509, "name": "INV_TOTAL_ENERGY_INFO: Inv In Year 3 Label"},
+          { "reg": 3510, "name": "INV_TOTAL_ENERGY_INFO: Inv In Year 3 Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy"}
+        ]
+      }
+    ]},
+    {"trigger_write": [
+      { "trigger_metadata": { "trigger_reg": 2027, "trigger_value": 11, "delay": 0.2 } },
+      { "trigger_metadata": { "trigger_reg": 2026, "trigger_value": 11, "delay": 0.2 } },
+      { "post_trigger_read": { "read_start_reg": 3500, "read_count": 12, "delay": 0.2 },
+        "registers": [
+          { "reg": 3500, "name": "INV_TOTAL_ENERGY_INFO: Inv Out Statistics Type Conf", "notes": "Should return 1" },
+          { "reg": 3501, "name": "INV_TOTAL_ENERGY_INFO: Inv Out Lifetime Total Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" },
+          { "reg": 3503, "name": "INV_TOTAL_ENERGY_INFO: Inv Out Year 1 Label"},
+          { "reg": 3504, "name": "INV_TOTAL_ENERGY_INFO: Inv Out Year 1 Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy"},
+          { "reg": 3506, "name": "INV_TOTAL_ENERGY_INFO: Inv Out Year 2 Label"},
+          { "reg": 3507, "name": "INV_TOTAL_ENERGY_INFO: Inv Out Year 2 Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy"},
+          { "reg": 3509, "name": "INV_TOTAL_ENERGY_INFO: Inv Out Year 3 Label"},
+          { "reg": 3510, "name": "INV_TOTAL_ENERGY_INFO: Inv Out Year 3 Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy"}
+        ]
+      }
+    ]},
+    {"trigger_write": [
+      { "trigger_metadata": { "trigger_reg": 2027, "trigger_value": 12, "delay": 0.2 } },
+      { "trigger_metadata": { "trigger_reg": 2026, "trigger_value": 12, "delay": 0.2 } },
+      { "post_trigger_read": { "read_start_reg": 3500, "read_count": 12, "delay": 0.2 },
+        "registers": [
+          { "reg": 3500, "name": "INV_TOTAL_ENERGY_INFO: Oil Statistics Type Conf", "notes": "Should return 1" },
+          { "reg": 3501, "name": "INV_TOTAL_ENERGY_INFO: Oil Lifetime Total Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" },
+          { "reg": 3503, "name": "INV_TOTAL_ENERGY_INFO: Oil Year 1 Label"},
+          { "reg": 3504, "name": "INV_TOTAL_ENERGY_INFO: Oil Year 1 Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy"},
+          { "reg": 3506, "name": "INV_TOTAL_ENERGY_INFO: Oil Year 2 Label"},
+          { "reg": 3507, "name": "INV_TOTAL_ENERGY_INFO: Oil Year 2 Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy"},
+          { "reg": 3509, "name": "INV_TOTAL_ENERGY_INFO: Oil Year 3 Label"},
+          { "reg": 3510, "name": "INV_TOTAL_ENERGY_INFO: Oil Year 3 Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy"}
+        ]
+      }
+    ]},
+    {"trigger_write": [
+      { "trigger_metadata": { "trigger_reg": 2027, "trigger_value": 13, "delay": 0.2 } },
+      { "trigger_metadata": { "trigger_reg": 2026, "trigger_value": 13, "delay": 0.2 } },
+      { "post_trigger_read": { "read_start_reg": 3500, "read_count": 12, "delay": 0.2 },
+        "registers": [
+          { "reg": 3500, "name": "INV_TOTAL_ENERGY_INFO: Charging Pile Statistics Type Conf", "notes": "Should return 1" },
+          { "reg": 3501, "name": "INV_TOTAL_ENERGY_INFO: Charging Pile Lifetime Total Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" },
+          { "reg": 3503, "name": "INV_TOTAL_ENERGY_INFO: Charging Pile Year 1 Label"},
+          { "reg": 3504, "name": "INV_TOTAL_ENERGY_INFO: Charging Pile Year 1 Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy"},
+          { "reg": 3506, "name": "INV_TOTAL_ENERGY_INFO: Charging Pile Year 2 Label"},
+          { "reg": 3507, "name": "INV_TOTAL_ENERGY_INFO: Charging Pile Year 2 Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy"},
+          { "reg": 3509, "name": "INV_TOTAL_ENERGY_INFO: Charging Pile Year 3 Label"},
+          { "reg": 3510, "name": "INV_TOTAL_ENERGY_INFO: Charging Pile Year 3 Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy"}
+        ]
+      }
+    ]},
+    {"trigger_write": [
+      { "trigger_metadata": { "trigger_reg": 2027, "trigger_value": 14, "delay": 0.2 } },
+      { "trigger_metadata": { "trigger_reg": 2026, "trigger_value": 14, "delay": 0.2 } },
+      { "post_trigger_read": { "read_start_reg": 3500, "read_count": 12, "delay": 0.2 },
+        "registers": [
+          { "reg": 3500, "name": "INV_TOTAL_ENERGY_INFO: Charging Pile Out Statistics Type Conf", "notes": "Should return 1" },
+          { "reg": 3501, "name": "INV_TOTAL_ENERGY_INFO: Charging Pile Out Lifetime Total Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" },
+          { "reg": 3503, "name": "INV_TOTAL_ENERGY_INFO: Charging Pile Out Year 1 Label"},
+          { "reg": 3504, "name": "INV_TOTAL_ENERGY_INFO: Charging Pile Out Year 1 Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy"},
+          { "reg": 3506, "name": "INV_TOTAL_ENERGY_INFO: Charging Pile Out Year 2 Label"},
+          { "reg": 3507, "name": "INV_TOTAL_ENERGY_INFO: Charging Pile Out Year 2 Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy"},
+          { "reg": 3509, "name": "INV_TOTAL_ENERGY_INFO: Charging Pile Out Year 3 Label"},
+          { "reg": 3510, "name": "INV_TOTAL_ENERGY_INFO: Charging Pile Out Year 3 Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy"}
+        ]
+      }
+    ]},
+    {"trigger_write": [
+      { "trigger_metadata": { "trigger_reg": 2027, "trigger_value": 15, "delay": 0.2 } },
+      { "trigger_metadata": { "trigger_reg": 2026, "trigger_value": 15, "delay": 0.2 } },
+      { "post_trigger_read": { "read_start_reg": 3500, "read_count": 12, "delay": 0.2 },
+        "registers": [
+          { "reg": 3500, "name": "INV_TOTAL_ENERGY_INFO: Car Out Total Statistics Type Conf", "notes": "Should return 1" },
+          { "reg": 3501, "name": "INV_TOTAL_ENERGY_INFO: Car Out Total Lifetime Total Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" },
+          { "reg": 3503, "name": "INV_TOTAL_ENERGY_INFO: Car Out Total Year 1 Label"},
+          { "reg": 3504, "name": "INV_TOTAL_ENERGY_INFO: Car Out Total Year 1 Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy"},
+          { "reg": 3506, "name": "INV_TOTAL_ENERGY_INFO: Car Out Total Year 2 Label"},
+          { "reg": 3507, "name": "INV_TOTAL_ENERGY_INFO: Car Out Total Year 2 Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy"},
+          { "reg": 3509, "name": "INV_TOTAL_ENERGY_INFO: Car Out Total Year 3 Label"},
+          { "reg": 3510, "name": "INV_TOTAL_ENERGY_INFO: Car Out Total Year 3 Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy"}
+        ]
+      }
+    ]},
+    {"trigger_write": [
+      { "trigger_metadata": { "trigger_reg": 2027, "trigger_value": 16, "delay": 0.2 } },
+      { "trigger_metadata": { "trigger_reg": 2026, "trigger_value": 16, "delay": 0.2 } },
+      { "post_trigger_read": { "read_start_reg": 3500, "read_count": 12, "delay": 0.2 },
+        "registers": [
+          { "reg": 3500, "name": "INV_TOTAL_ENERGY_INFO: Car In Total Statistics Type Conf", "notes": "Should return 1" },
+          { "reg": 3501, "name": "INV_TOTAL_ENERGY_INFO: Car In Total Lifetime Total Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" },
+          { "reg": 3503, "name": "INV_TOTAL_ENERGY_INFO: Car In Total Year 1 Label"},
+          { "reg": 3504, "name": "INV_TOTAL_ENERGY_INFO: Car In Total Year 1 Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy"},
+          { "reg": 3506, "name": "INV_TOTAL_ENERGY_INFO: Car In Total Year 2 Label"},
+          { "reg": 3507, "name": "INV_TOTAL_ENERGY_INFO: Car In Total Year 2 Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy"},
+          { "reg": 3509, "name": "INV_TOTAL_ENERGY_INFO: Car In Total Year 3 Label"},
+          { "reg": 3510, "name": "INV_TOTAL_ENERGY_INFO: Car In Total Year 3 Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy"}
+        ]
+      }
+    ]},
+
+    {"trigger_write": [
+      { "trigger_metadata": { "trigger_reg": 2027, "trigger_value": 17, "delay": 0.2 } },
+      { "trigger_metadata": { "trigger_reg": 2026, "trigger_value": 17, "delay": 0.2 } },
+      { "post_trigger_read": { "read_start_reg": 3500, "read_count": 12, "delay": 0.2 },
+        "registers": [
+          { "reg": 3500, "name": "INV_TOTAL_ENERGY_INFO: Pack Discharge Statistics Type Conf", "notes": "Should return 1" },
+          { "reg": 3501, "name": "INV_TOTAL_ENERGY_INFO: Pack Discharge Lifetime Total Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" },
+          { "reg": 3503, "name": "INV_TOTAL_ENERGY_INFO: Pack Discharge Year 1 Label"},
+          { "reg": 3504, "name": "INV_TOTAL_ENERGY_INFO: Pack Discharge Year 1 Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy"},
+          { "reg": 3506, "name": "INV_TOTAL_ENERGY_INFO: Pack Discharge Year 2 Label"},
+          { "reg": 3507, "name": "INV_TOTAL_ENERGY_INFO: Pack Discharge Year 2 Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy"},
+          { "reg": 3509, "name": "INV_TOTAL_ENERGY_INFO: Pack Discharge Year 3 Label"},
+          { "reg": 3510, "name": "INV_TOTAL_ENERGY_INFO: Pack Discharge Year 3 Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy"}
+        ]
+      }
+    ]},
+    {"trigger_write": [
+      { "trigger_metadata": { "trigger_reg": 2027, "trigger_value": 18, "delay": 0.2 } },
+      { "trigger_metadata": { "trigger_reg": 2026, "trigger_value": 18, "delay": 0.2 } },
+      { "post_trigger_read": { "read_start_reg": 3500, "read_count": 12, "delay": 0.2 },
+        "registers": [
+          { "reg": 3500, "name": "INV_TOTAL_ENERGY_INFO: Total Load Statistics Type Conf", "notes": "Should return 1" },
+          { "reg": 3501, "name": "INV_TOTAL_ENERGY_INFO: Total Load Lifetime Total Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" },
+          { "reg": 3503, "name": "INV_TOTAL_ENERGY_INFO: Total Load Year 1 Label"},
+          { "reg": 3504, "name": "INV_TOTAL_ENERGY_INFO: Total Load Year 1 Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy"},
+          { "reg": 3506, "name": "INV_TOTAL_ENERGY_INFO: Total Load Year 2 Label"},
+          { "reg": 3507, "name": "INV_TOTAL_ENERGY_INFO: Total Load Year 2 Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy"},
+          { "reg": 3509, "name": "INV_TOTAL_ENERGY_INFO: Total Load Year 3 Label"},
+          { "reg": 3510, "name": "INV_TOTAL_ENERGY_INFO: Total Load Year 3 Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy"}
+        ]
+      }	  
+    ]}
+]

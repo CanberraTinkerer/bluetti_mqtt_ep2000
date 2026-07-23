@@ -30,6 +30,675 @@ class MqttFieldConfig:
 
 COMMAND_TOPIC_RE = re.compile(r'^bluetti/command/(\w+)-(\d+)/([a-z_]+)$')
 NORMAL_DEVICE_FIELDS = {
+    'pv1_power': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'PV1 Power',
+            'unit_of_measurement': 'W',
+            'device_class': 'power',
+            'state_class': 'measurement',
+        }
+    ),
+    'pv1_voltage': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'PV1 Voltage',
+            'unit_of_measurement': 'V',
+            'device_class': 'voltage',
+            'state_class': 'measurement',
+        }
+    ),
+    'pv1_current': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'PV1 Current',
+            'unit_of_measurement': 'A',
+            'device_class': 'current',
+            'state_class': 'measurement',
+        }
+    ),
+    'pv2_power': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'PV2 Power',
+            'unit_of_measurement': 'W',
+            'device_class': 'power',
+            'state_class': 'measurement',
+        }
+    ),
+    'pv2_voltage': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'PV2 Voltage',
+            'unit_of_measurement': 'V',
+            'device_class': 'voltage',
+            'state_class': 'measurement',
+        }
+    ),
+    'pv2_current': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'PV2 Current',
+            'unit_of_measurement': 'A',
+            'device_class': 'current',
+            'state_class': 'measurement',
+        }
+    ),
+    'adl400_ac_input_power_phase1': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'AC PV Power Phase 1',
+            'unit_of_measurement': 'W',
+            'device_class': 'power',
+            'state_class': 'measurement',
+        }
+    ),
+    'adl400_ac_input_voltage_phase1': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'AC PV Voltage Phase 1',
+            'unit_of_measurement': 'V',
+            'device_class': 'voltage',
+            'state_class': 'measurement',
+        }
+    ),
+    'adl400_ac_input_current_phase1': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'AC PV Current Phase 1',
+            'unit_of_measurement': 'A',
+            'device_class': 'current',
+            'state_class': 'measurement',
+        }
+    ),
+    'adl400_ac_input_power_phase2': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'AC PV Power Phase 2',
+            'unit_of_measurement': 'W',
+            'device_class': 'power',
+            'state_class': 'measurement',
+        }
+    ),
+    'adl400_ac_input_power_phase3': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'AC PV Power Phase 3',
+            'unit_of_measurement': 'W',
+            'device_class': 'power',
+            'state_class': 'measurement',
+        }
+    ),
+    'adl400_ac_input_voltage_phase2': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'AC PV Voltage Phase 2',
+            'unit_of_measurement': 'V',
+            'device_class': 'voltage',
+            'state_class': 'measurement',
+        }
+    ),
+    'adl400_ac_input_voltage_phase3': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'AC PV Voltage Phase 3',
+            'unit_of_measurement': 'V',
+            'device_class': 'voltage',
+            'state_class': 'measurement',
+        }
+    ),
+    'adl400_ac_input_current_phase2': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'AC PV Current Phase 2',
+            'unit_of_measurement': 'A',
+            'device_class': 'current',
+            'state_class': 'measurement',
+        }
+    ),
+    'adl400_ac_input_current_phase3': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'AC PV Current Phase 3',
+            'unit_of_measurement': 'A',
+            'device_class': 'current',
+            'state_class': 'measurement',
+        }
+    ),
+    'grid_frequency_hz': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'Grid Frequency',
+            'unit_of_measurement': 'Hz',
+            'device_class': 'frequency',
+            'state_class': 'measurement',
+        }
+    ),
+    'grid_power_phase1': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'Grid Power Phase 1',
+            'unit_of_measurement': 'W',
+            'device_class': 'power',
+            'state_class': 'measurement',
+        }
+    ),
+    'grid_power_phase2': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'Grid Power Phase 2',
+            'unit_of_measurement': 'W',
+            'device_class': 'power',
+            'state_class': 'measurement',
+        }
+    ),
+    'grid_power_phase3': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'Grid Power Phase 3',
+            'unit_of_measurement': 'W',
+            'device_class': 'power',
+            'state_class': 'measurement',
+        }
+    ),
+    'grid_voltage_phase1_v': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'Grid Voltage Phase 1',
+            'unit_of_measurement': 'V',
+            'device_class': 'voltage',
+            'state_class': 'measurement',
+        }
+    ),
+    'grid_voltage_phase2_v': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'Grid Voltage Phase 2',
+            'unit_of_measurement': 'V',
+            'device_class': 'voltage',
+            'state_class': 'measurement',
+        }
+    ),
+    'grid_voltage_phase3_v': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'Grid Voltage Phase 3',
+            'unit_of_measurement': 'V',
+            'device_class': 'voltage',
+            'state_class': 'measurement',
+        }
+    ),
+    'grid_current_phase1_a': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'Grid Current Phase 1',
+            'unit_of_measurement': 'A',
+            'device_class': 'current',
+            'state_class': 'measurement',
+        }
+    ),
+    'grid_current_phase2_a': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'Grid Current Phase 2',
+            'unit_of_measurement': 'A',
+            'device_class': 'current',
+            'state_class': 'measurement',
+        }
+    ),
+    'grid_current_phase3_a': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'Grid Current Phase 3',
+            'unit_of_measurement': 'A',
+            'device_class': 'current',
+            'state_class': 'measurement',
+        }
+    ),
+    'ac_output_frequency': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'AC Output Frequency',
+            'unit_of_measurement': 'Hz',
+            'device_class': 'frequency',
+            'state_class': 'measurement',
+        }
+    ),
+    'ac_output_power_phase1': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'AC Output Power Phase 1',
+            'unit_of_measurement': 'W',
+            'device_class': 'power',
+            'state_class': 'measurement',
+        }
+    ),
+    'ac_output_power_phase2': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'AC Output Power Phase 2',
+            'unit_of_measurement': 'W',
+            'device_class': 'power',
+            'state_class': 'measurement',
+        }
+    ),
+    'ac_output_power_phase3': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'AC Output Power Phase 3',
+            'unit_of_measurement': 'W',
+            'device_class': 'power',
+            'state_class': 'measurement',
+        }
+    ),
+    'ac_output_voltage_phase1': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'AC Output Voltage Phase 1',
+            'unit_of_measurement': 'V',
+            'device_class': 'voltage',
+            'state_class': 'measurement',
+        }
+    ),
+    'ac_output_voltage_phase2': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'AC Output Voltage Phase 2',
+            'unit_of_measurement': 'V',
+            'device_class': 'voltage',
+            'state_class': 'measurement',
+        }
+    ),
+    'ac_output_voltage_phase3': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'AC Output Voltage Phase 3',
+            'unit_of_measurement': 'V',
+            'device_class': 'voltage',
+            'state_class': 'measurement',
+        }
+    ),
+    'ac_output_current_phase1': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'AC Output Current Phase 1',
+            'unit_of_measurement': 'A',
+            'device_class': 'current',
+            'state_class': 'measurement',
+        }
+    ),
+    'ac_output_current_phase2': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'AC Output Current Phase 2',
+            'unit_of_measurement': 'A',
+            'device_class': 'current',
+            'state_class': 'measurement',
+        }
+    ),
+    'ac_output_current_phase3': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'AC Output Current Phase 3',
+            'unit_of_measurement': 'A',
+            'device_class': 'current',
+            'state_class': 'measurement',
+        }
+    ),
+    'consumption_power_phase1': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'Consumption Power Phase 1',
+            'unit_of_measurement': 'W',
+            'device_class': 'power',
+            'state_class': 'measurement',
+        }
+    ),
+    'consumption_power_phase2': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'Consumption Power Phase 2',
+            'unit_of_measurement': 'W',
+            'device_class': 'power',
+            'state_class': 'measurement',
+        }
+    ),
+    'consumption_power_phase3': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'Consumption Power Phase 3',
+            'unit_of_measurement': 'W',
+            'device_class': 'power',
+            'state_class': 'measurement',
+        }
+    ),
+    'consumption_voltage_phase1_v': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'Consumption Voltage Phase 1',
+            'unit_of_measurement': 'V',
+            'device_class': 'voltage',
+            'state_class': 'measurement',
+        }
+    ),
+    'consumption_voltage_phase2_v': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'Consumption Voltage Phase 2',
+            'unit_of_measurement': 'V',
+            'device_class': 'voltage',
+            'state_class': 'measurement',
+        }
+    ),
+    'consumption_voltage_phase3_v': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'Consumption Voltage Phase 3',
+            'unit_of_measurement': 'V',
+            'device_class': 'voltage',
+            'state_class': 'measurement',
+        }
+    ),
+    'consumption_current_phase1_a': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'Consumption Current Phase 1',
+            'unit_of_measurement': 'A',
+            'device_class': 'current',
+            'state_class': 'measurement',
+        }
+    ),
+    'consumption_current_phase2_a': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'Consumption Current Phase 2',
+            'unit_of_measurement': 'A',
+            'device_class': 'current',
+            'state_class': 'measurement',
+        }
+    ),
+    'consumption_current_phase3_a': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'Consumption Current Phase 3',
+            'unit_of_measurement': 'A',
+            'device_class': 'current',
+            'state_class': 'measurement',
+        }
+    ),
+    'consumption_power_1212': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'Consumption Power 1212',
+            'unit_of_measurement': 'W',
+            'device_class': 'power',
+            'state_class': 'measurement',
+        }
+    ),
+    'consumption_power_1220': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'Consumption Power 1220',
+            'unit_of_measurement': 'W',
+            'device_class': 'power',
+            'state_class': 'measurement',
+        }
+    ),
+    'consumption_power_1228': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'Consumption Power 1228',
+            'unit_of_measurement': 'W',
+            'device_class': 'power',
+            'state_class': 'measurement',
+        }
+    ),
+    'pv_input_power_all': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'Total PV Power',
+            'unit_of_measurement': 'W',
+            'device_class': 'power',
+            'state_class': 'measurement',
+        }
+    ),
+    'consumption_power_all': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'Total Consumption Power',
+            'unit_of_measurement': 'W',
+            'device_class': 'power',
+            'state_class': 'measurement',
+        }
+    ),
+    'grid_power_all': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'Total Grid Power',
+            'unit_of_measurement': 'W',
+            'device_class': 'power',
+            'state_class': 'measurement',
+        }
+    ),
+    'total_ac_consumption': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'Total AC Consumption',
+            'unit_of_measurement': 'kWh',
+            'device_class': 'energy',
+            'state_class': 'total_increasing',
+        }
+    ),
+    'total_grid_consumption': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'Total Grid Consumption',
+            'unit_of_measurement': 'kWh',
+            'device_class': 'energy',
+            'state_class': 'total_increasing',
+        }
+    ),
+    'total_grid_feed': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'Total Grid Feed',
+            'unit_of_measurement': 'kWh',
+            'device_class': 'energy',
+            'state_class': 'total_increasing',
+        }
+    ),
+    'total_inverter_power': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'Total Inverter Power',
+            'unit_of_measurement': 'W',
+            'device_class': 'power',
+            'state_class': 'measurement',
+        }
+    ),
+    'total_dc_energy': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'Total DC Energy',
+            'unit_of_measurement': 'kWh',
+            'device_class': 'energy',
+            'state_class': 'total_increasing',
+        }
+    ),
+    
+    'ac_control_enabled': MqttFieldConfig(
+        type=MqttFieldType.BOOL,
+        setter=True,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'AC Control Enabled',
+        }
+    ),
+
+    'generator_control_enabled': MqttFieldConfig(
+        type=MqttFieldType.BOOL,
+        setter=True,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'Generator Control Enabled',
+        }
+    ),
+
+    'grid_reconnect_voltage_low_limit_v': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'Grid Reconnect Voltage Low',
+            'unit_of_measurement': 'V',
+            'device_class': 'voltage',
+            'state_class': 'measurement',
+        }
+    ),
+    'grid_reconnect_voltage_high_limit_v': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'Grid Reconnect Voltage High',
+            'unit_of_measurement': 'V',
+            'device_class': 'voltage',
+            'state_class': 'measurement',
+        }
+    ),
+    'grid_reconnect_frequency_low_limit_hz': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'Grid Reconnect Frequency Low',
+            'unit_of_measurement': 'Hz',
+            'device_class': 'frequency',
+            'state_class': 'measurement',
+        }
+    ),
+    'grid_reconnect_frequency_high_limit_hz': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'Grid Reconnect Frequency High',
+            'unit_of_measurement': 'Hz',
+            'device_class': 'frequency',
+            'state_class': 'measurement',
+        }
+    ),
+
     'dc_input_power': MqttFieldConfig(
         type=MqttFieldType.NUMERIC,
         setter=False,
@@ -97,6 +766,28 @@ NORMAL_DEVICE_FIELDS = {
             'name': 'Total Battery Percent',
             'unit_of_measurement': '%',
             'device_class': 'battery',
+            'state_class': 'measurement',
+        }
+    ),
+    'pack_total_voltage': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'Pack Total Voltage',
+            'unit_of_measurement': 'V',
+            'device_class': 'voltage',
+            'state_class': 'measurement',
+        }
+    ),
+    'pack_total_current': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'Pack Total Current',
+            'unit_of_measurement': 'A',
+            'device_class': 'current',
             'state_class': 'measurement',
         }
     ),
@@ -402,6 +1093,61 @@ NORMAL_DEVICE_FIELDS = {
             'icon': 'mdi:arm-flex',
         }
     ),
+    'pv_dc_total_power': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'PV DC Total Power',
+            'unit_of_measurement': 'W',
+            'device_class': 'power',
+            'state_class': 'measurement',
+        }
+    ),
+    'pv_ac_total_power': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'PV AC Total Power',
+            'unit_of_measurement': 'W',
+            'device_class': 'power',
+            'state_class': 'measurement',
+        }
+    ),
+    'inverter_sum_power': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'Inverter Sum Power',
+            'unit_of_measurement': 'W',
+            'device_class': 'power',
+            'state_class': 'measurement',
+        }
+    ),
+    'self_consumption_power': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'Self Consumption Power',
+            'unit_of_measurement': 'W',
+            'device_class': 'power',
+            'state_class': 'measurement',
+        }
+    ),
+    'total_dc_power': MqttFieldConfig(
+        type=MqttFieldType.NUMERIC,
+        setter=False,
+        advanced=False,
+        home_assistant_extra={
+            'name': 'Total DC Power',
+            'unit_of_measurement': 'W',
+            'device_class': 'power',
+            'state_class': 'measurement',
+        }
+    ),
 }
 DC_INPUT_FIELDS = {
     'dc_input_voltage1': MqttFieldConfig(
@@ -597,10 +1343,19 @@ class MQTTClient:
             elif field.type == MqttFieldType.BUTTON:
                 type = 'button'
 
+            # Add modbus register as attribute if available
+            current_payload = payload(name, device, field)
+            if hasattr(device, 'get_field_registers'):
+                registers = device.get_field_registers(name)
+                if registers:
+                    current_payload_dict = json.loads(current_payload)
+                    current_payload_dict['json_attributes_topic'] = f'bluetti/state/{device.type}-{device.sn}/{name}/attributes'
+                    current_payload = json.dumps(current_payload_dict, separators=(',', ':'))
+
             # Publish config
             await client.publish(
                 f'homeassistant/{type}/{device.sn}_{name}/config',
-                payload=payload(name, device, field).encode(),
+                payload=current_payload.encode(),
                 retain=True
             )
 
@@ -690,6 +1445,13 @@ class MQTTClient:
                 assert False, f'Unhandled field type: {field.type.name}'
 
             await client.publish(topic_prefix + name, payload=payload.encode())
+
+            # Publish attributes
+            if hasattr(msg.device, 'get_field_registers'):
+                registers = msg.device.get_field_registers(name)
+                if registers:
+                    attributes = {'modbus_registers': ', '.join(map(str, registers))}
+                    await client.publish(topic_prefix + name + '/attributes', payload=json.dumps(attributes).encode())
 
         # Publish battery pack data
         pack_details = self._build_pack_details(msg.parsed)

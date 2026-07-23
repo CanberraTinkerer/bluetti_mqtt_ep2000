@@ -1,0 +1,27 @@
+[
+  {
+    "trigger_write": [
+      {
+        "trigger_metadata": {
+          "trigger_reg": 2027,
+          "trigger_value": 1,
+          "delay": 0.2,
+          "slave_id": 1
+        }
+      },
+      {
+        "post_trigger_read": {
+          "read_start_reg": 150,
+          "read_count": 8,
+          "delay": 0.2,
+          "slave_id": 41,
+          "registers": [
+            { "reg": 150, "name": "APP_HOME_DATA: PV Total Energy Low", "len": 32, "unit": "kWh", "scale": 1, "slave_id": 41, "device_class": "energy" },
+            { "reg": 154, "name": "APP_HOME_DATA: PV Today Energy", "len": 32, "unit": "kWh", "scale": 1, "slave_id": 41, "device_class": "energy" },
+            { "reg": 156, "name": "APP_HOME_DATA: PV Month Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" }
+          ]
+        }
+      }
+    ]
+  }
+]

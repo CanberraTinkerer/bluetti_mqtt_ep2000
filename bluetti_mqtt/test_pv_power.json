@@ -1,0 +1,11 @@
+[
+  {
+    "bulk_read": {
+      "slave_id": 1,
+      "delay": 0.2,
+      "registers": [
+        {"reg": 144, "name": "PV Input Power All", "len": 32, "signed": true, "unit": "W", "device_class": "power"}
+      ]
+    }
+  }
+]

@@ -1,0 +1,7 @@
+[
+    {
+        "reg": 109,
+        "name": "APP_HOME_DATA: CAN Bus Fault",
+        "notes": "CORRECT - 0=No Fault, nonZero=Fault"
+    }
+]

@@ -3,7 +3,6 @@ from enum import Enum, auto, unique
 import logging
 from typing import Union
 from bleak import BleakClient, BleakError
-from bleak.exc import BleakDeviceNotFoundError
 from bluetti_mqtt.core import DeviceCommand
 from .exc import BadConnectionError, ModbusError, ParseError
 
@@ -19,7 +18,9 @@ class ClientState(Enum):
 
 
 class BluetoothClient:
-    RESPONSE_TIMEOUT = 5
+    RESPONSE_TIMEOUT = 3
+    # Standard Bluetti BLE characteristics (FF00 service)
+    SERVICE_UUID = '0000ff00-0000-1000-8000-00805f9b34fb'
     WRITE_UUID = '0000ff02-0000-1000-8000-00805f9b34fb'
     NOTIFY_UUID = '0000ff01-0000-1000-8000-00805f9b34fb'
     DEVICE_NAME_UUID = '00002a00-0000-1000-8000-00805f9b34fb'
@@ -29,14 +30,21 @@ class BluetoothClient:
     notify_future: asyncio.Future
     notify_response: bytearray
 
-    def __init__(self, address: str):
+    def __init__(self, address: str, response_timeout: float = None, debug_logging: bool = False, device_name: str = None):
         self.address = address
+        self.response_timeout = response_timeout or self.RESPONSE_TIMEOUT
+        self.debug_logging = debug_logging
+        self.device_name = device_name
         self.state = ClientState.NOT_CONNECTED
         self.name = None
         self.client = BleakClient(self.address)
         self.command_queue = asyncio.Queue()
         self.notify_future = None
         self.loop = asyncio.get_running_loop()
+
+        # Set logging level based on debug flag
+        if self.debug_logging:
+            logging.getLogger().setLevel(logging.DEBUG)
 
     @property
     def is_ready(self):
@@ -47,8 +55,43 @@ class BluetoothClient:
         await self.command_queue.put((cmd, future))
         return future
 
-    async def perform_nowait(self, cmd: DeviceCommand):
-        await self.command_queue.put((cmd, None))
+    async def perform_with_fallback(self, cmd: DeviceCommand, device_protocol: str = "v2"):
+        """Perform command with protocol fallback logic.
+
+        If device_protocol == "v1": treat all reads/writes as plaintext.
+        If device_protocol == "v2": try V2 first, then try V1 on timeout.
+        """
+        from bluetti_mqtt.mqtt_debugger import ReadHoldingRegisters, WriteSingleRegister
+        from bluetti_mqtt.mqtt_debugger import ReadHoldingRegistersV2, WriteSingleRegisterV2
+
+        def convert_to_v1(original_cmd: DeviceCommand):
+            if isinstance(original_cmd, ReadHoldingRegistersV2):
+                return ReadHoldingRegisters(original_cmd.starting_address, original_cmd.quantity, original_cmd.slave_id)
+            if isinstance(original_cmd, WriteSingleRegisterV2):
+                return WriteSingleRegister(original_cmd.address, original_cmd.value, original_cmd.slave_id)
+            return original_cmd
+
+        # If forced v1, convert and execute directly
+        if device_protocol == "v1":
+            v1_cmd = convert_to_v1(cmd)
+            return await self.perform(v1_cmd)
+
+        # Normal v2 behavior: try original cmd first
+        try:
+            return await self.perform(cmd)
+        except BadConnectionError as e:
+            if "too many retries" not in str(e):
+                raise
+
+            logging.info(f"V2 command failed for {self.address} (too many retries), trying V1 fallback")
+            v1_cmd = convert_to_v1(cmd)
+
+            try:
+                logging.info(f"Attempting V1 fallback for {self.address}")
+                return await self.perform(v1_cmd)
+            except Exception:
+                logging.error(f"V1 fallback also failed for {self.address}")
+                raise e
 
     async def run(self):
         try:
@@ -78,7 +121,7 @@ class BluetoothClient:
             await self.client.connect()
             self.state = ClientState.CONNECTED
             logging.info(f'Connected to device: {self.address}')
-        except BleakDeviceNotFoundError:
+        except BleakError:
             logging.debug(f'Error connecting to device {self.address}: Not found')
         except (BleakError, EOFError, asyncio.TimeoutError):
             logging.exception(f'Error connecting to device {self.address}:')
@@ -104,6 +147,7 @@ class BluetoothClient:
         except BleakError:
             self.state = ClientState.DISCONNECTING
 
+
     async def _perform_command(self):
         cmd, cmd_future = await self.command_queue.get()
         retries = 0
@@ -115,30 +159,42 @@ class BluetoothClient:
                 self.notify_future = self.loop.create_future()
                 self.notify_response = bytearray()
 
+                # Log command being sent
+                cmd_bytes = bytes(self.current_command)
+                is_v2 = len(cmd_bytes) > 2 and cmd_bytes[0] == 0x00 and cmd_bytes[1] == 0x17
+                proto = "V2 Encrypted" if is_v2 else "Plaintext"
+                logging.debug(f'Sending {proto} command to {self.address}: {cmd_bytes.hex()} (attempt {retries + 1}/5)')
+
                 # Make request
                 await self.client.write_gatt_char(
                     self.WRITE_UUID,
-                    bytes(self.current_command))
+                    cmd_bytes)
 
                 # Wait for response
+                logging.debug(f'Waiting for response from {self.address} (timeout: {self.response_timeout}s)')
                 res = await asyncio.wait_for(
                     self.notify_future,
-                    timeout=self.RESPONSE_TIMEOUT)
+                    timeout=self.response_timeout)
+
+                logging.debug(f'Received response from {self.address}: {res.hex()}')
                 if cmd_future:
                     cmd_future.set_result(res)
 
                 # Success!
                 self.state = ClientState.READY
                 break
-            except ParseError:
+            except ParseError as e:
+                logging.warning(f'ParseError on attempt {retries + 1}/5 for {self.address}: {e}. Response so far: {self.notify_response.hex() if self.notify_response else "None"}')
                 # For safety, wait the full timeout before retrying again
                 self.state = ClientState.COMMAND_ERROR_WAIT
                 retries += 1
-                await asyncio.sleep(self.RESPONSE_TIMEOUT)
+                await asyncio.sleep(self.response_timeout)
             except asyncio.TimeoutError:
+                logging.warning(f'Timeout on attempt {retries + 1}/5 for {self.address}: No response within {self.response_timeout}s')
                 self.state = ClientState.COMMAND_ERROR_WAIT
                 retries += 1
             except ModbusError as err:
+                logging.debug(f'ModbusError for {self.address}: {err}')
                 if cmd_future:
                     cmd_future.set_exception(err)
 
@@ -146,6 +202,7 @@ class BluetoothClient:
                 self.state = ClientState.READY
                 break
             except (BleakError, EOFError, BadConnectionError) as err:
+                logging.error(f'Connection error for {self.address}: {err}')
                 if cmd_future:
                     cmd_future.set_exception(err)
 
@@ -153,6 +210,7 @@ class BluetoothClient:
                 break
 
         if retries == 5:
+            logging.error(f'Command failed after 5 retries for {self.address}: {bytes(cmd).hex()}')
             err = BadConnectionError('too many retries')
             if cmd_future:
                 cmd_future.set_exception(err)
@@ -169,23 +227,29 @@ class BluetoothClient:
     def _notification_handler(self, _sender: int, data: bytearray):
         # Ignore notifications we don't expect
         if not self.notify_future or self.notify_future.done():
+            logging.debug(f'Ignoring unexpected notification from {self.address}: {data.hex()}')
             return
 
         # If something went wrong, we might get weird data.
         if data == b'AT+NAME?\r' or data == b'AT+ADV?\r':
+            logging.warning(f'Received AT+ command response from {self.address}: {data}')
             err = BadConnectionError('Got AT+ notification')
             self.notify_future.set_exception(err)
             return
 
         # Save data
         self.notify_response.extend(data)
+        logging.debug(f'Received notification chunk from {self.address}: {data.hex()} (total so far: {len(self.notify_response)}/{self.current_command.response_size()} bytes)')
 
         if len(self.notify_response) == self.current_command.response_size():
             if self.current_command.is_valid_response(self.notify_response):
+                logging.debug(f'Valid complete response received from {self.address}')
                 self.notify_future.set_result(self.notify_response)
             else:
+                logging.warning(f'Invalid checksum for response from {self.address}: {self.notify_response.hex()}')
                 self.notify_future.set_exception(ParseError('Failed checksum'))
         elif self.current_command.is_exception_response(self.notify_response):
             # We got a MODBUS command exception
             msg = f'MODBUS Exception {self.current_command}: {self.notify_response[2]}'
+            logging.warning(f'{msg} from {self.address}')
             self.notify_future.set_exception(ModbusError(msg))

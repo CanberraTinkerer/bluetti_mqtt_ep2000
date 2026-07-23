@@ -1,0 +1,76 @@
+[
+  {
+    "trigger_action": [
+      { "trigger_read_metadata": { "trigger_reg": 21000, "trigger_count": 1, "delay": 0.2, "slave_id": 0 } },
+      { "bulk_read": {
+          "slave_id": 41,
+          "delay": 0.0,
+          "registers": [
+            {"reg": 1200, "len": 32, "name": "INV_PV_INFO: Total PV Power", "unit": "W", "device_class": "power", "notes": "CORRECT - new solar PV production, not including Solaredge", "no_word_swap": true },
+        {"reg": 1202, "len": 32, "name": "INV_PV_INFO: Total PV Energy", "scale": 1, "unit": "kWh", "device_class": "energy", "notes": "CORRECT - check in daytime - should be a sum", "no_word_swap": true },
+        { "reg": 1209,
+          "outputs": [
+            { "name": "INV_PV_INFO: DC String Count", "notes": "CORRECT", "mask": 15 },
+            { "name": "INV_PV_INFO: AC String Count", "offset": 4, "notes": "CORRECT", "mask": 15 }
+          ]
+        },
+        {"reg": 1210, "name": "INV_PV_INFO: String 1 Status", "len": 16, "mask": 255, "type": "enum", "values": ["Standby", "Normal", "Fault"], "notes": "CORRECT - 0=Standby, 1=Normal, 2=Fault" },
+        {"reg": 1211, "name": "INV_PV_INFO: String 1 Type", "len": 16, "notes": "CORRECT: 100=DC Input, 101=AC-Coupled" },
+        {"reg": 1212, "name": "INV_PV_INFO: String 1 Power", "len": 16, "unit": "W", "device_class": "power", "notes": "CORRECT"  },
+        {"reg": 1213, "name": "INV_PV_INFO: String 1 Voltage", "len": 16, "scale": 1, "unit": "V", "device_class": "voltage", "notes": "CORRECT" },
+        {"reg": 1214, "name": "INV_PV_INFO: String 1 Current", "len": 16, "scale": 1, "unit": "A", "device_class": "current", "notes": "CORRECT" },
+        {"reg": 1218, "name": "INV_PV_INFO: String 2 Status", "len": 16, "mask": 255, "type": "enum", "values": ["Standby", "Normal", "Fault"], "notes": "CORRECT - 0=Standby, 1=Normal, 2=Fault" },
+        {"reg": 1219, "name": "INV_PV_INFO: String 2 Type", "len": 16, "notes": "CORRECT: 100=DC Input, 101=AC-Coupled" },
+        {"reg": 1220, "name": "INV_PV_INFO: String 2 Power", "len": 16, "unit": "W", "device_class": "power", "notes": "CORRECT"  },
+        {"reg": 1221, "name": "INV_PV_INFO: String 2 Voltage", "len": 16, "scale": 1, "unit": "V", "device_class": "voltage", "notes": "CORRECT" },
+        {"reg": 1222, "name": "INV_PV_INFO: String 2 Current", "len": 16, "scale": 1, "unit": "A", "device_class": "current", "notes": "CORRECT" },
+        {"reg": 1226, "name": "INV_PV_INFO: String 3 Status", "len": 16, "mask": 255, "type": "enum", "values": ["Standby", "Normal", "Fault"], "notes": "CORRECT - 0=Standby, 1=Normal, 2=Fault" },
+        {"reg": 1227, "name": "INV_PV_INFO: String 3 Type", "len": 16, "notes": "CORRECT: 100=DC Input, 101=AC-Coupled" },
+        {"reg": 1228, "name": "INV_PV_INFO: String 3 Power", "len": 16, "unit": "W", "device_class": "power", "notes": "CORRECT" },
+        {"reg": 1229, "name": "INV_PV_INFO: String 3 Voltage", "len": 16, "scale": 1, "unit": "V", "device_class": "voltage", "notes": "CORRECT" },
+        {"reg": 1230, "name": "INV_PV_INFO: String 3 Current", "len": 16, "scale": 1, "unit": "A", "device_class": "current", "notes": "CORRECT" },
+        {"reg": 1234, "name": "INV_PV_INFO: String 4 Status", "len": 16, "mask": 255, "type": "enum", "values": ["Standby", "Normal", "Fault"], "notes": "CORRECT - 0=Standby, 1=Normal, 2=Fault" },
+        {"reg": 1235, "name": "INV_PV_INFO: String 4 Type", "len": 16, "notes": "CORRECT: 100=DC Input, 101=AC-Coupled" },
+        {"reg": 1236, "name": "INV_PV_INFO: String 4 Power", "len": 16, "unit": "W", "device_class": "power", "notes": "CORRECT" },
+        {"reg": 1237, "name": "INV_PV_INFO: String 4 Voltage", "len": 16, "scale": 1, "unit": "V", "device_class": "voltage", "notes": "CORRECT" },
+        {"reg": 1238, "name": "INV_PV_INFO: String 4 Current", "len": 16, "scale": 1, "unit": "A", "device_class": "current", "notes": "CORRECT" },
+        {"reg": 1242, "name": "INV_PV_INFO: String 5 Status", "len": 16, "mask": 255, "type": "enum", "values": ["Standby", "Normal", "Fault"], "notes": "CORRECT - 0=Standby, 1=Normal, 2=Fault" },
+        {"reg": 1243, "name": "INV_PV_INFO: String 5 Type", "len": 16, "notes": "CORRECT: 100=DC Input, 101=AC-Coupled" },
+        {"reg": 1244, "name": "INV_PV_INFO: String 5 Power", "len": 16, "unit": "W", "device_class": "power", "notes": "probably AC Coupled PV Phase 3 power"  },
+        {"reg": 1245, "name": "INV_PV_INFO: String 5 Voltage", "len": 16, "scale": 1, "unit": "V", "device_class": "voltage", "notes": "probably AC Coupled PV Phase 3 voltage" },
+        {"reg": 1246, "name": "INV_PV_INFO: String 5 Current", "len": 16, "scale": 1, "unit": "A", "device_class": "current", "notes": "probably AC Coupled PV Phase 3 current" },
+        {"reg": 1250, "name": "INV_PV_INFO: String 6 Status", "len": 16, "mask": 255, "type": "enum", "values": ["Standby", "Normal", "Fault"], "notes": "CORRECT - 0=Standby, 1=Normal, 2=Fault" },
+        {"reg": 1251, "name": "INV_PV_INFO: String 6 Type", "len": 16, "notes": "CORRECT: 100=DC Input, 101=AC-Coupled" },
+        {"reg": 1252, "name": "INV_PV_INFO: String 6 Power", "len": 16, "unit": "W", "device_class": "power", "notes": "CORRECT"  },
+        {"reg": 1253, "name": "INV_PV_INFO: String 6 Voltage", "len": 16, "scale": 1, "unit": "V", "device_class": "voltage", "notes": "CORRECT" },
+        {"reg": 1254, "name": "INV_PV_INFO: String 6 Current", "len": 16, "scale": 1, "unit": "A", "device_class": "current", "notes": "CORRECT" },
+        {"reg": 1258, "name": "INV_PV_INFO: String 7 Status", "len": 16, "mask": 255, "type": "enum", "values": ["Standby", "Normal", "Fault"], "notes": "CORRECT - 0=Standby, 1=Normal, 2=Fault" },
+        {"reg": 1259, "name": "INV_PV_INFO: String 7 Type", "len": 16, "notes": "CORRECT: 100=DC Input, 101=AC-Coupled" },
+        {"reg": 1260, "name": "INV_PV_INFO: String 7 Power", "len": 16, "unit": "W", "device_class": "power", "notes": "CORRECT"  },
+        {"reg": 1261, "name": "INV_PV_INFO: String 7 Voltage", "len": 16, "scale": 1, "unit": "V", "device_class": "voltage", "notes": "CORRECT" },
+        {"reg": 1262, "name": "INV_PV_INFO: String 7 Current", "len": 16, "scale": 1, "unit": "A", "device_class": "current", "notes": "CORRECT" },
+        {"reg": 1266, "name": "INV_PV_INFO: String 8 Status", "len": 16, "mask": 255, "type": "enum", "values": ["Standby", "Normal", "Fault"], "notes": "CORRECT - 0=Standby, 1=Normal, 2=Fault" },
+        {"reg": 1267, "name": "INV_PV_INFO: String 8 Type", "len": 16, "notes": "CORRECT: 100=DC Input, 101=AC-Coupled" },
+        {"reg": 1268, "name": "INV_PV_INFO: String 8 Power", "len": 16, "unit": "W", "device_class": "power", "notes": "CORRECT"  },
+        {"reg": 1269, "name": "INV_PV_INFO: String 8 Voltage", "len": 16, "scale": 1, "unit": "V", "device_class": "voltage", "notes": "CORRECT" },
+        {"reg": 1270, "name": "INV_PV_INFO: String 8 Current", "len": 16, "scale": 1, "unit": "A", "device_class": "current", "notes": "CORRECT" },
+        {"reg": 1274, "name": "INV_PV_INFO: String 9 Status", "len": 16, "mask": 255, "type": "enum", "values": ["Standby", "Normal", "Fault"], "notes": "CORRECT - 0=Standby, 1=Normal, 2=Fault" },
+        {"reg": 1275, "name": "INV_PV_INFO: String 9 Type", "len": 16, "notes": "CORRECT: 100=DC Input, 101=AC-Coupled" },
+        {"reg": 1276, "name": "INV_PV_INFO: String 9 Power", "len": 16, "unit": "W", "device_class": "power", "notes": "CORRECT"  },
+        {"reg": 1277, "name": "INV_PV_INFO: String 9 Voltage", "len": 16, "scale": 1, "unit": "V", "device_class": "voltage", "notes": "CORRECT" },
+        {"reg": 1278, "name": "INV_PV_INFO: String 9 Current", "len": 16, "scale": 1, "unit": "A", "device_class": "current", "notes": "CORRECT" },
+        {"reg": 1282, "name": "INV_PV_INFO: String 10 Status", "len": 16, "mask": 255, "type": "enum", "values": ["Standby", "Normal", "Fault"], "notes": "CORRECT - 0=Standby, 1=Normal, 2=Fault" },
+        {"reg": 1283, "name": "INV_PV_INFO: String 10 Type", "len": 16, "notes": "CORRECT: 100=DC Input, 101=AC-Coupled" },
+        {"reg": 1284, "name": "INV_PV_INFO: String 10 Power", "len": 16, "unit": "W", "device_class": "power", "notes": "CORRECT"  },
+        {"reg": 1285, "name": "INV_PV_INFO: String 10 Voltage", "len": 16, "scale": 1, "unit": "V", "device_class": "voltage", "notes": "CORRECT" },
+        {"reg": 1286, "name": "INV_PV_INFO: String 10 Current", "len": 16, "scale": 1, "unit": "A", "device_class": "current", "notes": "CORRECT" },
+        {"reg": 1287, "name": "INV_PV_INFO: ADL400 cumulative energy(W)", "len": 16, "notes": "tare bluetti consumption? ADL400 cumulative energy(W)" },
+        {"reg": 1288, "name": "INV_PV_INFO: ADL400 meter online status", "len": 16, "notes": "ADL400 meter online status" },
+        {"reg": 1289, "name": "INV_PV_INFO: ADL400 phase mapping", "len": 16, "notes": "ADL400 phase mapping" },
+        {"reg": 1290, "name": "INV_PV_INFO: Total System Self-Consumption (W)", "len": 16, "notes": "tare bluetti consumption?" },
+        {"reg": 1291, "name": "INV_PV_INFO: ADL400 meter fault code", "len": 16, "notes": "ADL400 meter fault code" }
+      ]
+  }
+  ]
+  }
+]

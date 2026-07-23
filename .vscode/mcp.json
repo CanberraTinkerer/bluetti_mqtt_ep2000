@@ -1,0 +1,20 @@
+{
+  "servers": {
+    "home-assistant": {
+      "type": "http",
+      "url": "http://192.168.1.102:9583/private_1BCazWORRDTCql1IS9WXoA"
+  	},
+    "mqtt-mcp": {
+      "type": "http",
+      "url": "http://192.168.1.103:8099/mcp/"
+  	},
+    "jadx": {
+      "command": "uv",
+      "args": [
+        "run",
+        "jadx_mcp_server.py"
+      ],
+      "cwd": "C:\\apps\\jadx\\jadx-mcp\\jadx-mcp-server-6.3.0\\jadx-mcp-server"
+    },
+  }
+}

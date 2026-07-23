@@ -1,0 +1,27 @@
+[
+    {"trigger_write": [
+      { "trigger_metadata": { "pagination_selector": 7000, "pagination_count_reg": 6154, "pagination_start": 1, "slave_id": 41, "delay": 0.2 } },
+      { "bulk_read":
+        { "slave_id": 41, "delay": 0.2,
+          "registers":
+          [
+            { "reg": 3000, "name": "BMS_PACK_SETTINGS: Pack ID", "notes": "The ID of the currently active battery pack" },
+            { "reg": 3001, "name": "BMS_PACK_SETTINGS: Heating Adaptation", "type": "enum", "values": ["Off", "On"], "notes": "0=Off, 1=On (Heating feature)" },
+            { "reg": 3002, "name": "BMS_PACK_SETTINGS: Pack Heat Status", "notes": "Current heating element status" },
+            { "reg": 3003, "name": "BMS_PACK_SETTINGS: Pack Unlock", "type": "enum", "values": ["Locked", "Unlocked"], "notes": "0=Locked, 1=Unlocked (Read-only status)" },
+            { "reg": 3004, "name": "BMS_PACK_SETTINGS: Pack Parallel Number", "len": 32, "notes": "System-wide parallel pack index" },
+            {
+              "reg": 3010,
+              "name": "BMS_PACK_SETTINGS: Protect Config",
+              "outputs": [
+                { "name": "BMS_PACK_SETTINGS: Deep Discharge Enable", "mask": 3, "offset": 6, "type": "enum", "values": ["Off", "On"], "notes": "Bits 6-7: 0=Off, 1=On" },
+                { "name": "BMS_PACK_SETTINGS: Start Heat Enable", "mask": 3, "offset": 4, "type": "enum", "values": ["Off", "On"], "notes": "Bits 4-5: 0=Off, 1=On" }
+              ]
+            },
+            { "reg": 3020, "name": "BMS_PACK_SETTINGS: BMS Protocol Type", "notes": "Type code for BMS communication protocol" },
+            { "reg": 3021, "name": "BMS_PACK_SETTINGS: BMS Interface Type", "type": "enum", "values": ["CAN", "RS485"], "notes": "0=CAN, 1=RS485" }
+          ]
+        }
+      }
+    ]}
+]

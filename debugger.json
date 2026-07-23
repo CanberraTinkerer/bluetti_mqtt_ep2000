@@ -1,0 +1,1453 @@
+[
+  {
+    "bulk_read": {
+      "slave_id": 0,
+      "delay": 0.2,
+      "registers": [
+        { "reg": 21000, "name": "NODE_INFO: Block Header Version", "notes": "Returns discovery process status/version" },
+        { "reg": 21001, "name": "NODE_INFO: Total Node Count", "notes": "node count" }
+      ]
+    }
+  },
+
+    {
+      "reg": 1,
+      "name": "Device Base Configuration: Region Spec & Voltage Type",
+      "outputs": [
+        {
+          "name": "Region Spec",
+          "mask": 255,
+          "offset": 8,
+          "type": "enum",
+          "values": ["Unknown", "US", "JP", "EU/UK_HES", "AU/ANZ", "CN", "AF", "DE", "TW", "UK"],
+          "notes": "DeviceSpec enum: 1=US, 2=JP, 3=EU/UK_HES, 4=AU/ANZ, 5=CN, 6=AF, 7=DE, 8=TW, 9=UK"
+        },
+        {
+          "name": "Voltage Type",
+          "mask": 255,
+          "type": "enum",
+          "values": ["Low Volt 100-120V", "High Volt 220-240V"],
+          "notes": "0=Low Volt 100-120V, 1=High Volt 220-240V"
+        }
+      ]
+    },
+    { "reg": 5, "name": "WinterMode", "type": "enum", "values": ["Disabled", "Enabled"], "notes": "Low-temp heater/protection logic" },
+    {
+      "reg": 6,
+      "name": "Device Base Configuration: Bluetooth Settings",
+      "outputs": [
+        {
+          "name": "Bluetooth Password Enable",
+          "mask": 3,
+          "offset": 0,
+          "type": "enum",
+          "values": ["Disabled", "Enabled"],
+          "notes": "0=Disabled, 1=Enabled - triggers reading regs 7-9 for password"
+        },
+        {
+          "name": "Guest Mode Enable",
+          "mask": 3,
+          "offset": 2,
+          "type": "enum",
+          "values": ["Disabled", "Enabled"],
+          "notes": "0=Disabled, 1=Enabled"
+        }
+      ]
+    },
+    { "reg": 7, "name": "Device Base Configuration: Bluetooth Password Char 1-2", "ascii": true, "byte_swap": true, "notes": "Only present/read if BtPswEnable == 1" },
+    { "reg": 8, "name": "Device Base Configuration: Bluetooth Password Char 3-4", "ascii": true, "byte_swap": true },
+    { "reg": 9, "name": "Device Base Configuration: Bluetooth Password Char 5-6", "ascii": true, "byte_swap": true },
+    { "reg": 10, "name": "MicroInvEnable", "type": "enum", "values": ["Disabled", "Enabled"], "notes": "AC-coupled solar support" },
+    { "reg": 15, "name": "Protocol Major Version", "len": 16, "notes": "V1/Legacy Protocol" },
+    { "reg": 16, "name": "Protocol Firmware Version", "len": 16, "notes": "V1/Legacy Protocol" },
+
+	
+    { "reg": 100, "name": "APP_HOME_DATA: Pack Total Voltage", "len": 16, "device_class": "voltage", "unit": "V", "scale": 1, "notes": "CORRECT", "signed": true },
+    { "reg": 101, "name": "APP_HOME_DATA: Pack Total Current", "len": 16, "device_class": "current", "unit": "A", "scale": 1, "notes": "CORRECT", "signed": true },
+    { "reg": 102, "name": "APP_HOME_DATA: Total Battery Percent", "len": 16, "device_class": "battery", "unit": "%", "notes": "CORRECT" },
+    { "reg": 103, "name": "APP_HOME_DATA: Pack Charging Status", "type": "enum", "values": ["Standby/Idle", "Charging", "Discharging"], "notes": "CORRECT - 0-Standby/Idle, 1-Charging, 2-Discharging"},
+    { "reg": 104, "name": "APP_HOME_DATA: Pack Charge Time to Full", "unit": "min", "notes": "CORRECT" },
+    { "reg": 105, "name": "APP_HOME_DATA: Pack Discharge Remaining Time", "unit": "min", "notes": "CORRECT" },
+    { "reg": 106, "name": "APP_HOME_DATA: Pack Aging Info",
+      "outputs": [
+        {
+          "name": "APP_HOME_DATA: Aging Status", 
+          "mask": 15, 
+          "offset": 12,
+          "type": "enum",
+          "values": ["Init", "Ready", "Maint", "Done", "Stop", "Fail"],
+          "notes": "CORRECT - 0=Init, 1=Ready, 2=Maint, 3=Done, 4=Stop, 5=Fail"
+        },
+        {
+          "name": "APP_HOME_DATA: Aging Progress",
+          "mask": 15, 
+          "offset": 8,
+          "unit": "%", 
+          "notes": "CORRECT - "
+        },
+        {
+          "name": "APP_HOME_DATA: Aging Fault",
+          "mask": 15, 
+          "offset": 4,
+          "notes": "CORRECT - 1=LowTemp, 2=HighTemp, 3=Timeout, 4=VoltUnbal, 5=IntFault, 6=UserStop"
+        }
+      ]
+    },
+
+    {"reg": 107, "name": "APP_HOME_DATA: Pack Counts", "mask": 255, "notes": "CORRECT"},
+    {
+      "len": 32,
+      "reg": 108,
+      "name": "APP_HOME_DATA: Pack Online Status",
+      "outputs": [
+        { "name": "APP_HOME_DATA: Pack 1 Online", "mask": 1, "offset": 0, "type": "enum", "values": ["Offline", "Online"], "notes": "CORRECT" },
+        { "name": "APP_HOME_DATA: Pack 2 Online", "mask": 1, "offset": 1, "type": "enum", "values": ["Offline", "Online"], "notes": "CORRECT" },
+        { "name": "APP_HOME_DATA: Pack 3 Online", "mask": 1, "offset": 2, "type": "enum", "values": ["Offline", "Online"], "notes": "CORRECT" },
+        { "name": "APP_HOME_DATA: Pack 4 Online", "mask": 1, "offset": 3, "type": "enum", "values": ["Offline", "Online"], "notes": "CORRECT" },
+        { "name": "APP_HOME_DATA: Pack 5 Online", "mask": 1, "offset": 4, "type": "enum", "values": ["Offline", "Online"], "notes": "CORRECT" },
+        { "name": "APP_HOME_DATA: Pack 6 Online", "mask": 1, "offset": 5, "type": "enum", "values": ["Offline", "Online"], "notes": "CORRECT" },
+        { "name": "APP_HOME_DATA: Pack 7 Online", "mask": 1, "offset": 6, "type": "enum", "values": ["Offline", "Online"], "notes": "CORRECT" },
+        { "name": "APP_HOME_DATA: Pack 8 Online", "mask": 1, "offset": 7, "type": "enum", "values": ["Offline", "Online"], "notes": "CORRECT" },
+        { "name": "APP_HOME_DATA: Pack 9 Online", "mask": 1, "offset": 8, "type": "enum", "values": ["Offline", "Online"], "notes": "CORRECT" },
+        { "name": "APP_HOME_DATA: Pack 10 Online", "mask": 1, "offset": 9, "type": "enum", "values": ["Offline", "Online"], "notes": "CORRECT" },
+        { "name": "APP_HOME_DATA: Pack 11 Online", "mask": 1, "offset": 10, "type": "enum", "values": ["Offline", "Online"], "notes": "CORRECT" },
+        { "name": "APP_HOME_DATA: Pack 12 Online", "mask": 1, "offset": 11, "type": "enum", "values": ["Offline", "Online"], "notes": "CORRECT" },
+        { "name": "APP_HOME_DATA: Pack 13 Online", "mask": 1, "offset": 12, "type": "enum", "values": ["Offline", "Online"], "notes": "CORRECT" },
+        { "name": "APP_HOME_DATA: Pack 14 Online", "mask": 1, "offset": 13, "type": "enum", "values": ["Offline", "Online"], "notes": "CORRECT" },
+        { "name": "APP_HOME_DATA: Pack 15 Online", "mask": 1, "offset": 14, "type": "enum", "values": ["Offline", "Online"], "notes": "CORRECT" },
+        { "name": "APP_HOME_DATA: Pack 16 Online", "mask": 1, "offset": 15, "type": "enum", "values": ["Offline", "Online"], "notes": "CORRECT" }
+      ]
+      , "no_word_swap": true
+    },
+    {"reg": 109, "name": "APP_HOME_DATA: CAN Bus Fault", "notes": "CORRECT - 0=No Fault, nonZero=Fault"},
+    { "reg": 110, "name": "APP_HOME_DATA: Device Type", "len": 6, "ascii": true, "notes": "CORRECT" },
+    { "reg": 115, "name": "APP_HOME_DATA: Legacy Voltage Type", "len": 16, "type": "enum", "values": ["Low (100-120V)", "High (220-240V)"], "notes": "CORRECT - 0=Low (100-120v), 1=High (220-240v)" },
+    {"reg": 116, "name": "APP_HOME_DATA: Device Serial Number", "len": 64, "notes": "CORRECT"},
+    {"reg": 120, "name": "APP_HOME_DATA: Inverter Number", "mask": 255, "notes": "CORRECT - value is the sum of all of the connected inverters"},
+    {
+      "reg": 121,
+      "name": "APP_HOME_DATA: Inverter Online Status",
+      "outputs": [
+        { "name": "APP_HOME_DATA: Inverter 1 Online", "mask": 1, "offset": 0, "type": "enum", "values": ["Offline", "Online"], "notes": "CORRECT" },
+        { "name": "APP_HOME_DATA: Inverter 2 Online", "mask": 1, "offset": 1, "type": "enum", "values": ["Offline", "Online"], "notes": "CORRECT" },
+        { "name": "APP_HOME_DATA: Inverter 3 Online", "mask": 1, "offset": 2, "type": "enum", "values": ["Offline", "Online"], "notes": "CORRECT" },
+        { "name": "APP_HOME_DATA: Inverter 4 Online", "mask": 1, "offset": 3, "type": "enum", "values": ["Offline", "Online"], "notes": "CORRECT" },
+        { "name": "APP_HOME_DATA: Inverter 5 Online", "mask": 1, "offset": 4, "type": "enum", "values": ["Offline", "Online"], "notes": "CORRECT" },
+        { "name": "APP_HOME_DATA: Inverter 6 Online", "mask": 1, "offset": 5, "type": "enum", "values": ["Offline", "Online"], "notes": "CORRECT" },
+        { "name": "APP_HOME_DATA: Inverter 7 Online", "mask": 1, "offset": 6, "type": "enum", "values": ["Offline", "Online"], "notes": "CORRECT" },
+        { "name": "APP_HOME_DATA: Inverter 8 Online", "mask": 1, "offset": 7, "type": "enum", "values": ["Offline", "Online"], "notes": "CORRECT" },
+        { "name": "APP_HOME_DATA: Inverter 9 Online", "mask": 1, "offset": 8, "type": "enum", "values": ["Offline", "Online"], "notes": "CORRECT" },
+        { "name": "APP_HOME_DATA: Inverter 10 Online", "mask": 1, "offset": 9, "type": "enum", "values": ["Offline", "Online"], "notes": "CORRECT" },
+        { "name": "APP_HOME_DATA: Inverter 11 Online", "mask": 1, "offset": 10, "type": "enum", "values": ["Offline", "Online"], "notes": "CORRECT" },
+        { "name": "APP_HOME_DATA: Inverter 12 Online", "mask": 1, "offset": 11, "type": "enum", "values": ["Offline", "Online"], "notes": "CORRECT" },
+        { "name": "APP_HOME_DATA: Inverter 13 Online", "mask": 1, "offset": 12, "type": "enum", "values": ["Offline", "Online"], "notes": "CORRECT" },
+        { "name": "APP_HOME_DATA: Inverter 14 Online", "mask": 1, "offset": 13, "type": "enum", "values": ["Offline", "Online"], "notes": "CORRECT" },
+        { "name": "APP_HOME_DATA: Inverter 15 Online", "mask": 1, "offset": 14, "type": "enum", "values": ["Offline", "Online"], "notes": "CORRECT" },
+        { "name": "APP_HOME_DATA: Inverter 16 Online", "mask": 1, "offset": 15, "type": "enum", "values": ["Offline", "Online"], "notes": "CORRECT" }
+      ]
+    },
+    {"reg": 122, "name": "APP_HOME_DATA: Inverter Power Type", "type": "enum", "values": ["Low Power", "Unknown", "Unknown", "High Power"], "notes": "CORRECT - 3=High Power, 0=Low Power - not sure of significance"},
+    {
+      "reg": 123,
+      "name": "APP_HOME_DATA: Energy Flow Indicators",
+      "byte_swap": true,
+      "outputs": [
+        { "name": "APP_HOME_DATA: PvToBattery", "mask": 1, "offset": 0, "type": "enum", "values": ["Inactive", "Active"], "notes": "Energy flowing from Solar to Battery - 0 for EP2000" },
+        { "name": "APP_HOME_DATA: GridToBattery", "mask": 1, "offset": 1, "type": "enum", "values": ["Inactive", "Active"], "notes": "Energy flowing from Grid to Battery - 0 for EP2000" },
+        { "name": "APP_HOME_DATA: BatteryToGrid", "mask": 1, "offset": 2, "type": "enum", "values": ["Inactive", "Active"], "notes": "Energy flowing from Battery to Grid (Exporting) - 0 for EP2000" },
+        { "name": "APP_HOME_DATA: AcLoad", "mask": 1, "offset": 3, "type": "enum", "values": ["Inactive", "Active"], "notes": "Energy flowing to AC Load - 0 for EP2000" },
+        { "name": "APP_HOME_DATA: DcLoad", "mask": 1, "offset": 4, "type": "enum", "values": ["Inactive", "Active"], "notes": "Energy flowing to DC Load - 0 for EP2000" },
+        { "name": "APP_HOME_DATA: BatteryToInvert", "mask": 1, "offset": 5, "type": "enum", "values": ["Inactive", "Active"], "notes": "Battery discharging to Inverter - 0 for EP2000" },
+        { "name": "APP_HOME_DATA: InvertToBattery", "mask": 1, "offset": 6, "type": "enum", "values": ["Inactive", "Active"], "notes": "Inverter charging Battery - 0 for EP2000" },
+        { "name": "APP_HOME_DATA: GridToLoad", "mask": 1, "offset": 7, "type": "enum", "values": ["Inactive", "Active"], "notes": "Energy flowing from Grid directly to AC Load - 0 for EP2000" },
+        { "name": "APP_HOME_DATA: PvIcon", "mask": 1, "offset": 8, "type": "enum", "values": ["Inactive", "Active"], "notes": "Solar Panel icon visibility - 0 for EP2000" },
+        { "name": "APP_HOME_DATA: GridIcon", "mask": 1, "offset": 9, "type": "enum", "values": ["Inactive", "Active"], "notes": "Grid icon visibility - 0 for EP2000" },
+        { "name": "APP_HOME_DATA: AcLoadIcon", "mask": 1, "offset": 10, "type": "enum", "values": ["Inactive", "Active"], "notes": "AC Load icon visibility - 0 for EP2000" },
+        { "name": "APP_HOME_DATA: PvToGrid", "mask": 1, "offset": 11, "type": "enum", "values": ["Inactive", "Active"], "notes": "Solar energy flowing directly to Grid - 0 for EP2000" },
+        { "name": "APP_HOME_DATA: PvToACLoad", "mask": 1, "offset": 12, "type": "enum", "values": ["Inactive", "Active"], "notes": "Solar energy flowing directly to AC Load - 0 for EP2000" },
+        { "name": "APP_HOME_DATA: BatteryToACLoad", "mask": 1, "offset": 13, "type": "enum", "values": ["Inactive", "Active"], "notes": "Battery energy flowing directly to AC Load - 0 for EP2000" }
+      ]
+    },
+
+    {
+      "reg": 124,
+      "name": "APP_HOME_DATA: System Control Status",
+      "outputs": [
+        { "name": "APP_HOME_DATA: Main Power", "mask": 1, "offset": 0, "type": "enum", "values": ["Off", "On"], "notes": "Main System Power Status" },
+        { "name": "APP_HOME_DATA: AC Output", "mask": 1, "offset": 1, "type": "enum", "values": ["Off", "On"], "notes": "CORRECT - AC Output Status (ON/OFF)" },
+        { "name": "APP_HOME_DATA: DC Output", "mask": 1, "offset": 2, "type": "enum", "values": ["Off", "On"], "notes": "CORRECT - DC Output Status (ON/OFF)" },
+        { "name": "APP_HOME_DATA: Inverter Status", "mask": 1, "offset": 3, "type": "enum", "values": ["Off", "On"], "notes": "CORRECT - Inverter Status" },
+        { "name": "APP_HOME_DATA: Grid Status", "mask": 1, "offset": 4, "type": "enum", "values": ["Inactive", "Active"], "notes": "CORRECT - Grid Connection Status - is 0 for me?" },
+        { "name": "APP_HOME_DATA: PV Status", "mask": 1, "offset": 5, "type": "enum", "values": ["Inactive", "Active"], "notes": "CORRECT - PV (Solar) Input Status - is 0 for me?" },
+        { "name": "APP_HOME_DATA: Grid Feed-in", "mask": 1, "offset": 6, "type": "enum", "values": ["Off", "On"], "notes": "CORRECT - Feed-in to Grid Status" },
+        { "name": "APP_HOME_DATA: Meter Comm", "mask": 1, "offset": 7, "type": "enum", "values": ["Inactive", "Active"], "notes": "CORRECT - External Meter Communication Status - is 0 for me?" },
+        { "name": "APP_HOME_DATA: LED Status", "mask": 1, "offset": 8, "type": "enum", "values": ["Off", "On"], "notes": "CORRECT - LED / Display Light Status - is 1 for me" },
+        { "name": "APP_HOME_DATA: ECO Mode", "mask": 1, "offset": 9, "type": "enum", "values": ["Off", "On"], "notes": "CORRECT - ECO Mode Status" },
+        { "name": "APP_HOME_DATA: Super Power", "mask": 1, "offset": 10, "type": "enum", "values": ["Off", "On"], "notes": "CORRECT - Working Mode / High Power Status - is 0 for me?" }
+      ]
+    },
+    {"reg": 125, "name": "APP_HOME_DATA: Grid Parallel SoC", "mask": 255, "notes": "CORRECT" },
+    {
+      "reg": 126,
+      "name": "APP_HOME_DATA: Alarm Info",
+      "len": 64,
+      "outputs": [
+        { "name": "B001 Lead-acid battery voltage low", "mask": 1, "offset": 0, "type": "enum", "values": ["Inactive", "Active"], "notes": "CORRECT - Warning" },
+        { "name": "B002 Lead-acid battery voltage high", "mask": 1, "offset": 1, "type": "enum", "values": ["Inactive", "Active"], "notes": "CORRECT - Warning" },
+        { "name": "B003 Battery voltage low", "mask": 1, "offset": 2, "type": "enum", "values": ["Inactive", "Active"], "notes": "CORRECT - Warning" },
+        { "name": "B004 Battery voltage high", "mask": 1, "offset": 3, "type": "enum", "values": ["Inactive", "Active"], "notes": "CORRECT - Warning" },
+        { "name": "B005 Inverter overload", "mask": 1, "offset": 4, "type": "enum", "values": ["Inactive", "Active"], "notes": "CORRECT - Warning" },
+        { "name": "B006 Inverter temperature high", "mask": 1, "offset": 5, "type": "enum", "values": ["Inactive", "Active"], "notes": "CORRECT - Warning" },
+        { "name": "B007 Inverter temperature low", "mask": 1, "offset": 6, "type": "enum", "values": ["Inactive", "Active"], "notes": "CORRECT - Warning" },
+        { "name": "B008 Fan fault", "mask": 1, "offset": 7, "type": "enum", "values": ["Inactive", "Active"], "notes": "CORRECT - Warning" },
+        { "name": "B009 Grid voltage high", "mask": 1, "offset": 8, "type": "enum", "values": ["Inactive", "Active"], "notes": "CORRECT - Warning" },
+        { "name": "B010 Grid voltage low", "mask": 1, "offset": 9, "type": "enum", "values": ["Inactive", "Active"], "notes": "CORRECT - Warning" },
+        { "name": "B011 Grid frequency high", "mask": 1, "offset": 10, "type": "enum", "values": ["Inactive", "Active"], "notes": "CORRECT - Warning" },
+        { "name": "B012 Grid frequency low", "mask": 1, "offset": 11, "type": "enum", "values": ["Inactive", "Active"], "notes": "CORRECT - Warning" },
+        { "name": "B013 PV voltage high", "mask": 1, "offset": 12, "type": "enum", "values": ["Inactive", "Active"], "notes": "CORRECT - Warning" },
+        { "name": "B014 PV power high", "mask": 1, "offset": 13, "type": "enum", "values": ["Inactive", "Active"], "notes": "CORRECT - Warning" },
+        { "name": "B017 Ambient temperature high", "mask": 1, "offset": 16, "type": "enum", "values": ["Inactive", "Active"], "notes": "CORRECT - Warning" },
+        { "name": "B018 Ambient temperature low", "mask": 1, "offset": 17, "type": "enum", "values": ["Inactive", "Active"], "notes": "CORRECT - Warning" }
+      ]
+    },
+    {"reg": 133, "name": "APP_HOME_DATA: Fault Info", "len": 96,
+      "outputs": [
+        { "name": "E001 Bus Over Voltage", "mask": 1, "offset": 0, "type": "enum", "values": ["Inactive", "Active"], "notes": "CORRECT - Fault" },
+        { "name": "E002 BUS2 Over Voltage", "mask": 1, "offset": 1, "type": "enum", "values": ["Inactive", "Active"], "notes": "CORRECT - Fault" },
+        { "name": "E008 Hardware Inverter Over Current", "mask": 1, "offset": 7, "type": "enum", "values": ["Inactive", "Active"], "notes": "CORRECT - Fault" },
+        
+        { "name": "E017 PV1 Overcurrent", "mask": 1, "offset": 16, "type": "enum", "values": ["Inactive", "Active"], "notes": "CORRECT - Fault" },
+        { "name": "E021 PV1 Voltage High", "mask": 1, "offset": 20, "type": "enum", "values": ["Inactive", "Active"], "notes": "CORRECT - Fault" },
+        { "name": "E032 Fan Error", "mask": 1, "offset": 31, "type": "enum", "values": ["Inactive", "Active"], "notes": "CORRECT - Fault" },
+        
+        { "name": "E040 Inverter Over Load", "mask": 1, "offset": 39, "type": "enum", "values": ["Inactive", "Active"], "notes": "CORRECT - Fault" },
+        
+        { "name": "E049 DSP Communication Interrupted", "mask": 1, "offset": 48, "type": "enum", "values": ["Inactive", "Active"], "notes": "CORRECT - Fault" },
+        { "name": "E050 BMS Communication Interrupted", "mask": 1, "offset": 49, "type": "enum", "values": ["Inactive", "Active"], "notes": "CORRECT - Fault" },
+        
+        { "name": "E065 PV Overvoltage", "mask": 1, "offset": 64, "type": "enum", "values": ["Inactive", "Active"], "notes": "CORRECT - Fault" },
+        { "name": "E076 PV1 Reverse Polarity", "mask": 1, "offset": 75, "type": "enum", "values": ["Inactive", "Active"], "notes": "CORRECT - Fault" }
+      ]
+    },
+   
+    { "reg": 140, "name": "APP_HOME_DATA: Total DC Power", "len": 32, "unit": "W", "device_class": "power", "notes": "CORRECT - used for portable batteries that have DC output ports (cigarette lighter socket etc.  Not useful for EP2000"},
+    { "reg": 142, "name": "APP_HOME_DATA: Consumption Power All", "len": 32, "signed": true, "device_class": "power", "unit": "W", "notes": "CORRECT - diff between this and 148 may be inverter self-consumption" },
+    { "reg": 144, "name": "APP_HOME_DATA: PV Input Power All", "len": 32, "signed": true, "device_class": "power", "unit": "W", "notes": "CORRECT - This is the new DC coupled solar PV production" },
+    { "reg": 146, "name": "APP_HOME_DATA: Grid Power All", "len": 32, "signed": true, "device_class": "power", "unit": "W", "notes": "probably is AC coupled inverter production (old PV)" },
+    { "reg": 148, "name": "APP_HOME_DATA: Total Inverter Power", "len": 32, "signed": true, "device_class": "power", "unit": "W", "notes": "CORRECT: negative when charging, positive when discharging" },
+
+	{
+	  "trigger_action": [
+		  {"trigger_read_metadata": { "trigger_reg": 21000, "trigger_count": 1, "delay": 0.2, "slave_id": 0 } },
+		  {
+			"bulk_read": {
+			  "slave_id": 41,
+			  "delay": 0.2,
+			  "registers": [
+				  { "reg": 150, "name": "Total Energy DC Consumption", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" },
+				  { "reg": 152, "name": "Total Energy AC House Consumption", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" },
+				  { "reg": 154, "name": "Lifetime PV Generation", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" },
+				  { "reg": 156, "name": "Lifetime Grid Charging", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" },
+				  { "reg": 158, "name": "Lifetime Grid Export",  "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" }
+			  ]
+			}
+		  }
+		]
+    },
+    {"reg": 160, "name": "APP_HOME_DATA: Charging Mode", "mask": 255, "type": "enum", "values": ["Standard", "Silent", "Turbo"], "notes": "CORRECT - 0=Standard, 1=Silent, 2=Fast/Turbo" },
+    {"reg": 161, "name": "APP_HOME_DATA: Inverter Working Status", "mask": 255, "type": "enum", "values": ["Standby", "Self-Test", "Grid-Tied", "Off-Grid", "Bypass", "Charging", "Unknown", "Fault/Alarm"], "notes": "CORRECT - 0=Standby, 1=Self-Test, 2=Grid-Tied (Normal), 3=Off-Grid (Normal), 4=Bypass, 5=Charging, 7=Fault/Alarm"},
+    {"reg": 162, "name": "APP_HOME_DATA: PV to AC Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy", "notes": "CORRECT - 0 for EP2000 - only used for smaller batteries?"},
+    {"reg": 164, "name": "APP_HOME_DATA: Self-Sufficiency Rate", "unit": "%", "mask": 255,  "slave_id": 41, "notes": "0 for me, app says 76% - while Register 164 is the output, the inputs to that number come from: Register 1200 (Total PV Power),Register 1420 (Total AC Load Power),Register 101 (Pack Current / Discharge state" },
+    {"reg": 165, "name": "APP_HOME_DATA: PV to AC Power", "len": 32, "unit": "W", "device_class": "power", "notes": "0 for me", "slave_id": 41  },
+    {"reg": 167, "name": "APP_HOME_DATA: Pack Total Discharge Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy", "notes": "0 for me", "slave_id": 41  },
+    {"reg": 169, "name": "APP_HOME_DATA: Rated Voltage", "unit": "V", "device_class": "voltage", "notes": "0 for me", "slave_id": 41  },
+    {"reg": 170, "name": "APP_HOME_DATA: Rated Frequency", "unit": "Hz", "device_class": "frequency", "notes": "0 for me", "slave_id": 41  },
+    {
+        "reg": 171,
+        "len": 1,
+        "outputs": [
+          {
+            "name": "DC Hub",
+            "offset": 0,
+            "mask": 1,
+            "type": "enum", "values": ["Offline", "Online"],
+            "notes": "CORRECT - part of Compononent Online Status bits - 0 for me"
+          },
+          {
+            "name": "AC Hub Controller",
+            "offset": 1,
+            "mask": 1,
+            "type": "enum", "values": ["Offline", "Online"],
+            "notes": "CORRECT - part of Compononent Online Status bits - 0 for me"
+          },
+          {
+            "name": "Grid Meter",
+            "offset": 2,
+            "mask": 1,
+            "type": "enum", "values": ["Offline", "Online"],
+            "notes": "CORRECT - part of Compononent Online Status bits - 0 for me"
+          },
+          {
+            "name": "Load Meter",
+            "offset": 3,
+            "mask": 1,
+            "type": "enum", "values": ["Offline", "Online"],
+            "notes": "CORRECT - part of Compononent Online Status bits - 0 for me"
+          },
+          {
+            "name": "ATS",
+            "offset": 4,
+            "mask": 1,
+            "type": "enum", "values": ["Offline", "Online"],
+            "notes": "CORRECT - part of Compononent Online Status bits - 0 for me"
+          },
+          {
+            "name": "Remote Startup",
+            "offset": 5,
+            "mask": 1,
+            "type": "enum", "values": ["Offline", "Online"],
+            "notes": "CORRECT - part of Compononent Online Status bits - 0 for me"
+          },
+          {
+            "name": "Generator",
+            "offset": 6,
+            "mask": 1,
+            "type": "enum", "values": ["Offline", "Online"],
+            "notes": "CORRECT - part of Compononent Online Status bits - 0 for me"
+          }
+        ]
+      },
+
+    {
+        "reg": 174,
+        "len": 16,
+        "outputs": [
+          {
+            "name": "Sub-1GHz Mode",
+            "offset": 0,
+            "mask": 3,
+            "type": "enum",
+            "values": ["Off", "Scanning"],
+            "notes": "CORRECT - part of IOT module bits - 0 for me.  0=OFF, 1=Scanning"
+          },
+          {
+            "name": "Upgrade Status",
+            "offset": 2,
+            "mask": 3,
+            "type": "enum",
+            "values": ["None", "Downloading", "Installing"],
+            "notes": "CORRECT - part of IOT module bits - 0 for me.  0=None, 1=Downloading, 2=Installing"
+          },
+          {
+            "name": "Child Lock",
+            "offset": 4,
+            "mask": 3,
+            "type": "enum",
+            "values": ["Disabled", "Enabled"],
+            "device_class": "lock",
+            "notes": "CORRECT - part of IOT module bits - 0 for me.  0=Disabled, 1=Enabled"
+          },
+          {
+            "name": "Remote Ctrl",
+            "offset": 6,
+            "mask": 3,
+            "type": "enum",
+            "values": ["Local only", "Remote allowed"],
+            "notes": "CORRECT - part of IOT module bits - 0 for me.  0=Local only, 1=Remote allowed"
+          },
+          {
+            "name": "WiFi Mesh",
+            "offset": 8,
+            "mask": 3,
+            "type": "enum",
+            "values": ["Off", "Scanning"],
+            "notes": "CORRECT - part of IOT module bits - 0 for me.  0=Off, 1=Scanning"
+          },
+          {
+            "name": "IoT Error",
+            "offset": 10,
+            "mask": 1,
+            "type": "enum", "values": ["OK", "Fault"],
+            "notes": "CORRECT - part of IOT module bits - 0 for me"
+          },
+          {
+            "name": "BMS Error",
+            "offset": 11,
+            "mask": 1,
+            "type": "enum", "values": ["OK", "Fault"],
+            "notes": "CORRECT - part of IOT module bits - 0 for me.  "
+          },
+          {
+            "name": "AT1 Error",
+            "offset": 12,
+            "mask": 1,
+            "type": "enum", "values": ["OK", "Fault"],
+            "notes": "CORRECT - part of IOT module bits - 0 for me.  "
+          },
+           {
+            "name": "Sys Upgrade Type",
+            "offset": 13,
+            "mask": 7,
+            "type": "numeric",
+            "notes": "CORRECT - part of IOT module bits - 0 for me.  "
+          }
+        ]
+      },
+    
+    {"reg": 175, "name": "Scene Flag", "mask": 255, "notes": "CORRECT - 0 for me.  0=Home, 1=Balcony, 2=Balcony2.  used for background images in app"},
+    {"reg": 178, "name": "Sleep Standby Time", "len": 32, "unit": "s", "notes": "CORRECT - 0 for me.  tracks how much time the system has spent in Standby/Sleep Mode or estimates the Remaining Standby Time before the battery is depleted by internal tare loads", "no_word_swap": true},
+    {"reg": 180, "name": "Pack Total Charge Energy", "len": 32, "unit": "kWh", "device_class": "energy", "notes": "CORRECT - 0 for me. tracks the cumulative lifetime energy that has been charged into the battery packs", "no_word_swap": true },
+    {"reg": 182, "name": "Total Car Output Power", "unit": "W", "device_class": "power", "notes": "CORRECT - 0 for me." },
+    {"reg": 183, "name": "Total EV Power", "len": 32, "unit": "W", "device_class": "power", "notes": "CORRECT - 0 for me.", "signed": true, "no_word_swap": true },
+      {
+        "reg": 188,
+        "len": 16,
+        "outputs": [
+          {
+            "name": "Bluetooth Upgrade Supported",
+            "offset": 0,
+            "mask": 1,
+            "type": "enum", "values": ["Disabled", "Enabled"],
+            "notes": "CORRECT - 0 for me.  FeatureStatus.  1=Enabled, 0=Disabled"
+          },
+          {
+            "name": "Cloud Upgrade Supported",
+            "offset": 1,
+            "mask": 1,
+            "type": "enum", "values": ["Disabled", "Enabled"],
+            "notes": "CORRECT - 0 for me.  FeatureStatus.  1=Enabled, 0=Disabled"
+          },
+          {
+            "name": "Remote Power Supported",
+            "offset": 2,
+            "mask": 1,
+            "type": "enum", "values": ["Disabled", "Enabled"],
+            "notes": "CORRECT - 0 for me.  FeatureStatus.  1=Enabled, 0=Disabled"
+          },
+          {
+            "name": "System Power Off Supported",
+            "offset": 3,
+            "mask": 1,
+            "type": "enum", "values": ["Disabled", "Enabled"],
+            "notes": "CORRECT - 0 for me.  FeatureStatus.  1=Enabled, 0=Disabled.For your EP2000, checking this register tells you exactly what the current firmware allows the app to control remotely. If you're trying to automate a Power Off via Modbus, you must first ensure Bit 3 is 1"
+          },
+          {
+            "name": "Extreme Weather Supported",
+            "offset": 8,
+            "mask": 1,
+            "type": "enum", "values": ["Not Supported", "Supported"],
+            "notes": "CORRECT - 0 for me.  FeatureStatus.  1=Enabled, 0=Disabled"
+          }
+        ]
+      },
+
+    {"reg": 191, "name": "Switch Recovery Status", "notes": "Bitfield"},
+      {
+        "reg": 191,
+        "len": 16,
+        "outputs": [
+          {
+            "name": "AC Recovery",
+            "offset": 0,
+            "mask": 1,
+            "type": "enum", "values": ["Stay OFF", "Auto-Restore"],
+            "notes": "Correct - SwitchRecoveryStatus. 0 for me.  1=Auto-Restore 0=Stay OFF"
+          },
+          {
+            "name": "DC Recovery",
+            "offset": 1,
+            "mask": 1,
+            "type": "enum", "values": ["Stay OFF", "Auto-Restore"],
+            "notes": "Correct - SwitchRecoveryStatus. 0 for me.  1=Auto-Restore 0=Stay OFF"
+          },
+          {
+            "name": "DC Hub Recovery",
+            "offset": 2,
+            "mask": 1,
+            "type": "enum", "values": ["Stay OFF", "Auto-Restore"],
+            "notes": "Correct - SwitchRecoveryStatus. 0 for me.  1=Auto-Restore 0=Stay OFF"
+          },
+          {
+            "name": "AC Hub Recovery",
+            "offset": 3,
+            "mask": 1,
+            "type": "enum", "values": ["Stay OFF", "Auto-Restore"],
+            "notes": "Correct - SwitchRecoveryStatus. 0 for me.  1=Auto-Restore 0=Stay OFF"
+          }
+        ]
+      },
+      
+
+      {"reg": 700, "name": "OTA Master Switch", "notes": "Triggers the firmware update sequence. Monitoring only." },
+      {"reg": 720, "name": "OTA Group", "mask": 255, "notes": "1:INV, 2:PACK, 3:IOT, 4:LCD, 5:ATS" },
+      {"reg": 722, "name": "Module 1 OTA Status", "notes": "Status of the first file in the update bundle." },
+      {"reg": 723, "name": "Module 1 OTA File Step", "notes": "Current transfer step/block for Module 1." },
+      {"reg": 724, "name": "Module 1 Processor Type", "notes": "1=ARM, 2=DSP, 3=BMS" },
+      {"reg": 725, "name": "Module 1 Firmware Depth" },
+      {"reg": 726, "name": "Module 1 Upgrade Progress", "unit": "%" },
+      {"reg": 727, "name": "Module 1 OTA Error Code", "notes": "0=Success. Non-zero=Specific failure reason." },
+    {
+      "bulk_read": {
+        "read_start_reg": 1100,
+        "read_count": 70,
+        "registers": [
+          {"reg": 1101, "len": 6, "ascii": true, "name": "INV_BASE_INFO: Model Name", "notes": "Legacy Protocol Version is also at this address" },
+          {"reg": 1107, "len": 64, "name": "INV_BASE_INFO: Inverter SN" },
+          {"reg": 1149, "name": "INV_BASE_INFO: Voltage Type", "type": "enum", "values": ["Low (110V)", "High (230V)"], "notes": "0: Low (110V), 1: High (230V)" },
+          {"reg": 1150, "name": "INV_BASE_INFO: Internal Padding", "notes": "Reserved"},
+          {"reg": 1151, "name": "INV_BASE_INFO: Ambient Temp", "subtract": 40, "unit": "°C", "device_class": "temperature" },
+          {"reg": 1152, "name": "INV_BASE_INFO: Max Inverter Temp", "subtract": 40, "unit": "°C", "device_class": "temperature" },
+          {"reg": 1153, "name": "INV_BASE_INFO: PV DCDC Max Temp", "subtract": 40, "unit": "°C", "device_class": "temperature" },
+          {"reg": 1154, "name": "INV_BASE_INFO: Firmware Feature Flags", "notes": "fmVerDiff"},
+          {"reg": 1155, "name": "INV_BASE_INFO: Max Charge Power Limit L1", "unit": "W", "device_class": "power"},
+          {"reg": 1156, "name": "INV_BASE_INFO: Max Charge Power Limit L2", "unit": "W", "device_class": "power"},
+          {"reg": 1157, "name": "INV_BASE_INFO: Max Charge Power Limit L3", "unit": "W", "device_class": "power"},
+          {"reg": 1158, "name": "INV_BASE_INFO: Max Discharge Power Limit L1", "unit": "W", "device_class": "power"},
+          {"reg": 1159, "name": "INV_BASE_INFO: Max Discharge Power Limit L2", "unit": "W", "device_class": "power"},
+          {"reg": 1160, "name": "INV_BASE_INFO: Max Discharge Power Limit L3", "unit": "W", "device_class": "power"},
+          {"reg": 1161, "name": "INV_BASE_INFO: Rated Input Current L1", "scale": 1, "unit": "A", "device_class": "current"},
+          {"reg": 1162, "name": "INV_BASE_INFO: Rated Input Current L2", "scale": 1, "unit": "A", "device_class": "current"},
+          {"reg": 1163, "name": "INV_BASE_INFO: Rated Input Current L3", "scale": 1, "unit": "A", "device_class": "current"},
+          {"reg": 1164, "name": "INV_BASE_INFO: Rated Output Current L1", "scale": 1, "unit": "A", "device_class": "current" },
+          {"reg": 1165, "name": "INV_BASE_INFO: Rated Output Current L2", "scale": 1, "unit": "A", "device_class": "current" },
+          {"reg": 1166, "name": "INV_BASE_INFO: Rated Output Current L3", "scale": 1, "unit": "A", "device_class": "current" },
+          {"reg": 1167, "name": "INV_BASE_INFO: Rated Grid Input Current L1", "scale": 1, "unit": "A", "device_class": "current"},
+          {"reg": 1168, "name": "INV_BASE_INFO: Rated Grid Input Current L2", "scale": 1, "unit": "A", "device_class": "current"},
+          {"reg": 1169, "name": "INV_BASE_INFO: Rated Grid Input Current L3", "scale": 1, "unit": "A", "device_class": "current"}
+        ]
+      }
+    },
+
+    {
+      "bulk_read": {
+        "slave_id": 1,
+        "registers": [
+          {"reg": 1200, "len": 32, "name": "INV_PV_INFO: Total PV Power", "unit": "W", "device_class": "power", "notes": "CORRECT - new solar PV production, not including Solaredge", "no_word_swap": true },
+          {"reg": 1202, "len": 32, "name": "INV_PV_INFO: Total PV Energy", "scale": 1, "unit": "kWh", "device_class": "energy", "notes": "CORRECT - check in daytime - should be a sum", "no_word_swap": true },
+          { "reg": 1209,
+            "outputs": [
+              { "name": "INV_PV_INFO: DC String Count", "notes": "CORRECT", "mask": 15 },
+              { "name": "INV_PV_INFO: AC String Count", "offset": 4, "notes": "CORRECT", "mask": 15 }
+            ]
+          },
+          {"reg": 1210, "name": "INV_PV_INFO: String 1 Status", "len": 16, "mask": 255, "type": "enum", "values": ["Standby", "Normal", "Fault"], "notes": "CORRECT - 0=Standby, 1=Normal, 2=Fault" },
+          {"reg": 1211, "name": "INV_PV_INFO: String 1 Type", "len": 16, "notes": "CORRECT: 100=DC Input, 101=AC-Coupled" },
+          {"reg": 1212, "name": "INV_PV_INFO: String 1 Power", "len": 16, "unit": "W", "device_class": "power", "notes": "CORRECT"  },
+          {"reg": 1213, "name": "INV_PV_INFO: String 1 Voltage", "len": 16, "scale": 1, "unit": "V", "device_class": "voltage", "notes": "CORRECT" },
+          {"reg": 1214, "name": "INV_PV_INFO: String 1 Current", "len": 16, "scale": 1, "unit": "A", "device_class": "current", "notes": "CORRECT" },
+          {"reg": 1218, "name": "INV_PV_INFO: String 2 Status", "len": 16, "mask": 255, "type": "enum", "values": ["Standby", "Normal", "Fault"], "notes": "CORRECT - 0=Standby, 1=Normal, 2=Fault" },
+          {"reg": 1219, "name": "INV_PV_INFO: String 2 Type", "len": 16, "notes": "CORRECT: 100=DC Input, 101=AC-Coupled" },
+          {"reg": 1220, "name": "INV_PV_INFO: String 2 Power", "len": 16, "unit": "W", "device_class": "power", "notes": "CORRECT"  },
+          {"reg": 1221, "name": "INV_PV_INFO: String 2 Voltage", "len": 16, "scale": 1, "unit": "V", "device_class": "voltage", "notes": "CORRECT" },
+          {"reg": 1222, "name": "INV_PV_INFO: String 2 Current", "len": 16, "scale": 1, "unit": "A", "device_class": "current", "notes": "CORRECT" },
+          {"reg": 1226, "name": "INV_PV_INFO: String 3 Status", "len": 16, "mask": 255, "type": "enum", "values": ["Standby", "Normal", "Fault"], "notes": "CORRECT - 0=Standby, 1=Normal, 2=Fault" },
+          {"reg": 1227, "name": "INV_PV_INFO: String 3 Type", "len": 16, "notes": "CORRECT: 100=DC Input, 101=AC-Coupled" },
+          {"reg": 1228, "name": "INV_PV_INFO: String 3 Power", "len": 16, "unit": "W", "device_class": "power", "notes": "CORRECT" },
+          {"reg": 1229, "name": "INV_PV_INFO: String 3 Voltage", "len": 16, "scale": 1, "unit": "V", "device_class": "voltage", "notes": "CORRECT" },
+          {"reg": 1230, "name": "INV_PV_INFO: String 3 Current", "len": 16, "scale": 1, "unit": "A", "device_class": "current", "notes": "CORRECT" },
+          {"reg": 1234, "name": "INV_PV_INFO: String 4 Status", "len": 16, "mask": 255, "type": "enum", "values": ["Standby", "Normal", "Fault"], "notes": "CORRECT - 0=Standby, 1=Normal, 2=Fault" },
+          {"reg": 1235, "name": "INV_PV_INFO: String 4 Type", "len": 16, "notes": "CORRECT: 100=DC Input, 101=AC-Coupled" },
+          {"reg": 1236, "name": "INV_PV_INFO: String 4 Power", "len": 16, "unit": "W", "device_class": "power", "notes": "CORRECT" },
+          {"reg": 1237, "name": "INV_PV_INFO: String 4 Voltage", "len": 16, "scale": 1, "unit": "V", "device_class": "voltage", "notes": "CORRECT" },
+          {"reg": 1238, "name": "INV_PV_INFO: String 4 Current", "len": 16, "scale": 1, "unit": "A", "device_class": "current", "notes": "CORRECT" },
+          {"reg": 1242, "name": "INV_PV_INFO: String 5 Status", "len": 16, "mask": 255, "type": "enum", "values": ["Standby", "Normal", "Fault"], "notes": "CORRECT - 0=Standby, 1=Normal, 2=Fault" },
+          {"reg": 1243, "name": "INV_PV_INFO: String 5 Type", "len": 16, "notes": "CORRECT: 100=DC Input, 101=AC-Coupled" },
+          {"reg": 1244, "name": "INV_PV_INFO: String 5 Power", "len": 16, "unit": "W", "device_class": "power", "notes": "probably AC Coupled PV Phase 3 power"  },
+          {"reg": 1245, "name": "INV_PV_INFO: String 5 Voltage", "len": 16, "scale": 1, "unit": "V", "device_class": "voltage", "notes": "probably AC Coupled PV Phase 3 voltage" },
+          {"reg": 1246, "name": "INV_PV_INFO: String 5 Current", "len": 16, "scale": 1, "unit": "A", "device_class": "current", "notes": "probably AC Coupled PV Phase 3 current" },
+          {"reg": 1250, "name": "INV_PV_INFO: String 6 Status", "len": 16, "mask": 255, "type": "enum", "values": ["Standby", "Normal", "Fault"], "notes": "CORRECT - 0=Standby, 1=Normal, 2=Fault" },
+          {"reg": 1251, "name": "INV_PV_INFO: String 6 Type", "len": 16, "notes": "CORRECT: 100=DC Input, 101=AC-Coupled" },
+          {"reg": 1252, "name": "INV_PV_INFO: String 6 Power", "len": 16, "unit": "W", "device_class": "power", "notes": "CORRECT"  },
+          {"reg": 1253, "name": "INV_PV_INFO: String 6 Voltage", "len": 16, "scale": 1, "unit": "V", "device_class": "voltage", "notes": "CORRECT" },
+          {"reg": 1254, "name": "INV_PV_INFO: String 6 Current", "len": 16, "scale": 1, "unit": "A", "device_class": "current", "notes": "CORRECT" },
+          {"reg": 1258, "name": "INV_PV_INFO: String 7 Status", "len": 16, "mask": 255, "type": "enum", "values": ["Standby", "Normal", "Fault"], "notes": "CORRECT - 0=Standby, 1=Normal, 2=Fault" },
+          {"reg": 1259, "name": "INV_PV_INFO: String 7 Type", "len": 16, "notes": "CORRECT: 100=DC Input, 101=AC-Coupled" },
+          {"reg": 1260, "name": "INV_PV_INFO: String 7 Power", "len": 16, "unit": "W", "device_class": "power", "notes": "CORRECT"  },
+          {"reg": 1261, "name": "INV_PV_INFO: String 7 Voltage", "len": 16, "scale": 1, "unit": "V", "device_class": "voltage", "notes": "CORRECT" },
+          {"reg": 1262, "name": "INV_PV_INFO: String 7 Current", "len": 16, "scale": 1, "unit": "A", "device_class": "current", "notes": "CORRECT" },
+          {"reg": 1266, "name": "INV_PV_INFO: String 8 Status", "len": 16, "mask": 255, "type": "enum", "values": ["Standby", "Normal", "Fault"], "notes": "CORRECT - 0=Standby, 1=Normal, 2=Fault" },
+          {"reg": 1267, "name": "INV_PV_INFO: String 8 Type", "len": 16, "notes": "CORRECT: 100=DC Input, 101=AC-Coupled" },
+          {"reg": 1268, "name": "INV_PV_INFO: String 8 Power", "len": 16, "unit": "W", "device_class": "power", "notes": "CORRECT"  },
+          {"reg": 1269, "name": "INV_PV_INFO: String 8 Voltage", "len": 16, "scale": 1, "unit": "V", "device_class": "voltage", "notes": "CORRECT" },
+          {"reg": 1270, "name": "INV_PV_INFO: String 8 Current", "len": 16, "scale": 1, "unit": "A", "device_class": "current", "notes": "CORRECT" },
+          {"reg": 1274, "name": "INV_PV_INFO: String 9 Status", "len": 16, "mask": 255, "type": "enum", "values": ["Standby", "Normal", "Fault"], "notes": "CORRECT - 0=Standby, 1=Normal, 2=Fault" },
+          {"reg": 1275, "name": "INV_PV_INFO: String 9 Type", "len": 16, "notes": "CORRECT: 100=DC Input, 101=AC-Coupled" },
+          {"reg": 1276, "name": "INV_PV_INFO: String 9 Power", "len": 16, "unit": "W", "device_class": "power", "notes": "CORRECT"  },
+          {"reg": 1277, "name": "INV_PV_INFO: String 9 Voltage", "len": 16, "scale": 1, "unit": "V", "device_class": "voltage", "notes": "CORRECT" },
+          {"reg": 1278, "name": "INV_PV_INFO: String 9 Current", "len": 16, "scale": 1, "unit": "A", "device_class": "current", "notes": "CORRECT" },
+          {"reg": 1282, "name": "INV_PV_INFO: String 10 Status", "len": 16, "mask": 255, "type": "enum", "values": ["Standby", "Normal", "Fault"], "notes": "CORRECT - 0=Standby, 1=Normal, 2=Fault" },
+          {"reg": 1283, "name": "INV_PV_INFO: String 10 Type", "len": 16, "notes": "CORRECT: 100=DC Input, 101=AC-Coupled" },
+          {"reg": 1284, "name": "INV_PV_INFO: String 10 Power", "len": 16, "unit": "W", "device_class": "power", "notes": "CORRECT"  },
+          {"reg": 1285, "name": "INV_PV_INFO: String 10 Voltage", "len": 16, "scale": 1, "unit": "V", "device_class": "voltage", "notes": "CORRECT" },
+          {"reg": 1286, "name": "INV_PV_INFO: String 10 Current", "len": 16, "scale": 1, "unit": "A", "device_class": "current", "notes": "CORRECT" },
+          {"reg": 1287, "name": "INV_PV_INFO: ADL400 cumulative energy(W)", "len": 16, "notes": "tare bluetti consumption? ADL400 cumulative energy(W)" },
+          {"reg": 1288, "name": "INV_PV_INFO: ADL400 meter online status", "len": 16, "notes": "ADL400 meter online status" },
+          {"reg": 1289, "name": "INV_PV_INFO: ADL400 phase mapping", "len": 16, "notes": "ADL400 phase mapping" },
+          {"reg": 1290, "name": "INV_PV_INFO: Total System Self-Consumption (W)", "len": 16, "notes": "tare bluetti consumption?" },
+          {"reg": 1291, "name": "INV_PV_INFO: ADL400 meter fault code", "len": 16, "notes": "ADL400 meter fault code" }
+        ]
+       }
+    },
+    {
+      "trigger_action": [
+        { "trigger_read_metadata": { "trigger_reg": 21000, "trigger_count": 1, "delay": 0.2, "slave_id": 0 } },
+        { "bulk_read": {
+          "slave_id": 41,
+          "delay": 0.0,
+          "registers": [
+          {"reg": 1200, "len": 32, "name": "INV_PV_INFO: Total PV Power", "unit": "W", "device_class": "power", "notes": "CORRECT - new solar PV production, not including Solaredge", "no_word_swap": true },
+          {"reg": 1202, "len": 32, "name": "INV_PV_INFO: Total PV Energy", "scale": 1, "unit": "kWh", "device_class": "energy", "notes": "CORRECT - check in daytime - should be a sum", "no_word_swap": true },
+          { "reg": 1209,
+            "outputs": [
+              { "name": "INV_PV_INFO: DC String Count", "notes": "CORRECT", "mask": 15 },
+              { "name": "INV_PV_INFO: AC String Count", "offset": 4, "notes": "CORRECT", "mask": 15 }
+            ]
+          },
+          {"reg": 1210, "name": "INV_PV_INFO: String 1 Status", "len": 16, "mask": 255, "type": "enum", "values": ["Standby", "Normal", "Fault"], "notes": "CORRECT - 0=Standby, 1=Normal, 2=Fault" },
+          {"reg": 1211, "name": "INV_PV_INFO: String 1 Type", "len": 16, "notes": "CORRECT: 100=DC Input, 101=AC-Coupled" },
+          {"reg": 1212, "name": "INV_PV_INFO: String 1 Power", "len": 16, "unit": "W", "device_class": "power", "notes": "CORRECT"  },
+          {"reg": 1213, "name": "INV_PV_INFO: String 1 Voltage", "len": 16, "scale": 1, "unit": "V", "device_class": "voltage", "notes": "CORRECT" },
+          {"reg": 1214, "name": "INV_PV_INFO: String 1 Current", "len": 16, "scale": 1, "unit": "A", "device_class": "current", "notes": "CORRECT" },
+          {"reg": 1218, "name": "INV_PV_INFO: String 2 Status", "len": 16, "mask": 255, "type": "enum", "values": ["Standby", "Normal", "Fault"], "notes": "CORRECT - 0=Standby, 1=Normal, 2=Fault" },
+          {"reg": 1219, "name": "INV_PV_INFO: String 2 Type", "len": 16, "notes": "CORRECT: 100=DC Input, 101=AC-Coupled" },
+          {"reg": 1220, "name": "INV_PV_INFO: String 2 Power", "len": 16, "unit": "W", "device_class": "power", "notes": "CORRECT"  },
+          {"reg": 1221, "name": "INV_PV_INFO: String 2 Voltage", "len": 16, "scale": 1, "unit": "V", "device_class": "voltage", "notes": "CORRECT" },
+          {"reg": 1222, "name": "INV_PV_INFO: String 2 Current", "len": 16, "scale": 1, "unit": "A", "device_class": "current", "notes": "CORRECT" },
+          {"reg": 1226, "name": "INV_PV_INFO: String 3 Status", "len": 16, "mask": 255, "type": "enum", "values": ["Standby", "Normal", "Fault"], "notes": "CORRECT - 0=Standby, 1=Normal, 2=Fault" },
+          {"reg": 1227, "name": "INV_PV_INFO: String 3 Type", "len": 16, "notes": "CORRECT: 100=DC Input, 101=AC-Coupled" },
+          {"reg": 1228, "name": "INV_PV_INFO: String 3 Power", "len": 16, "unit": "W", "device_class": "power", "notes": "CORRECT" },
+          {"reg": 1229, "name": "INV_PV_INFO: String 3 Voltage", "len": 16, "scale": 1, "unit": "V", "device_class": "voltage", "notes": "CORRECT" },
+          {"reg": 1230, "name": "INV_PV_INFO: String 3 Current", "len": 16, "scale": 1, "unit": "A", "device_class": "current", "notes": "CORRECT" },
+          {"reg": 1234, "name": "INV_PV_INFO: String 4 Status", "len": 16, "mask": 255, "type": "enum", "values": ["Standby", "Normal", "Fault"], "notes": "CORRECT - 0=Standby, 1=Normal, 2=Fault" },
+          {"reg": 1235, "name": "INV_PV_INFO: String 4 Type", "len": 16, "notes": "CORRECT: 100=DC Input, 101=AC-Coupled" },
+          {"reg": 1236, "name": "INV_PV_INFO: String 4 Power", "len": 16, "unit": "W", "device_class": "power", "notes": "CORRECT" },
+          {"reg": 1237, "name": "INV_PV_INFO: String 4 Voltage", "len": 16, "scale": 1, "unit": "V", "device_class": "voltage", "notes": "CORRECT" },
+          {"reg": 1238, "name": "INV_PV_INFO: String 4 Current", "len": 16, "scale": 1, "unit": "A", "device_class": "current", "notes": "CORRECT" },
+          {"reg": 1242, "name": "INV_PV_INFO: String 5 Status", "len": 16, "mask": 255, "type": "enum", "values": ["Standby", "Normal", "Fault"], "notes": "CORRECT - 0=Standby, 1=Normal, 2=Fault" },
+          {"reg": 1243, "name": "INV_PV_INFO: String 5 Type", "len": 16, "notes": "CORRECT: 100=DC Input, 101=AC-Coupled" },
+          {"reg": 1244, "name": "INV_PV_INFO: String 5 Power", "len": 16, "unit": "W", "device_class": "power", "notes": "probably AC Coupled PV Phase 3 power"  },
+          {"reg": 1245, "name": "INV_PV_INFO: String 5 Voltage", "len": 16, "scale": 1, "unit": "V", "device_class": "voltage", "notes": "probably AC Coupled PV Phase 3 voltage" },
+          {"reg": 1246, "name": "INV_PV_INFO: String 5 Current", "len": 16, "scale": 1, "unit": "A", "device_class": "current", "notes": "probably AC Coupled PV Phase 3 current" },
+          {"reg": 1250, "name": "INV_PV_INFO: String 6 Status", "len": 16, "mask": 255, "type": "enum", "values": ["Standby", "Normal", "Fault"], "notes": "CORRECT - 0=Standby, 1=Normal, 2=Fault" },
+          {"reg": 1251, "name": "INV_PV_INFO: String 6 Type", "len": 16, "notes": "CORRECT: 100=DC Input, 101=AC-Coupled" },
+          {"reg": 1252, "name": "INV_PV_INFO: String 6 Power", "len": 16, "unit": "W", "device_class": "power", "notes": "CORRECT"  },
+          {"reg": 1253, "name": "INV_PV_INFO: String 6 Voltage", "len": 16, "scale": 1, "unit": "V", "device_class": "voltage", "notes": "CORRECT" },
+          {"reg": 1254, "name": "INV_PV_INFO: String 6 Current", "len": 16, "scale": 1, "unit": "A", "device_class": "current", "notes": "CORRECT" },
+          {"reg": 1258, "name": "INV_PV_INFO: String 7 Status", "len": 16, "mask": 255, "type": "enum", "values": ["Standby", "Normal", "Fault"], "notes": "CORRECT - 0=Standby, 1=Normal, 2=Fault" },
+          {"reg": 1259, "name": "INV_PV_INFO: String 7 Type", "len": 16, "notes": "CORRECT: 100=DC Input, 101=AC-Coupled" },
+          {"reg": 1260, "name": "INV_PV_INFO: String 7 Power", "len": 16, "unit": "W", "device_class": "power", "notes": "CORRECT"  },
+          {"reg": 1261, "name": "INV_PV_INFO: String 7 Voltage", "len": 16, "scale": 1, "unit": "V", "device_class": "voltage", "notes": "CORRECT" },
+          {"reg": 1262, "name": "INV_PV_INFO: String 7 Current", "len": 16, "scale": 1, "unit": "A", "device_class": "current", "notes": "CORRECT" },
+          {"reg": 1266, "name": "INV_PV_INFO: String 8 Status", "len": 16, "mask": 255, "type": "enum", "values": ["Standby", "Normal", "Fault"], "notes": "CORRECT - 0=Standby, 1=Normal, 2=Fault" },
+          {"reg": 1267, "name": "INV_PV_INFO: String 8 Type", "len": 16, "notes": "CORRECT: 100=DC Input, 101=AC-Coupled" },
+          {"reg": 1268, "name": "INV_PV_INFO: String 8 Power", "len": 16, "unit": "W", "device_class": "power", "notes": "CORRECT"  },
+          {"reg": 1269, "name": "INV_PV_INFO: String 8 Voltage", "len": 16, "scale": 1, "unit": "V", "device_class": "voltage", "notes": "CORRECT" },
+          {"reg": 1270, "name": "INV_PV_INFO: String 8 Current", "len": 16, "scale": 1, "unit": "A", "device_class": "current", "notes": "CORRECT" },
+          {"reg": 1274, "name": "INV_PV_INFO: String 9 Status", "len": 16, "mask": 255, "type": "enum", "values": ["Standby", "Normal", "Fault"], "notes": "CORRECT - 0=Standby, 1=Normal, 2=Fault" },
+          {"reg": 1275, "name": "INV_PV_INFO: String 9 Type", "len": 16, "notes": "CORRECT: 100=DC Input, 101=AC-Coupled" },
+          {"reg": 1276, "name": "INV_PV_INFO: String 9 Power", "len": 16, "unit": "W", "device_class": "power", "notes": "CORRECT"  },
+          {"reg": 1277, "name": "INV_PV_INFO: String 9 Voltage", "len": 16, "scale": 1, "unit": "V", "device_class": "voltage", "notes": "CORRECT" },
+          {"reg": 1278, "name": "INV_PV_INFO: String 9 Current", "len": 16, "scale": 1, "unit": "A", "device_class": "current", "notes": "CORRECT" },
+          {"reg": 1282, "name": "INV_PV_INFO: String 10 Status", "len": 16, "mask": 255, "type": "enum", "values": ["Standby", "Normal", "Fault"], "notes": "CORRECT - 0=Standby, 1=Normal, 2=Fault" },
+          {"reg": 1283, "name": "INV_PV_INFO: String 10 Type", "len": 16, "notes": "CORRECT: 100=DC Input, 101=AC-Coupled" },
+          {"reg": 1284, "name": "INV_PV_INFO: String 10 Power", "len": 16, "unit": "W", "device_class": "power", "notes": "CORRECT"  },
+          {"reg": 1285, "name": "INV_PV_INFO: String 10 Voltage", "len": 16, "scale": 1, "unit": "V", "device_class": "voltage", "notes": "CORRECT" },
+          {"reg": 1286, "name": "INV_PV_INFO: String 10 Current", "len": 16, "scale": 1, "unit": "A", "device_class": "current", "notes": "CORRECT" },
+          {"reg": 1287, "name": "INV_PV_INFO: ADL400 cumulative energy(W)", "len": 16, "notes": "tare bluetti consumption? ADL400 cumulative energy(W)" },
+          {"reg": 1288, "name": "INV_PV_INFO: ADL400 meter online status", "len": 16, "notes": "ADL400 meter online status" },
+          {"reg": 1289, "name": "INV_PV_INFO: ADL400 phase mapping", "len": 16, "notes": "ADL400 phase mapping" },
+          {"reg": 1290, "name": "INV_PV_INFO: Total System Self-Consumption (W)", "len": 16, "notes": "tare bluetti consumption?" },
+          {"reg": 1291, "name": "INV_PV_INFO: ADL400 meter fault code", "len": 16, "notes": "ADL400 meter fault code" }
+        ]
+      }
+    }
+  ]
+  },
+
+	{
+      "bulk_read": {
+        "read_start_reg": 1300,
+        "read_count": 31,
+        "registers": [
+          { "reg": 1300, "name": "INV_GRID_INFO: Grid Frequency", "unit": "Hz", "scale": 1, "device_class": "frequency" },
+          { "reg": 1301, "len": 32, "name": "INV_GRID_INFO: Total AC Power - GRID + AC-PV", "unit": "W", "device_class": "power", "signed": true, "notes": "CORRECT: GRID consumption + PV-AC generation" },
+          { "reg": 1303, "len": 32, "name": "INV_GRID_INFO: Total Grid Energy", "unit": "kWh", "scale": 1, "device_class": "energy" },
+          { "reg": 1305, "len": 32, "name": "INV_GRID_INFO: Total Feedback Energy", "unit": "kWh", "scale": 1, "device_class": "energy" },
+          { "reg": 1312, "name": "INV_GRID_INFO: System Phase Count" },
+          { 
+            "reg": 1312, 
+            "name": "INV_GRID_INFO: System Phase Count",
+            "name": "INV_GRID_INFO: System Phase Count Block",
+            "type": "repeating_count",
+            "len": 304,
+            "count_offset": 0,
+            "start_offset": 1,
+            "block_regs": 6,
+            "outputs": [
+              { "reg_offset": 0, "name": "INV_GRID_INFO: Phase Grid Power", "unit": "W", "device_class": "power", "signed": true },
+              { "reg_offset": 1, "name": "INV_GRID_INFO: Phase Grid Voltage", "unit": "V", "scale": 1, "device_class": "voltage" },
+              { "reg_offset": 2, "name": "INV_GRID_INFO: Phase Grid Current", "unit": "A", "scale": 1, "device_class": "current", "signed": true },
+              { "reg_offset": 3, "name": "INV_GRID_INFO: Phase Apparent Power", "unit": "VA", "device_class": "apparent_power" }
+            ]
+          }
+        ]
+      }
+    },
+
+    {
+      "bulk_read": {
+        "registers": [
+          { "reg": 1400, "name": "INV_INV_INFO: Total DC Load Power", "len": 32, "unit": "W", "device_class": "power" },
+          { "reg": 1402, "name": "INV_INV_INFO: Total DC Load Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" },
+          { "reg": 1404, "name": "INV_INV_INFO: DC 5V Power", "unit": "W", "device_class": "power" },
+          { "reg": 1406, "name": "INV_INV_INFO: DC 12V Power", "unit": "W", "device_class": "power" },
+          { "reg": 1408, "name": "INV_INV_INFO: DC 24V Power", "unit": "W", "device_class": "power" },
+          { "reg": 1412, "name": "INV_INV_INFO: Total DC Voltage", "unit": "V", "scale": 1, "device_class": "voltage" },
+          { "reg": 1420, "name": "INV_INV_INFO: Total AC Load Power", "len": 32, "unit": "W", "device_class": "power", "notes": "zero always - no change since first poll" },
+          { "reg": 1422, "name": "INV_INV_INFO: Total AC Load Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy" },
+          { "reg": 1429, "name": "INV_INV_INFO: Load Phase Count" },
+          { 
+            "reg": 1429, "name": "INV_INV_INFO: Load Phase Count", "type": "repeating_count",
+            "reg": 1429, "name": "INV_INV_INFO: Load Phase Count Block", "type": "repeating_count",
+            "len": 304,
+            "count_offset": 0, "start_offset": 1, "block_regs": 6,
+            "outputs": [
+              { "reg_offset": 0, "name": "INV_INV_INFO: Phase Load Power", "unit": "W", "device_class": "power" },
+              { "reg_offset": 1, "name": "INV_INV_INFO: Phase Load Voltage", "unit": "V", "scale": 1, "device_class": "voltage" },
+              { "reg_offset": 2, "name": "INV_INV_INFO: Phase Load Current", "unit": "A", "scale": 1, "device_class": "current" },
+              { "reg_offset": 3, "name": "INV_INV_INFO: Phase Apparent Power", "unit": "VA", "device_class": "apparent_power" }
+            ]
+          }
+        ]
+      }
+    },
+
+   {
+      "bulk_read": {
+        "read_start_reg": 1500,
+        "read_count": 31,
+        "registers": [
+          { "reg": 1500, "name": "INV_INV_INFO: AC Output Frequency", "unit": "Hz", "scale": 1, "device_class": "frequency" },
+          { "reg": 1501, "name": "INV_INV_INFO: Total AC Output Energy", "len": 32, "unit": "kWh", "scale": 1, "device_class": "energy", "signed": true },
+          { "reg": 1508, "name": "INV_INV_INFO: Inverter Phase Count", "notes": "CORRECT - number of phases of AC connected PV"},
+          {
+            "reg": 1508, "name": "INV_INV_INFO: Inverter Phase Count Block", "type": "repeating_count",
+            "len": 352, "count_offset": 0, "start_offset": 1, "block_regs": 7,
+            "outputs": [
+              { "reg_offset": 0, "name": "Phase Work Status", "notes": "e.g., 3 = active/normal" },
+              { "reg_offset": 1, "name": "Phase Output Power", "unit": "W", "device_class": "power", "signed": true },
+              { "reg_offset": 2, "name": "Phase Output Voltage", "unit": "V", "scale": 1, "device_class": "voltage" },
+              { "reg_offset": 3, "name": "Phase Output Current", "unit": "A", "scale": 1, "device_class": "current", "signed": true }
+            ]
+          }
+        ]
+      }
+    },
+
+    { "reg": 1700, "name": "INV_METER_INFO: Meter Model Name", "len": 5, "ascii": true, "notes": "Registers 1700-1705 (12 bytes)" },
+    { "reg": 1705, "name": "INV_METER_INFO: Meter Serial Number", "len": 4, "ascii": true, "notes": "Registers 1706-1711 (12 bytes)" },
+	
+	
+	
+    {
+      "bulk_read": {
+        "read_start_reg": 2000,
+        "read_count": 30,
+        "registers": [
+          { "reg": 2000, "name": "INV_BASE_SETTINGS: Inverter Modbus Address" },
+          { "reg": 2005, "name": "INV_BASE_SETTINGS: Working Mode", "type": "enum", "values": ["Unknown", "Standalone", "Parallel", "Master/Slave"] },
+          { "reg": 2007, "name": "INV_BASE_SETTINGS: LED Ring Control", "type": "enum", "values": ["Off", "On"] },
+          { "reg": 2008, "name": "CTRL_METER: Meter Type Selection", "type": "enum", "values": ["Reserved", "Grid Meter", "AC Meter"] },
+          { "reg": 2009, "name": "INV_BASE_SETTINGS: Solar (PV) Input Switch", "type": "enum", "values": ["Off", "On"] },
+          { "reg": 2010, "name": "INV_BASE_SETTINGS: Inverter Power Switch", "type": "enum", "values": ["Off", "On"] },
+          { "reg": 2011, "name": "INV_BASE_SETTINGS: AC Output Switch", "type": "enum", "values": ["Off", "On"] },
+          { "reg": 2012, "name": "INV_BASE_SETTINGS: DC Output Switch", "type": "enum", "values": ["Off", "On"] },
+          { "reg": 2013, "name": "INV_BASE_SETTINGS: System Power Off Trigger", "notes": "Write 1 to shut down" },
+          { "reg": 2014, "name": "INV_BASE_SETTINGS: DC ECO Mode", "type": "enum", "values": ["Off", "On"] },
+          { "reg": 2015, "name": "INV_BASE_SETTINGS: DC ECO Shutdown Delay", "unit": "min" },
+          { "reg": 2016, "name": "INV_BASE_SETTINGS: DC ECO Power Threshold", "unit": "W" },
+          { "reg": 2017, "name": "INV_BASE_SETTINGS: AC ECO Mode", "type": "enum", "values": ["Off", "On"] },
+          { "reg": 2018, "name": "INV_BASE_SETTINGS: AC ECO Shutdown Delay", "unit": "min" },
+          { "reg": 2019, "name": "INV_BASE_SETTINGS: AC ECO Power Threshold", "unit": "W" },
+          { "reg": 2020, "name": "INV_BASE_SETTINGS: Charging Mode", "type": "enum", "values": ["Unknown", "Standard", "Silent", "Turbo"] },
+          { "reg": 2021, "name": "INV_BASE_SETTINGS: Power Lifting Mode", "type": "enum", "values": ["Off", "On"], "notes": "Turbo mode for heavy loads" },
+          { "reg": 2022, "name": "INV_BASE_SETTINGS: SOC Low Limit", "unit": "%", "device_class": "battery", "notes": "Discharge stop threshold" },
+          { "reg": 2023, "name": "INV_BASE_SETTINGS: SOC High Limit", "unit": "%", "device_class": "battery", "notes": "Grid charge stop threshold" },
+          { "reg": 2024, "name": "INV_BASE_SETTINGS: Internal Machine Type ID" },
+          { "reg": 2026, "name": "INV_BASE_SETTINGS: History Energy Type Selector" },
+          { "reg": 2027, "name": "INV_BASE_SETTINGS: Current Energy Type Selector" },
+          { "reg": 2028, "name": "INV_BASE_SETTINGS: Database Page Commit Trigger" },
+          { "reg": 2029, "name": "INV_BASE_SETTINGS: Timer Settings Start Offset", "unit": "min" }
+        ]
+      }
+    },
+    {"reg":2030,"name":"INV_BASE_SETTINGS: Slot 1 Config","outputs":[{"name":"INV_BASE_SETTINGS: Slot 1 Status","mask":255,"type":"enum","values":["Disable","Charge","Discharge"]},{"name":"INV_BASE_SETTINGS: Slot 1 Power","offset":8,"mask":255}]},
+    {"reg":2031,"name":"INV_BASE_SETTINGS: Slot 1 Start Time","outputs":[{"name":"INV_BASE_SETTINGS: Slot 1 Start Minute","mask":255},{"name":"INV_BASE_SETTINGS: Slot 1 Start Hour","offset":8,"mask":255}]},
+    {"reg":2032,"name":"INV_BASE_SETTINGS: Slot 1 End Time","outputs":[{"name":"INV_BASE_SETTINGS: Slot 1 End Minute","mask":255},{"name":"INV_BASE_SETTINGS: Slot 1 End Hour","offset":8,"mask":255}]},
+    {"reg":2066,"name":"INV_BASE_SETTINGS: Buzzer Control","type":"enum","values":["Muted","Enabled"],"notes":"0:Mute / 1:Enable"},
+    {"reg":2067,"name":"INV_BASE_SETTINGS: LCD Timeout","unit":"s"},
+    {"reg":2078,"name":"INV_BASE_SETTINGS: LED Color","type":"enum","values":["Cool","Warm","SOS"],"notes":"0:Cool / 1:Warm / 2:SOS"},
+
+    {
+      "bulk_read": {
+        "read_start_reg": 2200,
+        "read_count": 93,
+        "registers": [
+          { "reg": 2200, "len": 64, "ascii": true, "name": "INV_ADVANCED_SETTINGS: Expert Mode Password" },
+          { "reg": 2206, "name": "INV_ADVANCED_SETTINGS: Factory Reset Trigger", "notes": "Write 1 to reset" },
+          { "reg": 2207, "name": "INV_ADVANCED_SETTINGS: Grid Interface Enable", "type": "enum", "values": ["Off", "On"] },
+          { "reg": 2208, "name": "INV_ADVANCED_SETTINGS: Grid Export (Anti-backflow)", "type": "enum", "values": ["Disallowed", "Allowed"] },
+          { "reg": 2209, "name": "INV_ADVANCED_SETTINGS: Target Output Voltage", "unit": "V" },
+          { "reg": 2210, "name": "INV_ADVANCED_SETTINGS: Target Output Frequency", "scale": 2, "unit": "Hz" },
+          { "reg": 2211, "name": "INV_ADVANCED_SETTINGS: Max Bulk Charge Voltage", "scale": 1, "unit": "V", "device_class": "voltage" },
+          { "reg": 2212, "name": "INV_ADVANCED_SETTINGS: Max Solar Charge Current", "scale": 1, "unit": "A", "device_class": "current" },
+          { "reg": 2213, "name": "INV_ADVANCED_SETTINGS: Max Grid Input Power", "unit": "W", "device_class": "power" },
+          { "reg": 2214, "name": "INV_ADVANCED_SETTINGS: Max Grid Input Current", "scale": 1, "unit": "A", "device_class": "current" },
+          { "reg": 2215, "name": "INV_ADVANCED_SETTINGS: Max Grid Export Power", "unit": "W", "device_class": "power" },
+          { "reg": 2216, "name": "INV_ADVANCED_SETTINGS: Max Grid Export Current", "scale": 1, "unit": "A", "device_class": "current" },
+          { "reg": 2217, "name": "INV_ADVANCED_SETTINGS: Rated Off-Grid Power", "unit": "W" },
+          { "reg": 2218, "name": "INV_ADVANCED_SETTINGS: Grid Region Index" },
+          { "reg": 2225, "name": "INV_ADVANCED_SETTINGS: Enhanced Grid Stability", "type": "enum", "values": ["Off", "On"] },
+          { "reg": 2226, "name": "INV_ADVANCED_SETTINGS: System Auto-Recovery Status" },
+          { "reg": 2227, "name": "INV_ADVANCED_SETTINGS: External Meter Polling", "type": "enum", "values": ["Off", "On"] },
+          { "reg": 2228, "name": "INV_ADVANCED_SETTINGS: Meter Model Type", "type": "enum", "values": ["ADL400", "AGF", "ADL200N", "ADL400N", "ADL400M"] },
+          { "reg": 2230, "name": "INV_ADVANCED_SETTINGS: Parallel Inverter Address" },
+          { "reg": 2231, "name": "INV_ADVANCED_SETTINGS: Last CT Test Result" },
+          { "reg": 2241, "name": "INV_ADVANCED_SETTINGS: EmsCtrlMode", "mask": 15, "notes": "The 'Brain' Mode (bits 0-3)" },
+          { "reg": 2242, "name": "INV_ADVANCED_SETTINGS: Performance Mask", "outputs": [
+              { "name": "INV_ADVANCED_SETTINGS: EvEnable", "mask": 1, "offset": 0, "notes": "EV Charging" },
+              { "name": "INV_ADVANCED_SETTINGS: SocLowerLimitKeepEnable", "mask": 1, "offset": 1 },
+              { "name": "INV_ADVANCED_SETTINGS: HardwareLimitOutput", "mask": 1, "offset": 2 },
+              { "name": "INV_ADVANCED_SETTINGS: GeneratorInverterPower", "mask": 1, "offset": 3 },
+              { "name": "INV_ADVANCED_SETTINGS: BalanceEnable", "mask": 1, "offset": 4, "notes": "Phase Balancing" },
+              { "name": "INV_ADVANCED_SETTINGS: WinterModeEnable", "mask": 1, "offset": 5 },
+              { "name": "INV_ADVANCED_SETTINGS: GridMaxInputCurrentEnable", "mask": 1, "offset": 6 },
+              { "name": "INV_ADVANCED_SETTINGS: DrmsEnable", "mask": 1, "offset": 7, "notes": "Demand Response" }
+          ]},
+          { "reg": 2248, "name": "INV_ADVANCED_SETTINGS: Generator Auto-Start SOC", "unit": "%" },
+          { "reg": 2249, "name": "INV_ADVANCED_SETTINGS: Generator Auto-Stop SOC", "unit": "%" },
+          { "reg": 2267, "name": "INV_ADVANCED_SETTINGS: LCD Screen Dim Timeout", "unit": "s" },
+          { "reg": 2268, "len": 32, "name": "INV_ADVANCED_SETTINGS: Configured Max Load", "unit": "W", "device_class": "power" },
+          { "reg": 2270, "len": 32, "name": "INV_ADVANCED_SETTINGS: Rated AC Capacity", "unit": "W", "device_class": "power" },
+          { "reg": 2273, "name": "INV_ADVANCED_SETTINGS: Custom Function Enable Bits", "outputs": [
+              { "name": "INV_ADVANCED_SETTINGS: Custom Functionality", "mask": 1, "offset": 0, "type": "enum", "values": ["Disabled", "Enabled"] },
+              { "name": "INV_ADVANCED_SETTINGS: Charging Mode Set", "mask": 1, "offset": 1, "type": "enum", "values": ["Disabled", "Enabled"] },
+              { "name": "INV_ADVANCED_SETTINGS: Child Lock Status", "mask": 1, "offset": 2, "type": "enum", "values": ["Unlocked", "Locked"] }
+          ]},
+          { "reg": 2275, "name": "INV_ADVANCED_SETTINGS: Holding Mode Min SOC", "unit": "%" },
+          { "reg": 2277, "len": 32, "name": "INV_ADVANCED_SETTINGS: Auto-Sleep Time Remaining", "unit": "min" },
+          { "reg": 2279, "name": "INV_ADVANCED_SETTINGS: LED Ring Config", "outputs": [
+              { "name": "INV_ADVANCED_SETTINGS: LED Color", "mask": 255 },
+              { "name": "INV_ADVANCED_SETTINGS: LED Brightness", "mask": 255, "offset": 8 }
+          ]},
+          { "reg": 2280, "name": "INV_ADVANCED_SETTINGS: Pack Count Settings", "outputs": [
+              { "name": "INV_ADVANCED_SETTINGS: System Pack Count", "mask": 255 },
+              { "name": "INV_ADVANCED_SETTINGS: Display Pack Count", "mask": 255, "offset": 8 }
+          ]},
+          { "reg": 2281, "name": "INV_ADVANCED_SETTINGS: Inverter Count Settings", "outputs": [
+              { "name": "INV_ADVANCED_SETTINGS: Set Inverter Count", "mask": 255 },
+              { "name": "INV_ADVANCED_SETTINGS: Actual Inverter Count", "mask": 255, "offset": 8 }
+          ]},
+          { "reg": 2283, "name": "INV_ADVANCED_SETTINGS: SOC Holding Thresholds", "outputs": [
+              { "name": "INV_ADVANCED_SETTINGS: SOC Holding Enable", "mask": 255, "type": "enum", "values": ["Off", "On"] },
+              { "name": "INV_ADVANCED_SETTINGS: SOC High Threshold", "mask": 255, "offset": 8, "unit": "%" }
+          ]},
+          { "reg": 2285, "name": "INV_ADVANCED_SETTINGS: 12V Port Output Level", "mask": 3, "type": "enum", "values": ["Low", "Medium", "High", "Max"] },
+          { "reg": 2287, "name": "INV_ADVANCED_SETTINGS: System Design Capacity", "scale": 1, "unit": "Ah" },
+          { "reg": 2288, "name": "INV_ADVANCED_SETTINGS: System Actual Capacity", "scale": 1, "unit": "Ah" },
+          { "reg": 2289, "name": "INV_ADVANCED_SETTINGS: System Start Time (Y/M)", "outputs": [
+              { "name": "INV_ADVANCED_SETTINGS: Start Month", "mask": 255 },
+              { "name": "INV_ADVANCED_SETTINGS: Start Year", "mask": 255, "offset": 8, "subtract": -2000 }
+          ]},
+          { "reg": 2292, "name": "INV_ADVANCED_SETTINGS: System Feature Flags", "outputs": [
+              { "name": "INV_ADVANCED_SETTINGS: Eco Mutex", "mask": 1, "offset": 0 },
+              { "name": "INV_ADVANCED_SETTINGS: Eco Mode Disable", "mask": 1, "offset": 1 },
+              { "name": "INV_ADVANCED_SETTINGS: Backup Power Mode", "mask": 1, "offset": 2 }
+          ]}
+        ]
+      }
+    },
+	
+    {
+      "bulk_read": {
+        "slave_id": 0,
+        "read_start_reg": 2200,
+        "read_count": 84,
+        "registers": [
+          { "reg": 2200, "len": 64, "ascii": true, "name": "SLAVE0_AdvLoginPassword" },
+          { "reg": 2206, "name": "SLAVE0_FactoryReset" },
+          { "reg": 2207, "name": "SLAVE0_CtrlGrid" },
+          { "reg": 2208, "name": "SLAVE0_CtrlFeedback" },
+          { "reg": 2209, "name": "SLAVE0_InvVoltage", "unit": "V" },
+          { "reg": 2210, "name": "SLAVE0_InvFreq", "unit": "Hz" },
+          { "reg": 2211, "name": "SLAVE0_ChgMaxVoltage", "unit": "V" },
+          { "reg": 2212, "name": "SLAVE0_PvChgMaxCurrent", "unit": "A" },
+          { "reg": 2213, "name": "SLAVE0_GridMaxPower", "unit": "W" },
+          { "reg": 2214, "name": "SLAVE0_GridMaxCurrent", "unit": "A" },
+          { "reg": 2215, "name": "SLAVE0_FeedbackMaxPower", "unit": "W" },
+          { "reg": 2216, "name": "SLAVE0_FeedbackMaxCurrent", "unit": "A" },
+          { "reg": 2217, "name": "SLAVE0_GridOffAcRatePower", "unit": "W" },
+          { "reg": 2218, "name": "SLAVE0_UserArea" },
+          { "reg": 2219, "len": 96, "name": "SLAVE0_PVParallelCtrl" },
+          { "reg": 2225, "name": "SLAVE0_CtrlGridEnhanced" },
+          { "reg": 2226, "name": "SLAVE0_SysSwitchRecovery" },
+          { "reg": 2227, "name": "SLAVE0_MeterCtrl" },
+          { "reg": 2228, "name": "SLAVE0_MeterType" },
+          { "reg": 2229, "name": "SLAVE0_CtrlMultiInv" },
+          { "reg": 2230, "name": "SLAVE0_InvAddr" },
+          { "reg": 2231, "name": "SLAVE0_CT_Test", "outputs": [
+              { "name": "SLAVE0_CtTestResult", "mask": 255 },
+              { "name": "SLAVE0_CtTestTrigger", "mask": 255, "offset": 8 }
+          ]},
+          { "reg": 2232, "name": "SLAVE0_MeshLogicMask", "outputs": [
+              { "name": "SLAVE0_AtsEnable", "mask": 1, "offset": 0 },
+              { "name": "SLAVE0_MultiInvOffGrid", "mask": 1, "offset": 2 },
+              { "name": "SLAVE0_AuxiliaryWifiEnable", "mask": 1, "offset": 6 },
+              { "name": "SLAVE0_GeneratorEnable", "mask": 1, "offset": 8 },
+              { "name": "SLAVE0_MicroInvEnable", "mask": 1, "offset": 10 },
+              { "name": "SLAVE0_PowerOptimizerEnable", "mask": 1, "offset": 12 },
+              { "name": "SLAVE0_GridConnectionEnable", "mask": 1, "offset": 14 }
+          ]},
+          { "reg": 2243, "name": "SLAVE0_ChargingPileVolt", "unit": "V" },
+          { "reg": 2244, "name": "SLAVE0_CtRatio", "outputs": [
+              { "name": "SLAVE0_CtRatioPv", "mask": 255 },
+              { "name": "SLAVE0_CtRatioGrid", "mask": 255, "offset": 8 }
+          ]},
+          { "reg": 2245, "name": "SLAVE0_AcCtTest", "outputs": [
+              { "name": "SLAVE0_AcCtTestResult", "mask": 255 },
+              { "name": "SLAVE0_AcCtTestTrigger", "mask": 255, "offset": 8 }
+          ]},
+          { "reg": 2246, "name": "SLAVE0_GenSettings" },
+          { "reg": 2247, "name": "SLAVE0_GenSocStart", "unit": "%" },
+          { "reg": 2248, "name": "SLAVE0_GenSocStop", "unit": "%" },
+          { "reg": 2249, "len": 144, "name": "SLAVE0_GenWorkingTime", "notes": "18-byte schedule for external generators" },
+          { "reg": 2258, "name": "SLAVE0_GridUVValue", "unit": "V", "device_class": "voltage" },
+          { "reg": 2259, "name": "SLAVE0_GridUVTime", "unit": "s" },
+          { "reg": 2260, "name": "SLAVE0_GridOVValue", "unit": "V", "device_class": "voltage" },
+          { "reg": 2261, "name": "SLAVE0_GridOVTime", "unit": "s" },
+          { "reg": 2267, "name": "SLAVE0_GridMeterConfig", "outputs": [
+              { "name": "SLAVE0_MeterType", "mask": 255 },
+              { "name": "SLAVE0_MeterCtrl", "mask": 255, "offset": 8 }
+          ]},
+          { "reg": 2269, "name": "SLAVE0_PvAdvConfig", "outputs": [
+              { "name": "SLAVE0_PvAdvEnable", "mask": 255 },
+              { "name": "SLAVE0_PvCtrl", "mask": 255, "offset": 8 }
+          ]},
+          { "reg": 2270, "name": "SLAVE0_PhaseConfig", "outputs": [
+              { "name": "SLAVE0_PhaseVoltage", "mask": 255 },
+              { "name": "SLAVE0_PhaseMode", "mask": 255, "offset": 8 }
+          ]},
+          { "reg": 2271, "name": "SLAVE0_DcVoltSet", "outputs": [
+              { "name": "SLAVE0_DcVoltValue", "mask": 255 },
+              { "name": "SLAVE0_DcVoltEnable", "mask": 255, "offset": 8 }
+          ]},
+          { "reg": 2272, "name": "SLAVE0_GridMaxCurr2", "unit": "A" },
+          { "reg": 2274, "name": "SLAVE0_SceneConfig", "outputs": [
+              { "name": "SLAVE0_SceneSub", "mask": 255 },
+              { "name": "SLAVE0_SceneUse", "mask": 255, "offset": 8 }
+          ]},
+          { "reg": 2277, "len": 32, "name": "SLAVE0_BatteryCapacity", "unit": "Wh", "device_class": "energy" },
+          { "reg": 2279, "name": "SLAVE0_BatterySpec", "outputs": [
+              { "name": "SLAVE0_BatteryType", "mask": 255 },
+              { "name": "SLAVE0_ModelType", "mask": 255, "offset": 8 }
+          ]},
+          { "reg": 2280, "name": "SLAVE0_HeatPumpMask", "len": 64 }
+        ]
+      }
+    },
+
+    {"reg": 2401, "name": "Grid Certification Country Code", "notes": "Enum: UK, AU, DE, etc."},
+    {"reg": 2402, "name": "Grid Under-Voltage Level 1", "scale": 1, "unit": "V", "device_class": "voltage"},
+    {"reg": 2403, "name": "Grid Under-Voltage Level 1 Time", "scale": 2, "unit": "s"},
+    {"reg": 2404, "name": "Grid Under-Voltage Level 2", "scale": 1, "unit": "V", "device_class": "voltage"},
+    {"reg": 2405, "name": "Grid Under-Voltage Level 2 Time", "scale": 2, "unit": "s"},
+    {"reg": 2406, "name": "Target Power Factor", "signed": true, "scale": 3, "notes": "e.g., 900 -> 0.900"},
+    {"reg": 2411, "name": "Grid Over-Voltage Level 1", "scale": 1, "unit": "V", "device_class": "voltage"},
+    {"reg": 2412, "name": "Grid Over-Voltage Level 1 Time", "scale": 2, "unit": "s"},
+    {"reg": 2413, "name": "Grid Over-Voltage Level 2", "scale": 1, "unit": "V", "device_class": "voltage"},
+    {"reg": 2414, "name": "Grid Over-Voltage Level 2 Time", "scale": 2, "unit": "s"},
+    {"reg": 2419, "name": "Grid Under-Frequency Level 1", "scale": 2, "unit": "Hz", "device_class": "frequency"},
+    {"reg": 2420, "name": "Grid Under-Frequency Level 1 Time", "scale": 2, "unit": "s"},
+    {"reg": 2421, "name": "Grid Under-Frequency Level 2", "scale": 2, "unit": "Hz", "device_class": "frequency"},
+    {"reg": 2422, "name": "Grid Under-Frequency Level 2 Time", "scale": 2, "unit": "s"},
+    {"reg": 2427, "name": "Grid Over-Frequency Level 1", "scale": 2, "unit": "Hz", "device_class": "frequency"},
+    {"reg": 2428, "name": "Grid Over-Frequency Level 1 Time", "scale": 2, "unit": "s"},
+    {"reg": 2429, "name": "Grid Over-Frequency Level 2", "scale": 2, "unit": "Hz", "device_class": "frequency"},
+    {"reg": 2430, "name": "Grid Over-Frequency Level 2 Time", "scale": 2, "unit": "s"},
+    {"reg": 2435, "name": "Grid Reconnect Voltage Lower Limit", "scale": 1, "unit": "V", "device_class": "voltage"},
+    {"reg": 2436, "name": "Grid Reconnect Voltage Upper Limit", "scale": 1, "unit": "V", "device_class": "voltage"},
+    {"reg": 2437, "name": "Grid Reconnect Frequency Lower Limit", "scale": 2, "unit": "Hz", "device_class": "frequency"},
+    {"reg": 2438, "name": "Grid Reconnect Frequency Upper Limit", "scale": 2, "unit": "Hz", "device_class": "frequency"},
+    {"reg": 2439, "name": "Grid Reconnect Delay", "unit": "s"},
+	
+    {
+      "bulk_read": {
+        "read_start_reg": 3000,
+        "read_count": 26,
+        "registers": [
+          { "reg": 3000, "name": "LOG_HISTORY_INFO: Total History Log Pages" },
+          { "reg": 3001, "name": "LOG_HISTORY_INFO: Active Log Page Index" },
+          { "reg": 3002, "name": "LOG_HISTORY_INFO: System Working Mode", "type": "enum", "values": ["Unknown", "Standalone", "Parallel", "Master/Slave"] },
+          { "reg": 3003, "name": "LOG_HISTORY_INFO: Global Charge Current Limit", "unit": "A" },
+          { "reg": 3004, "name": "LOG_HISTORY_INFO: Global Discharge Current Limit", "unit": "A" },
+          { "reg": 3007, "name": "LOG_HISTORY_INFO: AC Master Switch", "type": "enum", "values": ["Off", "On"] },
+          { "reg": 3008, "name": "LOG_HISTORY_INFO: DC Master Switch", "type": "enum", "values": ["Off", "On"] }
+        ]
+      }
+    },
+
+
+    {
+      "bulk_read": {
+        "slave_id": 41,
+        "read_start_reg": 6000,
+        "read_count": 35,
+        "registers": [
+          { "reg": 6000, "name": "Battery Platform Type", "type": "enum", "values": ["Unknown", "Low Voltage", "High Voltage"] },
+          { "reg": 6001, "name": "BMS Logical Hub Count" },
+          { "reg": 6002, "name": "Battery System Online Mask" },
+          { "reg": 6003, "name": "Aggregate Battery Voltage", "scale": 1, "unit": "V", "device_class": "voltage" },
+          { "reg": 6004, "name": "Aggregate Battery Current", "signed": true, "scale": 1, "unit": "A", "device_class": "current" },
+          { "reg": 6005, "name": "Aggregate SOC", "unit": "%", "device_class": "battery" },
+          { "reg": 6006, "name": "Aggregate SOH", "unit": "%", "device_class": "battery" },
+          { "reg": 6007, "name": "BMS Average Temperature", "subtract": 40, "unit": "°C", "device_class": "temperature" },
+          { "reg": 6008, "name": "System Running Status Index" },
+          { "reg": 6009, "name": "Battery Charging Status Index" },
+          { "reg": 6010, "name": "BMS Requested Max Voltage", "scale": 1, "unit": "V", "device_class": "voltage" },
+          { "reg": 6011, "name": "BMS Requested Max Charge Current", "scale": 1, "unit": "A", "device_class": "current" },
+          { "reg": 6012, "name": "BMS Allowed Max Discharge Current", "scale": 1, "unit": "A", "device_class": "current" },
+          { "reg": 6013, "name": "BMS Internal Relay Status", "notes": "3 = Both Charge/Discharge relays energized" },
+          { "reg": 6016, "name": "BMS MOSFET Gate States", "outputs": [
+              { "name": "Charging Path Open", "mask": 1, "offset": 0, "type": "enum", "values": ["Closed", "Open"] },
+              { "name": "Discharging Path Open", "mask": 1, "offset": 1, "type": "enum", "values": ["Closed", "Open"] }
+          ]},
+          { "reg": 6017, "name": "Estimated Time to Full", "unit": "min" },
+          { "reg": 6018, "name": "Estimated Time to Empty", "unit": "min" },
+          { "reg": 6029, "name": "BMS Protection Status 1", "notes": "Critical Protection Bitmask" },
+          { "reg": 6030, "name": "BMS Protection Status 2", "notes": "Thermal/Current Protection Bitmask" },
+          { "reg": 6031, "name": "System Battery Fault Mask" },
+          { "reg": 6033, "name": "Bcu Balance Power Consumption", "unit": "W", "device_class": "power" }
+        ]
+      }
+    },
+	
+    {
+      "bulk_read": {
+        "slave_id": 41,
+        "read_start_reg": 6100,
+        "read_count": 85,
+        "registers": [
+          { "reg": 6100, "name": "Pack Index ID" },
+          { "reg": 6101, "len": 6, "ascii": true, "name": "Pack Model Name", "notes": "Expected: HV800" },
+          { "reg": 6107, "len": 64, "name": "Pack Serial Number Block" },
+          { "reg": 6111, "name": "Pack Precise Voltage", "scale": 1, "unit": "V", "device_class": "voltage", "notes": "0.1V resolution in your trace" },
+          { "reg": 6112, "name": "Pack Real-time Current", "signed": true, "scale": 1, "unit": "A", "device_class": "current" },
+          { "reg": 6113, "name": "Pack SOC", "unit": "%", "device_class": "battery" },
+          { "reg": 6114, "name": "Pack SOH", "unit": "%", "device_class": "battery" },
+          { "reg": 6115, "name": "Pack Average Temp", "subtract": 40, "unit": "°C", "device_class": "temperature" },
+          { "reg": 6124, "name": "BMS Internal Running Status" },
+          { "reg": 6125, "name": "BMS Active Charging Stage" },
+          { "reg": 6129, "name": "Pack Full Capacity Estimate", "unit": "Ah" },
+          { "reg": 6144, "name": "Pack Protection Bitmask" },
+          { "reg": 6146, "len": 48, "name": "BMS Critical Hardware Errors" },
+          { "reg": 6151, "name": "Legacy Pack Cell Count" },
+          { "reg": 6152, "name": "Max Theoretical Cell Count" },
+          { "reg": 6153, "name": "Active Cell Count", "notes": "Source of Truth for cell loops (112)" },
+          { "reg": 6154, "name": "Physical BMU Count", "notes": "Source of Truth for pack count (7)" },
+          { "reg": 6156, "name": "BMU Hardware Profile ID" },
+          { "reg": 6173, "name": "Firmware Module Count" },
+          { 
+            "reg": 6173, "name": "Firmware Module Count", "type": "repeating_count",
+            "reg": 6173, "name": "Firmware Module Count Block", "type": "repeating_count",
+            "len": 400,
+            "count_offset": 0, "start_offset": 1, "block_regs": 3,
+            "outputs": [
+              { "reg_offset": 0, "name": "Firmware Module ID" },
+              { "reg_offset": 1, "name": "Firmware Version", "len": 32 }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "bulk_read": {
+        "slave_id": 41,
+        "read_start_reg": 6300,
+        "read_count": 282,
+        "registers": [
+          {
+            "reg": 6300,
+            "name": "Battery Pack Cell and NTC Data",
+            "type": "dynamic_packed_array",
+            "len": 4512,
+            "start_offset": 2,
+            "arrays": [
+              {
+                "name": "Cell",
+                "count_reg_offset": 0,
+                "count_byte": "low",
+                "items_per_register": 1,
+                "outputs": [
+                  { "reg_offset": 0, "mask": 16383, "name": "Cell Voltage", "unit": "V", "scale": 3, "device_class": "voltage" },
+                  { "reg_offset": 0, "offset": 14, "mask": 3, "name": "Cell Balance Status", "type": "enum", "values": ["Idle", "Active"] }
+                ]
+              },
+              {
+                "name": "NTC",
+                "count_reg_offset": 1,
+                "count_byte": "low",
+                "items_per_register": 2,
+                "outputs": [
+                  { "name": "NTC Temperature", "subtract": 40, "unit": "°C", "device_class": "temperature" }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+
+    {"reg":7000,"name":"Active Pack ID","notes":"0=Pack 1, 1=Pack 2, etc."},
+    {"reg":7001,"name":"Off-Grid Heating Adaptation","type":"enum","values":["Off","On"],"notes":"0: OFF / 1: ON"},
+    {"reg":7002,"name":"Manual Battery Heating","type":"enum","values":["Off","On"],"notes":"0: OFF / 1: ON"},
+    {"reg":7004,"name":"Number of Parallel Units in Pack"},
+    {"reg":7005,"name":"Auto-Heating Start Threshold","notes":"Bits / Enum"},
+    {"reg":7006,"name":"Deep Discharge Mode","type":"enum","values":["Off","On"],"notes":"0: OFF / 1: ON"},
+    {"reg":7010,"name":"BMS Communication Protocol Type","type":"enum"},
+    {"reg":7011,"name":"BMS Hardware Interface Type","type":"enum"},
+
+    {
+      "bulk_read": {
+        "slave_id": 41,
+        "read_start_reg": 7200,
+        "read_count": 100,
+        "registers": [
+          {
+            "reg": 7200,
+            "name": "BMU Interleaved Metadata",
+            "type": "segmented_repeating",
+            "len": 800,
+            "count": 7,
+            "segments": [
+              {
+                "start_offset": 0, "stride": 4,
+                "outputs": [
+                  { "reg_offset": 0, "len": 32, "name": "BMU Unique ID" },
+                  { "reg_offset": 2, "name": "BMU Status Flags", "notes": "Expected 0250 (592)" }
+                ]
+              },
+              {
+                "start_offset": 28, "stride": 2,
+                "outputs": [
+                  { "reg_offset": 0, "name": "BMU Fault Bitmask" }
+                ]
+              },
+              {
+                "start_offset": 42, "stride": 1,
+                "outputs": [
+                  { "reg_offset": 0, "name": "NTC and Cell Counts", "outputs": [
+                    { "name": "Active Cells", "mask": 255 },
+                    { "name": "Active NTCs", "offset": 8, "mask": 255 }
+                  ]}
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "bulk_read": {
+        "slave_id": 41,
+        "read_start_reg": 7586,
+        "read_count": 3,
+        "registers": [
+          { "reg": 7586, "name": "BMS Aggregator CRC" },
+          { "reg": 7587, "name": "BMS System Status Mask", "notes": "FF01 = Fully Active" },
+          { "reg": 7588, "name": "BMS Aggregate SOC Mirror", "unit": "%", "device_class": "battery" }
+        ]
+      }
+    },
+    {"reg":7208,"name":"CELL_VOLT_01","unit":"mV","scale":1,"slave_id":41},
+    {"reg":7209,"name":"CELL_VOLT_02","unit":"mV","scale":1,"slave_id":41},
+    {"reg":7210,"name":"CELL_VOLT_03","unit":"mV","scale":1,"slave_id":41},
+    {"reg":7211,"name":"CELL_VOLT_04","unit":"mV","scale":1,"slave_id":41},
+    {"reg":7212,"name":"CELL_VOLT_05","unit":"mV","scale":1,"slave_id":41},
+    {"reg":7213,"name":"CELL_VOLT_06","unit":"mV","scale":1,"slave_id":41},
+    {"reg":7214,"name":"CELL_VOLT_07","unit":"mV","scale":1,"slave_id":41},
+    {"reg":7215,"name":"CELL_VOLT_08","unit":"mV","scale":1,"slave_id":41},
+    {"reg":7216,"name":"CELL_VOLT_09","unit":"mV","scale":1,"slave_id":41},
+    {"reg":7217,"name":"CELL_VOLT_10","unit":"mV","scale":1,"slave_id":41},
+    {"reg":7218,"name":"CELL_VOLT_11","unit":"mV","scale":1,"slave_id":41},
+    {"reg":7219,"name":"CELL_VOLT_12","unit":"mV","scale":1,"slave_id":41},
+    {"reg":7220,"name":"CELL_VOLT_13","unit":"mV","scale":1,"slave_id":41},
+    {"reg":7221,"name":"CELL_VOLT_14","unit":"mV","scale":1,"slave_id":41},
+    {"reg":7222,"name":"CELL_VOLT_15","unit":"mV","scale":1,"slave_id":41},
+    {"reg":7223,"name":"CELL_VOLT_16","unit":"mV","scale":1,"slave_id":41},
+    {"reg":7224,"name":"CELL_TEMP_01_02","unit":"°C","slave_id":41},
+    {"reg":7225,"name":"CELL_TEMP_03_04","unit":"°C","slave_id":41},
+    {"reg":7226,"name":"CELL_TEMP_05_06","unit":"°C","slave_id":41},
+    {"reg":7227,"name":"CELL_TEMP_07_08","unit":"°C","slave_id":41},
+    {"reg":7228,"name":"BMU_FAULT","len":16,"slave_id":41},
+    {"reg":7229,"name":"BMU_STATUS","len":16,"slave_id":41},
+    {"reg":7230,"name":"CELL_CNT","slave_id":41},
+    {"reg":7231,"name":"NTC_CNT","slave_id":41},
+    {"reg":7232,"name":"BMU_MODEL","slave_id":41},
+    {"reg":7233,"len":2,"name":"SOFT_VER","slave_id":41},
+
+    {"reg":11000,"len":6,"ascii":true,"name":"IoT Model Name"},
+    {"reg":11006,"len":64,"name":"IoT Serial Number"},
+    {"reg":11014,"len":32,"name":"IoT Software Version","notes":"Major.Minor.Build"},
+    {"reg":11016,"len":32,"name":"RF Version"},
+    {"reg":11018,"name":"IoT Control Status","outputs":[{"name":"WiFi Active","offset":0,"mask":1,"type":"enum","values":["Inactive","Active"]},{"name":"4G Active","offset":1,"mask":1,"type":"enum","values":["Inactive","Active"]},{"name":"Ethernet Active","offset":2,"mask":1,"type":"enum","values":["Inactive","Active"]}]},
+    {"reg":11020,"len":2,"name":"WiFi IP Address","format":"ipv4"},
+    {"reg":11022,"len":2,"name":"WiFi Gateway","format":"ipv4"},
+    {"reg":11024,"len":2,"name":"WiFi Subnet Mask","format":"ipv4"},
+    {"reg":11026,"name":"WiFi RSSI","signed":true,"unit":"dBm","device_class":"signal_strength","notes":"Low byte of register"},
+    {"reg":11027,"len":3,"name":"WiFi MAC Address","format":"mac"},
+    {"reg":11030,"len":3,"name":"BLE MAC Address","format":"mac"},
+    {"reg":11034,"name":"Network Mode","mask":255},
+    {"reg":11035,"name":"IoT Faults","len":64,"outputs":[
+        {"name":"SPI Flash Fault","offset":0,"mask":1,"type":"enum","values":["OK","Fault"]},
+        {"name":"EEPROM Fault","offset":1,"mask":1,"type":"enum","values":["OK","Fault"]},
+        {"name":"Sub 1GHz Comm Timeout","offset":2,"mask":1,"type":"enum","values":["OK","Fault"]},
+        {"name":"4G Module Comm Timeout","offset":3,"mask":1,"type":"enum","values":["OK","Fault"]},
+        {"name":"Meter Comm Timeout","offset":4,"mask":1,"type":"enum","values":["OK","Fault"]},
+        {"name":"ARM Comm Timeout","offset":5,"mask":1,"type": "enum", "values": ["OK", "Fault"]},
+        {"name":"RTC Fault","offset":6,"mask":1,"type":"enum","values":["OK","Fault"]},
+        {"name":"Microinverter Shutdown","offset":7,"mask":1,"type":"enum","values":["OK","Fault"]}
+    ]},
+    {"reg":11041,"len":2,"name":"4G IP Address","format":"ipv4"},
+    {"reg":11047,"name":"SIM Status","mask":255,"type":"enum","values":["Offline","Online"],"notes":"1: Online"},
+    {"reg":11052,"len":10,"ascii":true,"name":"IMEI Number"},
+    {"reg":11062,"len":10,"ascii":true,"name":"IMSI Number"},
+    {"reg":11072,"len":10,"ascii":true,"name":"ICCID Number"},
+
+
+    {"reg":12002,"name":"WiFi Config Flag","notes":"Bitfield, Used during network pairing"},
+    {"reg":12003,"len":16,"ascii":true,"name":"Current SSID"},
+    {"reg":12019,"len":32,"ascii":true,"name":"WiFi Password","notes":"SECURITY RISK: Exposes password in plain text"},
+	
+    {"reg":12163,"name":"Extreme Weather Alert Mode","type":"enum","values":["Off","On"],"notes":"0: OFF / 1: ON"},
+    {"reg":12170,"name":"Address Sorting Trigger","notes":"Write 1 to re-sort"},
+    {"reg":12174,"len":2,"name":"IoT Module Gateway IP","format":"ipv4"},
+	
+
+
+
+    {"reg":14000,"len":6,"ascii":true,"name":"HMI Model Name"},
+    {"reg":14006,"len":4,"ascii":true,"name":"HMI Serial Number"},
+    {"reg":14010,"len":32,"name":"HMI Boot Version"},
+    {"reg":14012,"len":32,"name":"HMI Kernel Version"},
+    {"reg":14014,"len":32,"name":"HMI File System Version"},
+    {"reg":14016,"len":32,"name":"HMI UI Version"},
+    {"reg":14018,"len":32,"name":"HMI Base Version"},
+
+
+    {"reg":15000,"name":"PPS Charging Status","type":"enum","values":["Idle","Charging","Discharging"],"notes":"0: Idle, 1: Charging, 2: Discharging"},
+    {"reg":15001,"len":6,"ascii":true,"name":"PPS Model Name"},
+    {"reg":15007,"len":64,"name":"PPS Serial Number"},
+    {"reg":15011,"len":32,"name":"PPS Software Version"},
+    {"reg":15013,"len":32,"name":"PPS Charging Power","unit":"W","device_class":"power"},
+    {"reg":15015,"name":"PPS Charging Voltage","scale":1,"unit":"V","device_class":"voltage"},
+    {"reg":15016,"name":"PPS Charging Current","scale":1,"unit":"A","device_class":"current"},
+    {"reg":15017,"len":32,"scale":1,"name":"PPS Total Discharge Energy","unit":"kWh","device_class":"energy"},
+    {"reg":15019,"len":32,"scale":1,"name":"PPS Total Charge Energy","unit":"kWh","device_class":"energy"},
+
+
+    
+    { "reg": 19001, "len": 16, "name": "WT Input Voltage", "scale": 1, "unit": "V", "device_class": "voltage", "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 19002, "len": 16, "name": "WT Input Current", "scale": 1, "unit": "A", "device_class": "current", "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 19003, "len": 32, "name": "WT Input Power", "unit": "W", "device_class": "power", "notes": "V2 Protocol - May be encrypted", "no_word_swap": true },
+    { "reg": 19005, "len": 16, "name": "WT Working Status", "type": "enum", "values": ["Standby", "Charging", "Braking", "Fault"], "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 19006, "len": 32, "name": "WT Total Energy", "scale": 1, "unit": "kWh", "device_class": "energy", "notes": "V2 Protocol - May be encrypted", "no_word_swap": true },
+    { "reg": 19010, "len": 16, "name": "WT Brake State", "type": "enum", "values": ["Normal", "Braking"], "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 19011, "len": 16, "name": "WT Fan Speed", "unit": "RPM", "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 19101, "len": 16, "name": "Cluster Node ID", "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 19102, "len": 16, "name": "Node Online Status", "type": "enum", "values": ["Offline", "Online"], "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 19103, "len": 16, "name": "Node Type", "type": "enum", "values": ["Master", "Slave", "Observer"], "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 19105, "len": 16, "name": "Heartbeat Interval", "unit": "s", "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 19110, "len": 32, "name": "Sync Clock Time", "notes": "V2 Protocol - Unix Timestamp. May be encrypted", "no_word_swap": true },
+
+    { "reg": 40001, "len": 32, "name": "History Total Record Count", "notes": "V2 Protocol - May be encrypted", "no_word_swap": true },
+    { "reg": 40003, "len": 32, "name": "History Current Record Index", "notes": "V2 Protocol - Write index to move window. May be encrypted", "no_word_swap": true },
+    { "reg": 40005, "len": 16, "name": "History Records per Read", "notes": "V2 Protocol - May be encrypted" },
+    { "reg": 40006, "name": "Grid Under-Voltage 1 Value", "scale": 1, "unit": "V", "device_class": "voltage" },
+    { "reg": 40007, "name": "Grid Under-Voltage 1 Time", "scale": 2, "unit": "s" },
+    { "reg": 40008, "name": "Grid Under-Voltage 2 Value", "scale": 1, "unit": "V", "device_class": "voltage" },
+    { "reg": 40009, "name": "Grid Under-Voltage 2 Time", "scale": 2, "unit": "s" },
+    { "reg": 40010, "name": "Grid Over-Voltage 1 Value", "scale": 1, "unit": "V", "device_class": "voltage" },
+    { "reg": 40011, "name": "Grid Over-Voltage 1 Time", "scale": 2, "unit": "s" },
+    { "reg": 40012, "name": "Grid Over-Voltage 2 Value", "scale": 1, "unit": "V", "device_class": "voltage" },
+    { "reg": 40013, "name": "Grid Over-Voltage 2 Time", "scale": 2, "unit": "s" },
+    { "reg": 40014, "name": "Grid Under-Frequency 1 Value", "scale": 2, "unit": "Hz", "device_class": "frequency" },
+    { "reg": 40015, "name": "Grid Under-Frequency 1 Time", "scale": 2, "unit": "s" },
+    { "reg": 40016, "name": "Grid Under-Frequency 2 Value", "scale": 2, "unit": "Hz", "device_class": "frequency" },
+    { "reg": 40017, "name": "Grid Under-Frequency 2 Time", "scale": 2, "unit": "s" },
+    { "reg": 40018, "name": "Grid Over-Frequency 1 Value", "scale": 2, "unit": "Hz", "device_class": "frequency" },
+    { "reg": 40019, "name": "Grid Over-Frequency 1 Time", "scale": 2, "unit": "s" },
+    { "reg": 40020, "name": "Grid Over-Frequency 2 Value", "scale": 2, "unit": "Hz", "device_class": "frequency" },
+    { "reg": 40021, "name": "Grid Over-Frequency 2 Time", "scale": 2, "unit": "s" },
+
+    {"reg": 1, "name": "Unknown Reg 1", "notes": "non-zero"},
+    {"reg": 6, "name": "Unknown Reg 6", "notes": "non-zero"},
+    {"reg": 1108, "name": "Unknown Reg 1108", "notes": "non-zero"},
+    {"reg": 1109, "name": "Unknown Reg 1109", "notes": "non-zero"},
+    {"reg": 1111, "name": "Unknown Reg 1111", "notes": "non-zero"},
+    {"reg": 1112, "name": "Unknown Reg 1112", "notes": "non-zero"},
+    {"reg": 1113, "name": "Unknown Reg 1113", "notes": "non-zero"},
+    {"reg": 1114, "name": "Unknown Reg 1114", "notes": "non-zero"},
+    {"reg": 1115, "name": "Unknown Reg 1115", "notes": "non-zero"},
+    {"reg": 1116, "name": "Unknown Reg 1116", "notes": "non-zero"},
+    {"reg": 1117, "name": "Unknown Reg 1117", "notes": "non-zero"},
+    {"reg": 1118, "name": "Unknown Reg 1118", "notes": "non-zero"},
+    {"reg": 1132, "name": "Unknown Reg 1132", "notes": "non-zero"},
+    {"reg": 1148, "name": "Unknown Reg 1148", "notes": "non-zero"},
+    {"reg": 2003, "name": "Unknown Reg 2003", "notes": "non-zero"},
+    {"reg": 2004, "name": "Unknown Reg 2004", "notes": "non-zero"},
+    {"reg": 2410, "name": "Unknown Reg 2410", "notes": "non-zero"},
+    {"reg": 6102, "name": "Unknown Reg 6102", "notes": "non-zero"},
+    {"reg": 6103, "name": "Unknown Reg 6103", "notes": "non-zero"},
+    {"reg": 6108, "name": "Unknown Reg 6108", "notes": "non-zero"},
+    {"reg": 6109, "name": "Unknown Reg 6109", "notes": "non-zero"},
+    {"reg": 6116, "name": "Unknown Reg 6116", "notes": "non-zero"},
+    {"reg": 6117, "name": "Unknown Reg 6117", "notes": "non-zero"},
+    {"reg": 6118, "name": "Unknown Reg 6118", "notes": "non-zero"},
+    {"reg": 6119, "name": "Unknown Reg 6119", "notes": "non-zero"},
+    {"reg": 6120, "name": "Unknown Reg 6120", "notes": "non-zero"},
+    {"reg": 6121, "name": "Unknown Reg 6121", "notes": "non-zero"},
+    {"reg": 6122, "name": "Unknown Reg 6122", "notes": "non-zero"},
+    {"reg": 6123, "name": "Unknown Reg 6123", "notes": "non-zero"},
+    {"reg": 6128, "name": "Unknown Reg 6128", "notes": "non-zero"},
+    {"reg": 6131, "name": "Unknown Reg 6131", "notes": "non-zero"},
+    {"reg": 6132, "name": "Unknown Reg 6132", "notes": "non-zero"},
+    {"reg": 6133, "name": "Unknown Reg 6133", "notes": "non-zero"},
+    {"reg": 6134, "name": "Unknown Reg 6134", "notes": "non-zero"},
+    {"reg": 6135, "name": "Unknown Reg 6135", "notes": "non-zero"},
+    {"reg": 6136, "name": "Unknown Reg 6136", "notes": "non-zero"},
+    {"reg": 6137, "name": "Unknown Reg 6137", "notes": "non-zero"},
+    {"reg": 6138, "name": "Unknown Reg 6138", "notes": "non-zero"},
+    {"reg": 6139, "name": "Unknown Reg 6139", "notes": "non-zero"},
+    {"reg": 6140, "name": "Unknown Reg 6140", "notes": "non-zero"},
+    {"reg": 6141, "name": "Unknown Reg 6141", "notes": "non-zero"},
+    {"reg": 6143, "name": "Unknown Reg 6143", "notes": "non-zero"},
+    {"reg": 6150, "name": "Unknown Reg 6150", "notes": "non-zero"},
+    {"reg": 6151, "name": "Unknown Reg 6151", "notes": "non-zero"},
+    {"reg": 6152, "name": "Unknown Reg 6152", "notes": "non-zero"},
+    {"reg": 6153, "name": "Unknown Reg 6153", "notes": "non-zero"},
+    {"reg": 6168, "name": "Unknown Reg 6168", "notes": "non-zero"},
+    {"reg": 6173, "name": "Unknown Reg 6173", "notes": "non-zero"},
+    {"reg": 6174, "name": "Unknown Reg 6174", "notes": "non-zero"},
+    {"reg": 6176, "name": "Unknown Reg 6176", "notes": "non-zero"},
+    {"reg": 6177, "name": "Unknown Reg 6177", "notes": "non-zero"},
+    {"reg": 6179, "name": "Unknown Reg 6179", "notes": "non-zero"},
+    {"reg": 6180, "name": "Unknown Reg 6180", "notes": "non-zero"},
+    {"reg": 6182, "name": "Unknown Reg 6182", "notes": "non-zero"},
+    {"reg": 11001, "name": "Unknown Reg 11001", "notes": "non-zero"},
+    {"reg": 11007, "name": "Unknown Reg 11007", "notes": "non-zero"},
+    {"reg": 11008, "name": "Unknown Reg 11008", "notes": "non-zero"},
+    {"reg": 11010, "name": "Unknown Reg 11010", "notes": "non-zero"},
+    {"reg": 11011, "name": "Unknown Reg 11011", "notes": "non-zero"},
+    {"reg": 11015, "name": "Unknown Reg 11015", "notes": "non-zero"},
+    {"reg": 11021, "name": "Unknown Reg 11021", "notes": "non-zero"},
+    {"reg": 11023, "name": "Unknown Reg 11023", "notes": "non-zero"},
+    {"reg": 11025, "name": "Unknown Reg 11025", "notes": "non-zero"},
+    {"reg": 11028, "name": "Unknown Reg 11028", "notes": "non-zero"},
+    {"reg": 11029, "name": "Unknown Reg 11029", "notes": "non-zero"},
+    {"reg": 11031, "name": "Unknown Reg 11031", "notes": "non-zero"},
+    {"reg": 11032, "name": "Unknown Reg 11032", "notes": "non-zero"},
+    {"reg": 12001, "name": "Unknown Reg 12001", "notes": "non-zero"},
+    {"reg": 12018, "name": "Unknown Reg 12018", "notes": "non-zero"},
+    {"reg": 12020, "name": "Unknown Reg 12020", "notes": "non-zero"},
+    {"reg": 12021, "name": "Unknown Reg 12021", "notes": "non-zero"},
+    {"reg": 12022, "name": "Unknown Reg 12022", "notes": "non-zero"},
+    {"reg": 12050, "name": "Unknown Reg 12050", "notes": "non-zero"},
+    {"reg": 12067, "name": "Unknown Reg 12067", "notes": "non-zero"},
+    {"reg": 12068, "name": "Unknown Reg 12068", "notes": "non-zero"},
+    {"reg": 12069, "name": "Unknown Reg 12069", "notes": "non-zero"},
+    {"reg": 12070, "name": "Unknown Reg 12070", "notes": "non-zero"},
+    {"reg": 12071, "name": "Unknown Reg 12071", "notes": "non-zero"},
+    {"reg": 12072, "name": "Unknown Reg 12072", "notes": "non-zero"},
+    {"reg": 12073, "name": "Unknown Reg 12073", "notes": "non-zero"},
+    {"reg": 12074, "name": "Unknown Reg 12074", "notes": "non-zero"},
+    {"reg": 12075, "name": "Unknown Reg 12075", "notes": "non-zero"},
+    {"reg": 12076, "name": "Unknown Reg 12076", "notes": "non-zero"},
+    {"reg": 12077, "name": "Unknown Reg 12077", "notes": "non-zero"},
+    {"reg": 12078, "name": "Unknown Reg 12078", "notes": "non-zero"},
+    {"reg": 12079, "name": "Unknown Reg 12079", "notes": "non-zero"},
+    {"reg": 12161, "name": "Unknown Reg 12161", "notes": "non-zero"},
+    {"reg": 14001, "name": "Unknown Reg 14001", "notes": "non-zero"},
+    {"reg": 14002, "name": "Unknown Reg 14002", "notes": "non-zero"},
+    {"reg": 14003, "name": "Unknown Reg 14003", "notes": "non-zero"},
+    {"reg": 14007, "name": "Unknown Reg 14007", "notes": "non-zero"},
+    {"reg": 14008, "name": "Unknown Reg 14008", "notes": "non-zero"},
+    {"reg": 14011, "name": "Unknown Reg 14011", "notes": "non-zero"},
+    {"reg": 14013, "name": "Unknown Reg 14013", "notes": "non-zero"},
+    {"reg": 15039, "name": "Unknown Reg 15039", "notes": "non-zero"},
+    {"reg": 15058, "name": "Unknown Reg 15058", "notes": "non-zero"},
+    {"reg": 15059, "name": "Unknown Reg 15059", "notes": "non-zero"},
+
+    {
+	  "bulk_read": {
+		"slave_id": 1,
+		"delay": 0.2,
+		"registers": [
+		  { "reg": 21000, "name": "NODE_INFO: Block Header Version", "notes": "Returns discovery process status/version" },
+		  { "reg": 21001, "name": "NODE_INFO: Total Node Count", "notes": "node count" },
+		  { 
+			"reg": 21001, "name": "NODE_INFO: Total Node Count_block", "type": "repeating_count",
+			"len": 4112, "count_offset": 0, "start_offset": 1, "block_regs": 8,
+			"outputs": [
+			  { "reg_offset": 0, "name": "NODE_INFO: Node Group", "mask": 255, "offset": 8 },
+			  { "reg_offset": 0, "name": "NODE_INFO: Node Slave ID", "mask": 255 },
+			  { "reg_offset": 1, "name": "NODE_INFO: Node Slave Addr Group", "mask": 255, "offset": 8 },
+			  { "reg_offset": 1, "name": "NODE_INFO: Node Parent ID", "mask": 255 },
+			  { "reg_offset": 2, "name": "NODE_INFO: Node Status", "notes": "Bitflags: meshOnline, upgradeStatus, warnings, errors" },
+			  { "reg_offset": 3, "name": "NODE_INFO: Node SN", "len": 64, "no_word_swap": true },
+			  { "reg_offset": 7, "name": "NODE_INFO: Node Model ID" }
+			]
+		  }
+		]
+      }
+	},
+
+    {
+        "type": "calculated",
+        "name": "total_grid",
+        "calculation": "sum(regs(1313, 1319, 1325))"
+    },
+	{
+        "type": "calculated",
+        "name": "total_grid_abs",
+        "calculation": "abs(sum(regs(1313, 1319, 1325)))"
+    },
+	{
+        "type": "calculated",
+        "name": "total_DC_PV",
+        "calculation": "abs(sum(regs(1212, 1220)))"
+    },
+	{
+        "type": "calculated",
+        "name": "total_1500s",
+        "calculation": "sum(regs(1510, 1517, 1524))",
+		"notes": "inverter to battery to inverter - positive means discharging, negative means charging.  DC<->AC conversion"
+    },
+    {
+        "type": "calculated",
+        "name": "Grid Mode",
+        "calculation": {
+            "if": [
+                {
+                    "abs(sum(regs(1313, 1319, 1325))) < 240": "idle"
+                },
+                {
+                    "sum(regs(1313, 1319, 1325)) > 0": "exporting"
+                },
+                {
+                    "else": "importing"
+                }
+            ]
+        }
+    }
+
+]
