@@ -4,10 +4,6 @@
 
 This document provides a comprehensive analysis of the Bluetti EP2000 communication protocol.
 
-**Protocol Version:** 2.0+ (ProtocolAddrV2)  
-**App Version:** 3.0.6  
-**Analysis Date:** 2025-03-27
-
 ## Modbus Register Map
 
 All register addresses are in **decimal** notation.
@@ -267,7 +263,7 @@ The protocol supports multiple Modbus slave addresses:
 - **Default slave address:** 1 (for most operations)
 - **Device-specific slaves:** Some devices use different slave IDs
 - **Parameter passing:** Slave address is passed as a parameter to read/write functions
-- **Multi-device support:** The `ConnectManager` tracks `modbusSlaveAddr` per device
+
 
 ```
 
