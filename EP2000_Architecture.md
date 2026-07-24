@@ -15,11 +15,6 @@ The system uses specific Slave IDs to distinguish between functional blocks. In 
 
 ## 3. Communication Protocols
 
-### Local Bluetooth (V2 Protocol)
-- **Encryption:** AES-128-CBC with Zero Padding.
-- **Session Key:** Defaults to `sxd_aiot_key_001` for early-stage handshaking.
-- **CRC:** Custom 16-bit CRC (often implemented as `bluetti_custom_crc`).
-- **Notification Handle:** 0x000e (standard for V2 commands).
 
 ### Cloud API
 - **Endpoint:** `https://api.bluettipower.com/`
