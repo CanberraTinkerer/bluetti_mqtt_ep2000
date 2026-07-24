@@ -38,8 +38,4 @@ These single registers contain multiple Boolean flags.
 | **2247** | `GenSocStart` | % | Auto-start generator at this level. |
 | **2248** | `GenSocStop` | % | Auto-stop generator at this level. |
 
-## Register Range: 21000 - 21032 (Node Map)
-Used by the app to dynamically discover the system layout.
-- **21001-21008:** Position 1 (usually Slave 0).
-- **21009-21016:** Position 2 (usually Inverter Slave 1).
-- **21017-21024:** Position 3 (usually Battery Slave 41).
+
