@@ -4,7 +4,7 @@ setup(
     name="bluetti-mqtt-ep2000",
     version="0.1.0",
     description="MQTT interface + logger for Bluetti power stations (EP2000/EP760 fork)",
-    author="Alan (CanberraTinkerer)",
+    author="(CanberraTinkerer)",
     license="MIT",
     packages=find_packages(),
     python_requires=">=3.7",
