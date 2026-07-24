@@ -2,41 +2,11 @@
 
 ## Overview
 
-This document provides a comprehensive analysis of the Bluetti EP2000 communication protocol based on reverse engineering of the Android app version 3.0.6.
+This document provides a comprehensive analysis of the Bluetti EP2000 communication protocol.
 
 **Protocol Version:** 2.0+ (ProtocolAddrV2)  
 **App Version:** 3.0.6  
 **Analysis Date:** 2025-03-27
-
-## Protocol Structure
-
-The EP2000 uses a **custom encrypted protocol** that wraps Modbus-style operations with AES-CBC encryption and a custom CRC checksum.
-
-### Command Types
-
-| Code | Name | Description | Modbus Equivalent |
-|------|------|-------------|-------------------|
-| 0x17 | P0x17 | Read multiple registers | 0x03 (Read Holding Registers) |
-| 0x18 | P0x18 | Write single register | 0x06 (Write Single Register) |
-| 0x19 | P0x19 | Write multiple registers | 0x10 (Write Multiple Registers) |
-
-### Security
-
-- **Encryption:** AES-CBC with PKCS7 padding
-- **Default Key:** `sxd_aiot_key_001`
-- **Default IV:** `sxd_aiot_2022_01`
-- **Key/IV:** Can be customized via parameters
-- **Checksum:** Custom CRC using lookup tables (b/c.java)
-
-### Packet Format
-
-```
-[Header: 10 bytes] [Encrypted Payload] [CRC: 2 bytes]
-```
-
-- Header contains protocol identifier, length, and control information
-- Payload contains the actual Modbus-style frame (slave addr, function code, data)
-- CRC is calculated over the entire packet (excluding CRC itself)
 
 ## Modbus Register Map
 
@@ -299,100 +269,10 @@ The protocol supports multiple Modbus slave addresses:
 - **Parameter passing:** Slave address is passed as a parameter to read/write functions
 - **Multi-device support:** The `ConnectManager` tracks `modbusSlaveAddr` per device
 
-### Example Usage
-
-```java
-// Read 10 registers from slave 1 at address 2005
-ConnectManager.getReadTask(2005, 10, 1)
-
-// Write single register to slave 1 at address 2011
-ConnectManager.getSetTask(2011, 1, 1)
-
-// Write multiple registers to slave 1 at address 2022
-ProtocolParse.INSTANCE.getMutiRegSetTask(2022, "0100", 2, 1)
 ```
 
-## Encryption Details
 
-### AES-CBC Encryption
 
-**Algorithm:** AES-CBC with PKCS7 padding  
-**Key:** `sxd_aiot_key_001` (default, 16 bytes)  
-**IV:** `sxd_aiot_2022_01` (default, 16 bytes)  
-**Implementation:** `b/a.java`
-
-```java
-// Encryption (for sending)
-Cipher cipher = Cipher.getInstance("AES/CBC/PKCS7Padding");
-cipher.init(Cipher.ENCRYPT_MODE, secretKey, ivSpec);
-encrypted = cipher.doFinal(payload);
-
-// Decryption (for receiving)
-Cipher cipher = Cipher.getInstance("AES/CBC/PKCS7Padding");
-cipher.init(Cipher.DECRYPT_MODE, secretKey, ivSpec);
-decrypted = cipher.doFinal(encryptedPayload);
-```
-
-### CRC Calculation
-
-**Algorithm:** Custom CRC with lookup tables  
-**Tables:** `f27a` and `f28b` in `b/c.java`  
-**Implementation:** `b/c.java`
-
-```java
-public static int a(byte[] bArr) {
-    int length = bArr.length;
-    int i = 0;
-    byte b2 = 255;
-    int i2 = 255;
-    while (i < length) {
-        int i3 = (i2 ^ bArr[i]) & 255;
-        int i4 = b2 ^ f27a[i3];
-        byte b3 = f28b[i3];
-        i++;
-        i2 = i4;
-        b2 = b3;
-    }
-    return ((b2 & 255) << 8) | (i2 & 255);
-}
-```
-
-## Protocol Implementation Files
-
-### Key Source Files
-
-| File | Purpose |
-|------|---------|
-| `ProtocolAddrV2.java` | Register address definitions |
-| `ProtocolModule.java` | UniApp module exposing P0x17/P0x18/P0x19 methods |
-| `ProtocolTool.java` | High-level protocol utilities |
-| `Param.java` | Parameter structure for multi-register operations |
-| `c/a.java` | P0x17 packet builder (read multiple) |
-| `c/b.java` | P0x18 packet builder (write single) |
-| `c/c.java` | P0x19 packet builder (write multiple) |
-| `b/a.java` | AES encryption/decryption |
-| `b/b.java` | Byte utilities (conversion, concatenation) |
-| `b/c.java` | CRC calculation and validation |
-
-### Packet Building Flow
-
-1. **Read (P0x17):**
-   - Build Modbus frame: `[slave][func][addr_hi][addr_lo][count_hi][count_lo]`
-   - Encrypt with AES-CBC
-   - Add header and CRC
-   - Send to device
-
-2. **Write Single (P0x18):**
-   - Build Modbus frame: `[slave][func][addr_hi][addr_lo][value_hi][value_lo]`
-   - Encrypt with AES-CBC
-   - Add header and CRC
-   - Send to device
-
-3. **Write Multiple (P0x19):**
-   - Build Modbus frame: `[slave][func][addr_hi][addr_lo][count_hi][count_lo][byte_count][data...]`
-   - Encrypt with AES-CBC
-   - Add header and CRC
-   - Send to device
 
 ## Device Compatibility
 
@@ -409,21 +289,8 @@ This protocol (ProtocolAddrV2) is used in the following Bluetti devices:
 
 **Protocol version check:** `ProtocolVer.VER_2000` (value 2000) indicates V2 protocol.
 
-## Notes
 
-1. All communication is **encrypted** - both reads and writes
-2. The protocol uses **big-endian** byte order for multi-byte values
-3. Some registers are **bitmask** fields where each bit represents a boolean flag
-4. Multi-register reads/writes are common for configuration and status data
-5. The `ConnectManager` handles task queuing and execution
-6. Responses are parsed by `ProtocolParserV2` and dispatched via `LiveEventBus`
 
-## References
-
-- Main protocol interface: `com.nky.protocal.unimodule.ProtocolModule`
-- Protocol addresses: `net.poweroak.bluetticloud.ui.connectv2.tools.ProtocolAddrV2`
-- Connection manager: `net.poweroak.bluetticloud.ui.connect.ConnectManager`
-- Protocol parser: `net.poweroak.bluetticloud.ui.connectv2.tools.ProtocolParserV2`
 
 ---
 
